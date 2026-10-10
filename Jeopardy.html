@@ -96,6 +96,69 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes riseIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:760px){#app{padding:12px}.top{align-items:flex-start;flex-direction:column;padding:17px;border-radius:17px}.top>.row{width:100%}.top>.row button{flex:1}.panel{border-radius:17px;padding:16px}.library-heading{flex-direction:column}.library-count{align-self:flex-start}.cell{min-height:76px;font-size:1.13rem;border-radius:11px;padding:8px}.cell.header{font-size:.82rem;min-height:62px}.scorebar{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}.team{padding:11px 12px}.score{font-size:1.7rem}.modal{padding:10px}.modalbox{border-radius:17px}}
 @media(max-width:440px){.brand-symbol{width:42px;height:42px;flex-basis:42px;border-radius:13px}.brand{font-size:1.03rem}.brand-sub{font-size:.78rem}.games{grid-template-columns:1fr}.game-card .row button{flex:1}.scorebar{grid-template-columns:1fr 1fr}.team input{font-size:.88rem}.score{font-size:1.45rem;min-width:0}.board{min-width:610px;gap:7px}.cell{min-height:70px;font-size:1rem}.cell.header{min-height:58px;font-size:.75rem}.toast{right:12px;bottom:12px}}
+.score.positive{color:#287650}.score.negative{color:#b44240}.score.zero{color:var(--accent-dark)}
+.outcome-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.outcome-grid .action-block{margin-top:0;min-width:0}
+.action-team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.action-team-grid button{min-width:0;padding:.68rem .55rem;overflow-wrap:anywhere}
+.answer-reveal-trigger{width:100%;min-height:112px;margin-top:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#8d7a4c,#6c5c3a);border:1px solid #6c5c3a;border-radius:18px;color:#fffdf7;box-shadow:0 10px 24px rgba(102,90,61,.2);font-size:clamp(1.25rem,2.2vw,1.65rem);letter-spacing:-.025em}
+.answer-reveal-trigger:hover:not(:disabled){background:linear-gradient(135deg,#76643f,#55492f);box-shadow:0 13px 28px rgba(102,90,61,.25);transform:translateY(-2px)}
+.answer-trigger-icon{display:grid;place-items:center;width:31px;height:31px;border-radius:10px;background:rgba(255,255,255,.17);font-size:1.1rem}
+.answer-trigger-hint{font-size:.78rem;font-weight:600;letter-spacing:.02em;opacity:.8}
+.editor-board-wrap{overflow:visible}
+.editor-board .cell.header{padding:5px}
+.header-editable{min-width:0}
+.grid-header-input{width:100%;min-width:0;padding:8px 3px;background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.4);border-radius:0;color:#fffdf7;text-align:center;font-weight:800;font-size:clamp(.8rem,1.2vw,1rem);line-height:1.25;outline:none}
+.grid-header-input:focus{border-bottom-color:#fffdf7;outline:2px solid rgba(255,255,255,.5);outline-offset:1px}
+.row-point-label{font-size:.78rem!important;letter-spacing:.02em;line-height:1.2}
+.row-point-editor{min-width:0;background:#eee7d5;border-color:#d3c5a6;color:var(--accent-dark);gap:8px;padding:8px}
+.row-point-label-small{font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;line-height:1.1;color:var(--muted)}
+.grid-points-input{width:100%;min-width:0;border:1px solid #c8baa0;border-radius:10px;background:#fffefa;color:var(--accent-dark);font-size:clamp(1.05rem,1.65vw,1.45rem);font-weight:900;text-align:center;padding:8px 2px;font-variant-numeric:tabular-nums}
+.grid-points-input:focus{outline:3px solid #b6a26a;outline-offset:1px}
+.editor-board .cell{min-width:0;min-height:110px;font-size:1rem;white-space:normal}
+.editor-board .cell.editable{cursor:pointer}
+.editor-board .cell-status{font-size:.74rem;line-height:1.25;white-space:normal}
+.play-screen{height:100dvh;overflow:hidden}
+.play-screen #app{width:100%;max-width:none;height:100dvh;min-height:0;display:flex;flex-direction:column;gap:clamp(8px,1.15vh,14px);padding:clamp(8px,1.15vh,16px) clamp(10px,1.1vw,18px);overflow:hidden}
+.play-screen .top{flex:0 0 auto;margin:0;padding:clamp(9px,1vh,14px) clamp(12px,1.4vw,22px);border-radius:16px;gap:12px}
+.play-screen .brand-symbol{width:40px;height:40px;flex-basis:40px;border-radius:12px}
+.play-screen .brand{font-size:1.05rem}
+.play-screen .brand-sub{font-size:.76rem;margin-top:2px}
+.play-screen .top>.row{justify-content:flex-end;gap:7px}
+.play-screen .top>.row button{padding:.58rem .82rem;font-size:.88rem}
+.play-screen .scorebar{flex:0 0 auto;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:8px;margin:0}
+.play-screen .team{padding:clamp(7px,.75vh,11px) 12px;border-radius:13px}
+.play-screen .team input{font-size:.9rem}
+.play-screen .score{font-size:clamp(1.35rem,2.2vw,2rem);padding:2px 0}
+.play-screen .panel.board-wrap{flex:1 1 auto;min-height:0;margin:0;padding:clamp(6px,.75vw,12px);overflow:hidden;display:flex;border-radius:16px}
+.play-screen .board{flex:1 1 auto;width:100%;height:100%;min-width:0;gap:clamp(4px,.55vw,9px)}
+.play-screen .cell{min-width:0;min-height:0;padding:clamp(4px,.65vw,10px);gap:5px;border-radius:clamp(8px,1vw,15px);font-size:clamp(1.45rem,2.7vw,2.65rem);line-height:1.08}
+.play-screen .cell.header{min-height:0;font-size:clamp(.95rem,1.55vw,1.35rem);line-height:1.18;padding:8px 5px;overflow-wrap:anywhere}
+.play-screen .cell.reduced::after{top:4px;right:4px}
+.play-screen .scorebar:empty{display:none}
+.play-screen #app>.top .brand-lockup{gap:10px}
+.play-screen .modalbox{width:min(880px,100%)}
+.play-screen .question-box{font-size:clamp(1.15rem,1.8vw,1.5rem)}
+@media(max-width:760px){
+ .outcome-grid{grid-template-columns:1fr}
+ .outcome-grid .action-block{padding:12px}
+ .answer-reveal-trigger{min-height:90px}
+ .editor-board .cell{min-height:90px}
+ .row-point-label{font-size:.68rem!important}
+ .grid-points-input{font-size:1rem;padding:6px 1px}
+}
+@media(max-width:440px){
+ .action-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .answer-reveal-trigger{min-height:84px}
+}
+@media(max-height:650px){
+ .play-screen .brand-symbol{width:34px;height:34px;flex-basis:34px}
+ .play-screen .top{padding-top:6px;padding-bottom:6px}
+ .play-screen .team{padding-top:5px;padding-bottom:5px}
+ .play-screen .scorebar{gap:6px}
+ .play-screen .panel.board-wrap{padding:5px}
+ .play-screen .cell.header{font-size:clamp(.78rem,1.3vw,1.1rem);padding:4px}
+}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -623,6 +686,7 @@ async function useLastFile(){
 
 /* ============ Home ============ */
 function renderHome(){
+  document.body.classList.remove('play-screen', 'edit-screen');
   editMode = false;
   current = null;
   currentView = 'home';
@@ -687,52 +751,12 @@ function renderHome(){
 
 /* ============ Setup / Editor ============ */
 async function openSetup(g){
-  let workingHeaders = g
-    ? { colHeaders: g.colHeaders.slice(), rowHeaders: g.rowHeaders.slice() }
-    : null;
-
-  function collectCurrentHeaderInputs(){
-    const r = +document.getElementById('rows').value;
-    const c = +document.getElementById('cols').value;
-    const prevCol = workingHeaders ? workingHeaders.colHeaders : [];
-    const prevRow = workingHeaders ? workingHeaders.rowHeaders : [];
-    const colHeaders = [];
-    for(let i = 0; i < c; i++){
-      const el = document.getElementById('ch' + i);
-      colHeaders.push(el ? el.value : (prevCol[i] ?? 'Thema ' + (i + 1)));
-    }
-    const rowHeaders = [];
-    for(let i = 0; i < r; i++){
-      const el = document.getElementById('rh' + i);
-      rowHeaders.push(el ? el.value : (prevRow[i] ?? (i + 1) * 100));
-    }
-    workingHeaders = { colHeaders, rowHeaders };
-  }
-
-  function renderHeaders(){
-    const r = +document.getElementById('rows').value;
-    const c = +document.getElementById('cols').value;
-    const ch = workingHeaders ? workingHeaders.colHeaders : [];
-    const rh = workingHeaders ? workingHeaders.rowHeaders : [];
-    document.getElementById('headers').innerHTML =
-      '<h3 style="margin-bottom:8px">Überschriften</h3>' +
-      '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">' +
-        Array.from({length: c}, (_, i) =>
-          '<div class="field"><label for="ch' + i + '">Spalte ' + (i + 1) + '</label>' +
-          '<input id="ch' + i + '" value="' + esc(ch[i] ?? 'Thema ' + (i + 1)) + '"></div>').join('') +
-      '</div>' +
-      '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-top:10px">' +
-        Array.from({length: r}, (_, i) =>
-          '<div class="field"><label for="rh' + i + '">Punktzahl für Reihe ' + (i + 1) + '</label>' +
-          '<input id="rh' + i + '" type="number" min="0" step="1" inputmode="numeric" value="' + esc(rh[i] ?? (i + 1) * 100) + '" required></div>').join('') +
-      '</div>';
-  }
-
   const rows = g ? g.rows : 5;
   const cols = g ? g.cols : 5;
 
   openModalWithFocus(
     '<h2>' + (g ? 'Spiel bearbeiten' : 'Neues Spiel') + '</h2>' +
+    '<p class="hint">Kategorien und Punktwerte kannst du anschließend direkt im Spielraster eintragen.</p>' +
     '<div class="grid">' +
       '<div class="field">' +
         '<label for="sname">Spielname</label>' +
@@ -746,26 +770,19 @@ async function openSetup(g){
           [1,2,3,4,5,6,7,8].map(n => '<option ' + (n === cols ? 'selected' : '') + '>' + n + '</option>').join('') +
         '</select></div>' +
       '</div>' +
-      '<div id="headers"></div>' +
       '<div class="row">' +
-        '<button id="btnContinue">Weiter</button>' +
+        '<button id="btnContinue">Zum Raster</button>' +
         '<button class="secondary" id="btnCancel">Abbrechen</button>' +
       '</div>' +
     '</div>',
     { focus: '#sname' }
   );
 
-  renderHeaders();
-  document.getElementById('rows').onchange = () => { collectCurrentHeaderInputs(); renderHeaders(); };
-  document.getElementById('cols').onchange = () => { collectCurrentHeaderInputs(); renderHeaders(); };
   document.getElementById('btnCancel').onclick = () => closeModal();
-  document.getElementById('btnContinue').onclick = () => {
-    collectCurrentHeaderInputs();
-    buildEditor(g ? g.id : null, workingHeaders);
-  };
+  document.getElementById('btnContinue').onclick = () => buildEditor(g ? g.id : null);
 }
 
-function buildEditor(id, workingHeaders){
+function buildEditor(id){
   const old = id && games.find(x => x.id === id);
   const r = +document.getElementById('rows').value;
   const c = +document.getElementById('cols').value;
@@ -773,22 +790,29 @@ function buildEditor(id, workingHeaders){
 
   const g = old ? JSON.parse(JSON.stringify(old)) : { id: uid(), cells: {} };
   g.id = g.id || uid();
+  const previousRows = old ? old.rows : 0;
+  const previousCols = old ? old.cols : 0;
+  const previousColHeaders = old && Array.isArray(old.colHeaders) ? old.colHeaders : [];
+  const previousRowHeaders = old && Array.isArray(old.rowHeaders) ? old.rowHeaders : [];
+  const previousPoints = old && Array.isArray(old.points) ? old.points : [];
+
   g.name = name;
   g.rows = r;
   g.cols = c;
-
   g.colHeaders = Array.from({length: c}, (_, i) => {
-    const v = workingHeaders.colHeaders[i];
-    return (v && String(v).trim()) || 'Spalte ' + (i + 1);
+    const v = previousColHeaders[i];
+    return (v && String(v).trim()) || 'Thema ' + (i + 1);
   });
   g.rowHeaders = Array.from({length: r}, (_, i) => {
-    const n = Number(workingHeaders.rowHeaders[i]);
+    const n = Number(previousRowHeaders[i]);
     return String(Number.isFinite(n) ? n : (i + 1) * 100);
   });
-
-  // P4: Punktwerte stets aus aktuellen Reihen-Headern ableiten
   g.points = Array.from({length: r}, (_, i) =>
-    Array.from({length: c}, () => Number(g.rowHeaders[i]))
+    Array.from({length: c}, (_, j) => {
+      const oldPoint = previousPoints[i] && previousPoints[i][j];
+      if(i < previousRows && j < previousCols && Number.isFinite(Number(oldPoint))) return Number(oldPoint);
+      return Number(g.rowHeaders[i]);
+    })
   );
 
   const newCells = {};
@@ -815,6 +839,8 @@ function buildEditor(id, workingHeaders){
 /* ============ Board ============ */
 function renderBoard(){
   currentView = 'board';
+  document.body.classList.toggle('play-screen', !editMode);
+  document.body.classList.toggle('edit-screen', editMode);
   document.getElementById('modalRoot').innerHTML = '';
 
   const topButtons = editMode
@@ -830,31 +856,79 @@ function renderBoard(){
       '<div class="row">' + topButtons + '</div>' +
     '</div>' +
     (editMode
-      ? '<div class="panel"><b>Bearbeitung:</b> Klicke ein Feld an, um Frage, Antwort und Medien zu hinterlegen. <span class="hint">Grüne Kennzeichnung = Frage vorhanden, rote Kennzeichnung = noch keine Frage.</span> Änderungen werden erst dauerhaft in der JSON-Datei gespeichert, wenn du „Speichern“ klickst.</div>'
+      ? '<div class="panel editor-instructions"><b>Spielraster bearbeiten</b><p class="hint">Kategorien und Punktwerte direkt im Raster ändern. Ein Spielfeld anklicken, um Frage, Antwort oder Medien zu bearbeiten. Danach „Speichern“ wählen.</p></div>'
       : '<div id="scorebar" class="scorebar"></div>') +
-    '<div class="panel board-wrap">' +
-      '<div class="board" id="board" style="grid-template-columns:repeat(' + current.cols + ',minmax(110px,1fr))"></div>' +
+    '<div class="panel board-wrap ' + (editMode ? 'editor-board-wrap' : 'play-board-wrap') + '">' +
+      '<div class="board ' + (editMode ? 'editor-board' : 'play-board') + '" id="board" style="grid-template-columns:' +
+        (editMode ? 'minmax(78px,.62fr) ' : '') +
+        'repeat(' + current.cols + ',minmax(0,1fr))"></div>' +
     '</div>';
 
   const boardEl = document.getElementById('board');
+  if(!editMode){
+    boardEl.style.gridTemplateRows = 'minmax(0.75fr, 1fr) repeat(' + current.rows + ', minmax(0, 1fr))';
+  }else{
+    boardEl.style.gridTemplateRows = 'minmax(54px, .7fr) repeat(' + current.rows + ', minmax(90px, 1fr))';
+  }
 
-  current.colHeaders.forEach(h => {
+  if(editMode){
+    const pointsHeading = document.createElement('div');
+    pointsHeading.className = 'cell header row-point-label';
+    pointsHeading.textContent = 'Punktwert';
+    boardEl.appendChild(pointsHeading);
+  }
+
+  current.colHeaders.forEach((h, j) => {
     const d = document.createElement('div');
-    d.className = 'cell header';
-    d.textContent = h;
+    d.className = 'cell header' + (editMode ? ' header-editable' : '');
+    if(editMode){
+      d.innerHTML = '<input class="grid-header-input" type="text" data-col-header="' + j + '" aria-label="Kategorie ' + (j + 1) + '" value="' + esc(h) + '">';
+      const input = d.querySelector('input');
+      input.addEventListener('input', e => {
+        current.colHeaders[j] = e.target.value;
+        dirty = true;
+      });
+      input.addEventListener('keydown', e => e.stopPropagation());
+    }else{
+      d.textContent = h;
+    }
     boardEl.appendChild(d);
   });
 
-  // P1: Reihen × Spalten unabhängig – kein slice() auf rowHeaders
   for(let i = 0; i < current.rows; i++){
+    if(editMode){
+      const pointCell = document.createElement('div');
+      pointCell.className = 'cell row-point-editor';
+      pointCell.innerHTML =
+        '<span class="row-point-label-small">Reihe ' + (i + 1) + '</span>' +
+        '<input class="grid-points-input" type="number" min="0" step="1" inputmode="numeric" data-row-points="' + i + '" aria-label="Punktwert für Reihe ' + (i + 1) + '" value="' + esc(current.rowHeaders[i] ?? (i + 1) * 100) + '">';
+      const input = pointCell.querySelector('input');
+      input.addEventListener('input', e => {
+        dirty = true;
+        const raw = e.target.value;
+        if(raw.trim() === '') return;
+        const value = Number(raw);
+        if(!Number.isFinite(value)) return;
+        current.rowHeaders[i] = String(value);
+        current.points[i] = Array.from({length: current.cols}, () => value);
+      });
+      input.addEventListener('keydown', e => e.stopPropagation());
+      input.addEventListener('click', e => e.stopPropagation());
+      boardEl.appendChild(pointCell);
+    }
+
     for(let j = 0; j < current.cols; j++){
       const k = i + ',' + j;
       const c = current.cells[k] || {};
       const basePoints = Number((current.points && current.points[i] && current.points[i][j]) ?? Number(current.rowHeaders[i]) ?? (i + 1) * 100);
       const displayPoints = (c.reduced && !c.used) ? Math.floor(basePoints / 2) : basePoints;
 
-      const btn = document.createElement('button');
-      btn.type = 'button';
+      const btn = document.createElement(editMode ? 'div' : 'button');
+      if(!editMode) btn.type = 'button';
+      else{
+        btn.setAttribute('role', 'button');
+        btn.tabIndex = 0;
+      }
       btn.className = 'cell';
       btn.dataset.i = i;
       btn.dataset.j = j;
@@ -862,13 +936,11 @@ function renderBoard(){
       if(editMode){
         const hasQ = Boolean(String(c.text || '').trim());
         btn.classList.add('editable');
-        btn.innerHTML = '<span class="cell-points">' + esc(displayPoints) + '</span>' +
-                        '<span class="cell-status ' + (hasQ ? 'has-question' : 'no-question') + '">' +
-                        (hasQ ? '✓ Frage vorhanden' : '○ Keine Frage') + '</span>';
-        btn.setAttribute('aria-label', 'Feld ' + (i + 1) + ',' + (j + 1) + ' bearbeiten');
+        btn.innerHTML = '<span class="cell-status ' + (hasQ ? 'has-question' : 'no-question') + '">' +
+                        (hasQ ? '✓ Frage bearbeiten' : '＋ Frage ergänzen') + '</span>';
+        btn.setAttribute('aria-label', 'Frage für ' + current.colHeaders[j] + ', Reihe ' + (i + 1) + ' bearbeiten');
       } else {
         if(c.used){
-          // P2: used-Zellen sind deaktiviert – kein Doppel-Bepunkten
           btn.classList.add('used');
           btn.disabled = true;
           btn.textContent = '✓';
@@ -885,8 +957,14 @@ function renderBoard(){
         if(editMode) editCell(i, j);
         else openCell(i, j);
       });
-      btn.addEventListener('keydown', e => handleBoardKey(e, i, j));
-
+      btn.addEventListener('keydown', e => {
+        if(editMode && (e.key === 'Enter' || e.key === ' ')){
+          e.preventDefault();
+          editCell(i, j);
+          return;
+        }
+        handleBoardKey(e, i, j);
+      });
       boardEl.appendChild(btn);
     }
   }
@@ -1074,13 +1152,18 @@ async function deleteGame(id){
 }
 
 /* ============ Teams ============ */
+function scoreToneClass(score){
+  const value = Number(score) || 0;
+  return value > 0 ? 'positive' : value < 0 ? 'negative' : 'zero';
+}
+
 function renderTeams(){
   const bar = document.getElementById('scorebar');
   if(!bar) return;
   bar.innerHTML = teams.map((t, i) =>
     '<div class="team" data-team="' + i + '">' +
       '<input value="' + esc(t.name) + '" data-role="name" aria-label="Teamname">' +
-      '<div class="score" data-role="score" role="button" tabindex="0" aria-label="Punktestand von ' + esc(t.name) + ': ' + t.score + '. Zum Ändern klicken.">' + t.score + '</div>' +
+      '<div class="score ' + scoreToneClass(t.score) + '" data-role="score" role="button" tabindex="0" aria-label="Punktestand von ' + esc(t.name) + ': ' + t.score + '. Zum Ändern klicken.">' + t.score + '</div>' +
     '</div>'
   ).join('');
 
@@ -1244,18 +1327,23 @@ function openCell(i, j){
     (c.type === 'image' && c.data ? '<img class="media-preview" src="' + c.data + '" alt="">' : '') +
     (c.type === 'audio' && c.data ? '<audio class="media-preview" controls src="' + c.data + '"></audio>' : '') +
     (c.type === 'video' && c.data ? '<video class="media-preview" controls src="' + c.data + '"></video>' : '') +
-    '<div id="answerArea" style="margin-top:16px"></div>' +
-    '<div class="action-block"><h4>Antwort anzeigen</h4>' +
-      '<button class="gold" id="btnShowAnswer">Antwort anzeigen</button></div>' +
+    '<div id="answerArea"></div>' +
+    '<button class="answer-reveal-trigger" id="btnShowAnswer" type="button">' +
+      '<span class="answer-trigger-icon" aria-hidden="true">✦</span>' +
+      '<span>Antwort anzeigen</span>' +
+      '<span class="answer-trigger-hint">Lösung einblenden</span>' +
+    '</button>' +
     '<div id="outcomeActions">' +
-      '<div class="action-block"><h4>✅ Richtige Antwort · +' + points + ' Punkte</h4>' +
-        '<div class="row">' + teams.map((t, idx) =>
-          '<button class="team-award" data-award="' + idx + '">' + esc(t.name || ('Team ' + (idx + 1))) + '</button>').join('') +
-        '</div></div>' +
-      '<div class="action-block"><h4>❌ Falsche Antwort · −' + half + ' Punkte</h4>' +
-        '<div class="row">' + teams.map((t, idx) =>
-          '<button class="team-deduct" data-wrong="' + idx + '">' + esc(t.name || ('Team ' + (idx + 1))) + '</button>').join('') +
-        '</div></div>' +
+      '<div class="outcome-grid">' +
+        '<div class="action-block"><h4>✓ Richtig · +' + points + ' Punkte</h4>' +
+          '<div class="action-team-grid">' + teams.map((t, idx) =>
+            '<button class="team-award" data-award="' + idx + '">' + esc(t.name || ('Team ' + (idx + 1))) + '</button>').join('') +
+          '</div></div>' +
+        '<div class="action-block"><h4>✕ Falsch · −' + half + ' Punkte</h4>' +
+          '<div class="action-team-grid">' + teams.map((t, idx) =>
+            '<button class="team-deduct" data-wrong="' + idx + '">' + esc(t.name || ('Team ' + (idx + 1))) + '</button>').join('') +
+          '</div></div>' +
+      '</div>' +
       '<div class="action-block"><h4>⏸ Keine Antwort</h4>' +
         '<button class="secondary" id="btnNoAnswer">Keine Antwort</button></div>' +
     '</div>' +
@@ -1304,6 +1392,8 @@ function wrongAnswer(i, j, ti, p){
   const scoreEl = document.querySelector('.team[data-team="' + ti + '"] .score');
   if(scoreEl){
     scoreEl.textContent = teams[ti].score;
+    scoreEl.classList.remove('positive', 'negative', 'zero');
+    scoreEl.classList.add(scoreToneClass(teams[ti].score));
     flashTeam(ti, -half);
   } else {
     renderTeams();
