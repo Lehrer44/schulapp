@@ -337,6 +337,33 @@ async function restoreLastFile(){
   }
 }
 
+async function loadPublishedGamesFile(){
+  try{
+    const response = await fetch(new URL('Jeopardy-Spiele.json', window.location.href), {cache: 'no-store'});
+    if(!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    if(!Array.isArray(data.games)) throw new Error('Keine gültige Jeopardy-Spieldatei.');
+
+    games = data.games.map(normalizeGame);
+    gamesFileHandle = null;
+    gamesFileName = 'Jeopardy-Spiele.json';
+    lastFileAvailable = false;
+    current = null;
+    dirty = false;
+    renderHome();
+    toast(games.length + ' Spiele aus der veröffentlichten JSON-Datei geladen');
+    return true;
+  }catch(e){
+    games = [];
+    gamesFileHandle = null;
+    gamesFileName = '';
+    lastFileAvailable = false;
+    renderHome();
+    toast('Veröffentlichte Spiele-Datei konnte nicht geladen werden. Du kannst sie über „Spiele-Datei öffnen“ auswählen.');
+    return false;
+  }
+}
+
 async function openGamesFile(){
   try{
     if(!('showOpenFilePicker' in window)) return fallbackOpenGamesFile();
@@ -1209,8 +1236,12 @@ document.addEventListener('keydown', e => {
   }
 });
 
-renderHome();
-restoreLastFile();
+async function initializeJeopardy(){
+  renderHome();
+  await restoreLastFile();
+  if(!games.length) await loadPublishedGamesFile();
+}
+initializeJeopardy();
 </script>
 </body>
 </html>
