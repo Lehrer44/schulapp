@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jeopardy – Offline</title>
+<style>
+:root{--bg:#07152f;--panel:#0e2450;--panel2:#122e62;--line:#2c4f89;--text:#f7fbff;--muted:#b7c8e6;--accent:#ffd447;--blue:#1756b8;--danger:#ef6262;--ok:#49d18d}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0;border-radius:10px;padding:.7rem 1rem;background:#1c56b5;color:white;font-weight:700}
+button:hover{filter:brightness(1.12)}
+button:disabled{cursor:not-allowed;opacity:.55;filter:none}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.secondary{background:#29446f}.danger{background:#a93445}.gold{background:var(--accent);color:#111}.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+#app{min-height:100vh;padding:20px}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}
+.brand{font-size:1.55rem;font-weight:900}.brand span{color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:10px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:.9rem;color:var(--muted);font-weight:700}
+.field input,.field select,.field textarea{background:#071a38;color:white;border:1px solid var(--line);border-radius:9px;padding:.65rem}
+.field textarea{min-height:90px;resize:vertical}
+.hidden{display:none!important}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.game-card{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:14px}
+.game-card h3{margin:0 0 5px}
+.muted{color:var(--muted);font-size:.9rem}
+.empty{color:var(--muted);padding:18px;text-align:center;border:1px dashed var(--line);border-radius:12px}
+.board-wrap{overflow:auto}
+.board{display:grid;gap:7px;min-width:650px}
+.cell{min-height:88px;background:#104aa5;border:2px solid #3c6bc0;border-radius:8px;color:#ffd447;font-size:1.45rem;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;gap:5px;position:relative}
+.cell.header{background:#092d70;color:white;font-size:1rem;min-height:58px}
+.cell.used{background:#263b63;color:#93a5c6;text-decoration:line-through}
+.cell.reduced{background:#7d5d0a;color:#ffe37a;border-color:#ffd447}
+.cell.reduced::after{content:'½';position:absolute;top:5px;right:8px;background:var(--accent);color:#111;font-size:.7rem;padding:2px 6px;border-radius:999px;font-weight:900}
+.cell.editable{outline:2px dashed #ffd447;outline-offset:-5px}
+.cell-points{line-height:1}
+.cell-status{font-size:.68rem;font-weight:800;line-height:1.1;padding:4px 7px;border-radius:999px;text-decoration:none}
+.cell-status.has-question{background:#174e36;color:#b8ffd9;border:1px solid #49d18d}
+.cell-status.no-question{background:#56202a;color:#ffc0c8;border:1px solid #ef6262}
+.team-award{background:#17804a;border:1px solid #49d18d}
+.team-award:hover{filter:brightness(1.12)}
+.team-deduct{background:#a93445;border:1px solid #ef6262}
+.team-deduct:hover{filter:brightness(1.12)}
+.action-block{padding:14px;background:#071a38;border:1px solid var(--line);border-radius:12px;margin-top:14px}
+.action-block h4{margin:0 0 7px}
+.action-help{color:var(--muted);font-size:.88rem;margin-bottom:8px}
+.scorebar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+.team{flex:1;min-width:170px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;position:relative;transition:box-shadow .25s}
+.team.flash{box-shadow:0 0 0 3px var(--accent)}
+.team input{width:100%;background:transparent;color:white;border:0;font-weight:800;font-size:1rem;outline:none}
+.team input:focus{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.score{font-size:1.8rem;font-weight:900;color:var(--accent);cursor:pointer;padding:4px 0;position:relative;display:inline-block;min-width:60px}
+.score-delta{position:absolute;right:0;top:-4px;font-size:.95rem;font-weight:900;color:var(--ok);animation:floatUp 1.25s ease-out forwards;pointer-events:none}
+.score-delta.neg{color:var(--danger)}
+@keyframes floatUp{0%{opacity:0;transform:translateY(0)}15%{opacity:1}100%{opacity:0;transform:translateY(-32px)}}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:18px;z-index:10}
+.modalbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(680px,100%);max-height:92vh;overflow:auto}
+.media-preview{max-width:100%;max-height:300px;display:block;margin-top:10px;border-radius:8px}
+.hint{color:var(--muted);font-size:.88rem}
+.toast{position:fixed;right:18px;bottom:18px;background:#153866;border:1px solid var(--line);padding:12px 16px;border-radius:10px;display:none;z-index:20;max-width:80vw}
+.loading{position:fixed;inset:0;background:rgba(7,21,47,.85);display:flex;align-items:center;justify-content:center;z-index:30;color:var(--text);font-weight:700;gap:12px}
+.spinner{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:700px){#app{padding:12px}.top{align-items:flex-start;flex-direction:column}.cell{min-height:75px;font-size:1.1rem}.cell.header{font-size:.85rem}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modalRoot"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="loading" class="loading hidden" role="status" aria-live="polite"><span class="spinner"></span><span id="loadingText">Lade …</span></div>
+<script>
+'use strict';
+
+/* ============ State ============ */
+let games = [];
+let current = null;
+let editMode = false;
+let teams = [];
+let gamesFileHandle = null;
+let gamesFileName = '';
+let lastFileAvailable = false;
+let dirty = false;
+let undoStack = [];
+let currentView = 'home';
+let lastFocusedBeforeModal = null;
+
+const FILE_VERSION = 2;
+const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
+
+/* ============ Utils ============ */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function esc(s){ return String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function numOr(v, fb){ const n = Number(v); return Number.isFinite(n) ? n : fb; }
+
+let toastTimer = null;
+function toast(t){
+  const x = document.getElementById('toast');
+  x.textContent = t;
+  x.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => x.style.display = 'none', 2000);
+}
+function setLoading(on, text){
+  const el = document.getElementById('loading');
+  if(on){
+    document.getElementById('loadingText').textContent = text || 'Lade …';
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+/* ============ Modal & Dialog System ============ */
+function trapFocus(e){
+  if(e.key !== 'Tab') return;
+  const box = e.currentTarget.querySelector('.modalbox');
+  const focusables = box.querySelectorAll('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
+  if(!focusables.length) return;
+  const first = focusables[0], last = focusables[focusables.length - 1];
+  if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+}
+
+function openModalWithFocus(html, opts){
+  opts = opts || {};
+  lastFocusedBeforeModal = document.activeElement;
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = '<div class="modal" role="dialog" aria-modal="true"><div class="modalbox">' + html + '</div></div>';
+  const modal = root.querySelector('.modal');
+  const box = root.querySelector('.modalbox');
+  modal.addEventListener('keydown', trapFocus);
+  modal.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && !opts.noEscape){
+      e.preventDefault();
+      if(opts.onEscape) opts.onEscape();
+      else closeModal();
+    }
+  });
+  let target = opts.focus ? box.querySelector(opts.focus) : box.querySelector('button:not([disabled]), input, textarea, select, [tabindex="0"]');
+  if(target) try { target.focus(); } catch(e){}
+  return box;
+}
+
+function closeModal(){
+  document.getElementById('modalRoot').innerHTML = '';
+  const el = lastFocusedBeforeModal;
+  lastFocusedBeforeModal = null;
+  if(el && document.contains(el) && typeof el.focus === 'function'){
+    try { el.focus(); } catch(e){}
+  }
+}
+
+function customConfirm(message, opts){
+  opts = opts || {};
+  return new Promise(resolve => {
+    let resolved = false;
+    function finish(val){
+      if(resolved) return;
+      resolved = true;
+      closeModal();
+      resolve(val);
+    }
+    openModalWithFocus(
+      '<h2>' + esc(opts.title || 'Bestätigung') + '</h2>' +
+      '<p style="line-height:1.5;white-space:pre-wrap">' + esc(message) + '</p>' +
+      '<div class="row" style="margin-top:16px">' +
+        '<button class="' + (opts.danger ? 'danger' : '') + '" id="dlgOk">' + esc(opts.okLabel || 'OK') + '</button>' +
+        '<button class="secondary" id="dlgCancel">' + esc(opts.cancelLabel || 'Abbrechen') + '</button>' +
+      '</div>',
+      { focus: '#dlgOk', onEscape: () => finish(false) }
+    );
+    document.getElementById('dlgOk').addEventListener('click', () => finish(true));
+    document.getElementById('dlgCancel').addEventListener('click', () => finish(false));
+  });
+}
+
+function customPrompt(message, defaultValue, opts){
+  opts = opts || {};
+  return new Promise(resolve => {
+    let resolved = false;
+    function finish(val){
+      if(resolved) return;
+      resolved = true;
+      closeModal();
+      resolve(val);
+    }
+    const minAttr = opts.min !== undefined ? ' min="' + esc(opts.min) + '"' : '';
+    const maxAttr = opts.max !== undefined ? ' max="' + esc(opts.max) + '"' : '';
+    const stepAttr = opts.step !== undefined ? ' step="' + esc(opts.step) + '"' : '';
+    openModalWithFocus(
+      '<h2>' + esc(opts.title || 'Eingabe') + '</h2>' +
+      '<div class="field">' +
+        '<label for="dlgInput">' + esc(message) + '</label>' +
+        '<input id="dlgInput" type="' + esc(opts.type || 'text') + '" value="' + esc(defaultValue ?? '') + '"' + minAttr + maxAttr + stepAttr + '>' +
+      '</div>' +
+      '<div class="row" style="margin-top:16px">' +
+        '<button id="dlgOk">' + esc(opts.okLabel || 'OK') + '</button>' +
+        '<button class="secondary" id="dlgCancel">Abbrechen</button>' +
+      '</div>',
+      { focus: '#dlgInput', onEscape: () => finish(null) }
+    );
+    const input = document.getElementById('dlgInput');
+    input.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){ e.preventDefault(); finish(input.value); }
+    });
+    document.getElementById('dlgOk').addEventListener('click', () => finish(input.value));
+    document.getElementById('dlgCancel').addEventListener('click', () => finish(null));
+  });
+}
+
+function customAlert(message, opts){
+  opts = opts || {};
+  return new Promise(resolve => {
+    openModalWithFocus(
+      '<h2>' + esc(opts.title || 'Hinweis') + '</h2>' +
+      '<p style="line-height:1.5;white-space:pre-wrap">' + esc(message) + '</p>' +
+      '<div class="row" style="margin-top:16px"><button id="dlgOk">OK</button></div>',
+      { focus: '#dlgOk', onEscape: () => { closeModal(); resolve(); } }
+    );
+    document.getElementById('dlgOk').addEventListener('click', () => { closeModal(); resolve(); });
+  });
+}
+
+/* ============ Game Model ============ */
+function normalizeGame(g){
+  g = g || {};
+  g.id = g.id || uid();
+  g.name = g.name || 'Unbenannt';
+  g.rows = Math.max(1, Math.min(20, Number(g.rows) || 1));
+  g.cols = Math.max(1, Math.min(20, Number(g.cols) || 1));
+  g.colHeaders = Array.from({length: g.cols}, (_, i) => (g.colHeaders && g.colHeaders[i]) || 'Spalte ' + (i + 1));
+  g.rowHeaders = Array.from({length: g.rows}, (_, i) => {
+    const v = Number(g.rowHeaders ? g.rowHeaders[i] : NaN);
+    return String(Number.isFinite(v) ? v : (i + 1) * 100);
+  });
+  g.points = Array.from({length: g.rows}, (_, i) =>
+    Array.from({length: g.cols}, (_, j) => {
+      const v = g.points && g.points[i] ? Number(g.points[i][j]) : NaN;
+      return Number.isFinite(v) ? v : Number(g.rowHeaders[i]);
+    })
+  );
+  g.cells = g.cells || {};
+  for(let i = 0; i < g.rows; i++){
+    for(let j = 0; j < g.cols; j++){
+      const k = i + ',' + j;
+      const c = g.cells[k] || {};
+      g.cells[k] = {
+        text: String(c.text || ''),
+        answer: String(c.answer || ''),
+        type: c.type || 'text',
+        data: c.data || '',
+        name: c.name || '',
+        used: false,
+        reduced: false
+      };
+    }
+  }
+  return g;
+}
+
+function packGames(){
+  return {
+    format: 'Offline Jeopardy Spiele',
+    version: FILE_VERSION,
+    updatedAt: new Date().toISOString(),
+    games: games.map(normalizeGame)
+  };
+}
+
+/* ============ IndexedDB ============ */
+function idbOpen(){
+  return new Promise((resolve, reject) => {
+    const r = indexedDB.open('offline-jeopardy-settings', 1);
+    r.onupgradeneeded = () => {
+      if(!r.result.objectStoreNames.contains('settings')) r.result.createObjectStore('settings');
+    };
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+async function idbSet(key, value){
+  try{
+    const db = await idbOpen();
+    await new Promise((res, rej) => {
+      const tx = db.transaction('settings', 'readwrite');
+      tx.objectStore('settings').put(value, key);
+      tx.oncomplete = () => res();
+      tx.onerror = () => rej(tx.error);
+    });
+    db.close();
+  }catch(e){}
+}
+async function idbGet(key){
+  try{
+    const db = await idbOpen();
+    const val = await new Promise((res, rej) => {
+      const r = db.transaction('settings').objectStore('settings').get(key);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    db.close();
+    return val;
+  }catch(e){ return null; }
+}
+
+/* ============ File I/O ============ */
+async function restoreLastFile(){
+  if(!('showOpenFilePicker' in window)) return;
+  const handle = await idbGet('gamesFileHandle');
+  if(!handle) return;
+  try{
+    const permission = await handle.queryPermission({mode: 'readwrite'});
+    gamesFileHandle = handle;
+    const file = await handle.getFile();
+    gamesFileName = file.name;
+    lastFileAvailable = true;
+    if(permission === 'granted'){
+      setLoading(true, 'Lade letzte Datei …');
+      const data = JSON.parse(await file.text());
+      if(!Array.isArray(data.games)) throw new Error('Keine gültige Jeopardy-Spieldatei.');
+      games = data.games.map(normalizeGame);
+      toast(games.length + ' Spiele automatisch geladen');
+    }
+  }catch(e){
+    gamesFileHandle = null;
+    gamesFileName = '';
+    lastFileAvailable = false;
+  }finally{
+    setLoading(false);
+    renderHome();
+  }
+}
+
+async function openGamesFile(){
+  try{
+    if(!('showOpenFilePicker' in window)) return fallbackOpenGamesFile();
+    const picked = await window.showOpenFilePicker({
+      multiple: false,
+      types: [{description: 'Jeopardy-Spieldatei', accept: {'application/json': ['.json']}}]
+    });
+    const handle = picked[0];
+    setLoading(true, 'Öffne Datei …');
+    const file = await handle.getFile();
+    const data = JSON.parse(await file.text());
+    if(!Array.isArray(data.games)) throw new Error('Keine gültige Jeopardy-Spieldatei.');
+    games = data.games.map(normalizeGame);
+    gamesFileHandle = handle;
+    gamesFileName = file.name;
+    lastFileAvailable = true;
+    await idbSet('gamesFileHandle', handle);
+    current = null;
+    dirty = false;
+    toast(games.length + ' Spiele geladen');
+    renderHome();
+  }catch(e){
+    if(e.name !== 'AbortError') await customAlert('Spieldatei konnte nicht geöffnet werden.\n\n' + e.message, {title: 'Fehler'});
+  }finally{
+    setLoading(false);
+  }
+}
+
+function fallbackOpenGamesFile(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = () => {
+    const f = input.files[0];
+    if(!f) return;
+    setLoading(true, 'Lese Datei …');
+    const fr = new FileReader();
+    fr.onload = () => {
+      try{
+        const data = JSON.parse(fr.result);
+        if(!Array.isArray(data.games)) throw new Error('Keine gültige Jeopardy-Spieldatei.');
+        games = data.games.map(normalizeGame);
+        gamesFileHandle = null;
+        gamesFileName = f.name;
+        toast(games.length + ' Spiele geladen');
+        renderHome();
+      }catch(err){
+        customAlert('Spieldatei konnte nicht geöffnet werden.\n\n' + err.message, {title: 'Fehler'});
+      }finally{
+        setLoading(false);
+      }
+    };
+    fr.onerror = () => { setLoading(false); customAlert('Datei konnte nicht gelesen werden.', {title: 'Fehler'}); };
+    fr.readAsText(f, 'utf-8');
+  };
+  input.click();
+}
+
+async function saveGamesFile(asNew){
+  try{
+    if(asNew || !gamesFileHandle){
+      if(!('showSaveFilePicker' in window)) return fallbackSaveGamesFile();
+      const handle = await window.showSaveFilePicker({
+        suggestedName: gamesFileName || 'Jeopardy-Spiele.json',
+        types: [{description: 'Jeopardy-Spieldatei', accept: {'application/json': ['.json']}}]
+      });
+      gamesFileHandle = handle;
+      gamesFileName = handle.name;
+      lastFileAvailable = true;
+      await idbSet('gamesFileHandle', handle);
+    }
+    setLoading(true, 'Speichere …');
+    const writable = await gamesFileHandle.createWritable();
+    await writable.write(JSON.stringify(packGames(), null, 2));
+    await writable.close();
+    dirty = false;
+    toast('Spiele gespeichert: ' + gamesFileName);
+    return true;
+  }catch(e){
+    if(e.name !== 'AbortError') await customAlert('Spiele konnten nicht gespeichert werden.\n\n' + e.message, {title: 'Fehler'});
+    return false;
+  }finally{
+    setLoading(false);
+  }
+}
+
+function fallbackSaveGamesFile(){
+  const blob = new Blob([JSON.stringify(packGames(), null, 2)], {type: 'application/json;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = gamesFileName || 'Jeopardy-Spiele.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  gamesFileHandle = null;
+  lastFileAvailable = false;
+  idbSet('gamesFileHandle', null);
+  toast('Spieldatei heruntergeladen');
+  renderHome();
+  return true;
+}
+
+async function useLastFile(){
+  const handle = await idbGet('gamesFileHandle');
+  if(!handle){ lastFileAvailable = false; renderHome(); return; }
+  try{
+    if((await handle.queryPermission({mode: 'readwrite'})) !== 'granted'){
+      if((await handle.requestPermission({mode: 'readwrite'})) !== 'granted') return;
+    }
+    setLoading(true, 'Lade …');
+    const file = await handle.getFile();
+    const data = JSON.parse(await file.text());
+    if(!Array.isArray(data.games)) throw new Error('Keine gültige Jeopardy-Spieldatei.');
+    games = data.games.map(normalizeGame);
+    gamesFileHandle = handle;
+    gamesFileName = file.name;
+    lastFileAvailable = true;
+    toast(games.length + ' Spiele geladen');
+    renderHome();
+  }catch(e){
+    lastFileAvailable = false;
+    await customAlert('Die zuletzt verwendete Datei konnte nicht geöffnet werden.\n\n' + e.message, {title: 'Fehler'});
+  }finally{
+    setLoading(false);
+  }
+}
+
+/* ============ Home ============ */
+function renderHome(){
+  editMode = false;
+  current = null;
+  currentView = 'home';
+  dirty = false;
+  undoStack = [];
+  document.getElementById('modalRoot').innerHTML = '';
+  lastFocusedBeforeModal = null;
+
+  document.getElementById('app').innerHTML =
+    '<div class="top">' +
+      '<div class="brand">OFFLINE <span>JEOPARDY</span></div>' +
+      '<div class="row">' +
+        '<button class="secondary" id="btnOpen">📂 Spiele-Datei öffnen</button>' +
+        (lastFileAvailable ? '<button class="secondary" id="btnReload">↻ Letzte Datei laden</button>' : '') +
+        '<button class="gold" id="btnSaveAs">💾 Speichern unter …</button>' +
+        '<button class="gold" id="btnNew">＋ Spiel erstellen</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel"><h2>Meine Spiele</h2>' +
+      '<div class="muted" style="margin-bottom:12px">' +
+        (gamesFileName ? 'Aktive Datei: <b>' + esc(gamesFileName) + '</b>' : 'Noch keine Spiele-Datei geöffnet. Öffne eine vorhandene JSON-Datei oder erstelle eine neue über „Speichern unter …“.') +
+        (gamesFileName && lastFileAvailable ? ' Die Datei wird bei zukünftigen Starts automatisch geladen, sofern der Browser die Dateiberechtigung beibehält.' : '') +
+      '</div>' +
+      '<div class="games">' +
+        (games.length
+          ? games.map(g =>
+              '<div class="game-card" data-game-id="' + esc(g.id) + '">' +
+                '<h3>' + esc(g.name) + '</h3>' +
+                '<div class="muted">' + g.rows + ' Reihen · ' + g.cols + ' Spalten</div>' +
+                '<div class="row" style="margin-top:12px">' +
+                  '<button data-action="start">▶ Starten</button>' +
+                  '<button class="secondary" data-action="edit">✎ Bearbeiten</button>' +
+                  '<button class="danger" data-action="delete">Löschen</button>' +
+                '</div>' +
+              '</div>').join('')
+          : '<div class="empty">Noch kein Spiel geladen. Erstelle ein Spiel und speichere anschließend die Spiele-Datei über „Speichern unter …“.</div>') +
+      '</div>' +
+    '</div>' +
+    '<div class="panel"><b>Speicherprinzip:</b> Die Spiele werden nicht im Local Storage gespeichert. Sie liegen in einer normalen <code>Jeopardy-Spiele.json</code>-Datei, die du selbst in deinem gewünschten Ordner ablegen kannst. Bilder, MP3s und Videos werden direkt in diese Datei eingebettet.</div>';
+
+  document.getElementById('btnOpen').onclick = () => openGamesFile();
+  const rel = document.getElementById('btnReload');
+  if(rel) rel.onclick = () => useLastFile();
+  document.getElementById('btnSaveAs').onclick = async () => { const ok = await saveGamesFile(true); if(ok) renderHome(); };
+  document.getElementById('btnNew').onclick = () => openSetup(null);
+
+  document.querySelectorAll('.game-card').forEach(card => {
+    const id = card.getAttribute('data-game-id');
+    card.querySelector('[data-action="start"]').onclick = () => startGame(id);
+    card.querySelector('[data-action="edit"]').onclick = () => editGame(id);
+    card.querySelector('[data-action="delete"]').onclick = () => deleteGame(id);
+  });
+}
+
+/* ============ Setup / Editor ============ */
+async function openSetup(g){
+  let workingHeaders = g
+    ? { colHeaders: g.colHeaders.slice(), rowHeaders: g.rowHeaders.slice() }
+    : null;
+
+  function collectCurrentHeaderInputs(){
+    const r = +document.getElementById('rows').value;
+    const c = +document.getElementById('cols').value;
+    const prevCol = workingHeaders ? workingHeaders.colHeaders : [];
+    const prevRow = workingHeaders ? workingHeaders.rowHeaders : [];
+    const colHeaders = [];
+    for(let i = 0; i < c; i++){
+      const el = document.getElementById('ch' + i);
+      colHeaders.push(el ? el.value : (prevCol[i] ?? 'Thema ' + (i + 1)));
+    }
+    const rowHeaders = [];
+    for(let i = 0; i < r; i++){
+      const el = document.getElementById('rh' + i);
+      rowHeaders.push(el ? el.value : (prevRow[i] ?? (i + 1) * 100));
+    }
+    workingHeaders = { colHeaders, rowHeaders };
+  }
+
+  function renderHeaders(){
+    const r = +document.getElementById('rows').value;
+    const c = +document.getElementById('cols').value;
+    const ch = workingHeaders ? workingHeaders.colHeaders : [];
+    const rh = workingHeaders ? workingHeaders.rowHeaders : [];
+    document.getElementById('headers').innerHTML =
+      '<h3 style="margin-bottom:8px">Überschriften</h3>' +
+      '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">' +
+        Array.from({length: c}, (_, i) =>
+          '<div class="field"><label for="ch' + i + '">Spalte ' + (i + 1) + '</label>' +
+          '<input id="ch' + i + '" value="' + esc(ch[i] ?? 'Thema ' + (i + 1)) + '"></div>').join('') +
+      '</div>' +
+      '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-top:10px">' +
+        Array.from({length: r}, (_, i) =>
+          '<div class="field"><label for="rh' + i + '">Punktzahl für Reihe ' + (i + 1) + '</label>' +
+          '<input id="rh' + i + '" type="number" min="0" step="1" inputmode="numeric" value="' + esc(rh[i] ?? (i + 1) * 100) + '" required></div>').join('') +
+      '</div>';
+  }
+
+  const rows = g ? g.rows : 5;
+  const cols = g ? g.cols : 5;
+
+  openModalWithFocus(
+    '<h2>' + (g ? 'Spiel bearbeiten' : 'Neues Spiel') + '</h2>' +
+    '<div class="grid">' +
+      '<div class="field">' +
+        '<label for="sname">Spielname</label>' +
+        '<input id="sname" value="' + esc(g ? g.name : 'Mein Jeopardy') + '" maxlength="80">' +
+      '</div>' +
+      '<div class="row">' +
+        '<div class="field"><label for="rows">Reihen</label><select id="rows">' +
+          [1,2,3,4,5,6,7,8].map(n => '<option ' + (n === rows ? 'selected' : '') + '>' + n + '</option>').join('') +
+        '</select></div>' +
+        '<div class="field"><label for="cols">Spalten</label><select id="cols">' +
+          [1,2,3,4,5,6,7,8].map(n => '<option ' + (n === cols ? 'selected' : '') + '>' + n + '</option>').join('') +
+        '</select></div>' +
+      '</div>' +
+      '<div id="headers"></div>' +
+      '<div class="row">' +
+        '<button id="btnContinue">Weiter</button>' +
+        '<button class="secondary" id="btnCancel">Abbrechen</button>' +
+      '</div>' +
+    '</div>',
+    { focus: '#sname' }
+  );
+
+  renderHeaders();
+  document.getElementById('rows').onchange = () => { collectCurrentHeaderInputs(); renderHeaders(); };
+  document.getElementById('cols').onchange = () => { collectCurrentHeaderInputs(); renderHeaders(); };
+  document.getElementById('btnCancel').onclick = () => closeModal();
+  document.getElementById('btnContinue').onclick = () => {
+    collectCurrentHeaderInputs();
+    buildEditor(g ? g.id : null, workingHeaders);
+  };
+}
+
+function buildEditor(id, workingHeaders){
+  const old = id && games.find(x => x.id === id);
+  const r = +document.getElementById('rows').value;
+  const c = +document.getElementById('cols').value;
+  const name = document.getElementById('sname').value.trim() || 'Unbenannt';
+
+  const g = old ? JSON.parse(JSON.stringify(old)) : { id: uid(), cells: {} };
+  g.id = g.id || uid();
+  g.name = name;
+  g.rows = r;
+  g.cols = c;
+
+  g.colHeaders = Array.from({length: c}, (_, i) => {
+    const v = workingHeaders.colHeaders[i];
+    return (v && String(v).trim()) || 'Spalte ' + (i + 1);
+  });
+  g.rowHeaders = Array.from({length: r}, (_, i) => {
+    const n = Number(workingHeaders.rowHeaders[i]);
+    return String(Number.isFinite(n) ? n : (i + 1) * 100);
+  });
+
+  // P4: Punktwerte stets aus aktuellen Reihen-Headern ableiten
+  g.points = Array.from({length: r}, (_, i) =>
+    Array.from({length: c}, () => Number(g.rowHeaders[i]))
+  );
+
+  const newCells = {};
+  for(let i = 0; i < r; i++){
+    for(let j = 0; j < c; j++){
+      const k = i + ',' + j;
+      const existing = g.cells && g.cells[k];
+      newCells[k] = existing
+        ? { text: existing.text || '', answer: existing.answer || '', type: existing.type || 'text',
+            data: existing.data || '', name: existing.name || '', used: false, reduced: false }
+        : { text: '', answer: '', type: 'text', data: '', name: '', used: false, reduced: false };
+    }
+  }
+  g.cells = newCells;
+
+  current = g;
+  editMode = true;
+  currentView = 'board';
+  dirty = false;
+  closeModal();
+  renderBoard();
+}
+
+/* ============ Board ============ */
+function renderBoard(){
+  currentView = 'board';
+  document.getElementById('modalRoot').innerHTML = '';
+
+  const topButtons = editMode
+    ? '<button class="gold" id="btnSave">💾 Speichern</button><button class="secondary" id="btnHome">Zur Liste</button>'
+    : '<button class="secondary" id="btnTeams">👥 Teams</button>' +
+      '<button class="secondary" id="btnUndo">↶ Rückgängig</button>' +
+      '<button class="gold" id="btnRestart">↻ Neu starten</button>' +
+      '<button class="secondary" id="btnHome">Beenden</button>';
+
+  document.getElementById('app').innerHTML =
+    '<div class="top">' +
+      '<div>' +
+        '<div class="brand">' + esc(current.name) + '</div>' +
+        '<div class="muted">' + (editMode ? 'Bearbeitungsmodus' : 'Spielmodus') + '</div>' +
+      '</div>' +
+      '<div class="row">' + topButtons + '</div>' +
+    '</div>' +
+    (editMode
+      ? '<div class="panel"><b>Bearbeitung:</b> Klicke ein Feld an, um Frage, Antwort und Medien zu hinterlegen. <span class="hint">Grüne Kennzeichnung = Frage vorhanden, rote Kennzeichnung = noch keine Frage.</span> Änderungen werden erst dauerhaft in der JSON-Datei gespeichert, wenn du „Speichern“ klickst.</div>'
+      : '<div id="scorebar" class="scorebar"></div>') +
+    '<div class="panel board-wrap">' +
+      '<div class="board" id="board" style="grid-template-columns:repeat(' + current.cols + ',minmax(110px,1fr))"></div>' +
+    '</div>';
+
+  const boardEl = document.getElementById('board');
+
+  current.colHeaders.forEach(h => {
+    const d = document.createElement('div');
+    d.className = 'cell header';
+    d.textContent = h;
+    boardEl.appendChild(d);
+  });
+
+  // P1: Reihen × Spalten unabhängig – kein slice() auf rowHeaders
+  for(let i = 0; i < current.rows; i++){
+    for(let j = 0; j < current.cols; j++){
+      const k = i + ',' + j;
+      const c = current.cells[k] || {};
+      const basePoints = Number((current.points && current.points[i] && current.points[i][j]) ?? Number(current.rowHeaders[i]) ?? (i + 1) * 100);
+      const displayPoints = (c.reduced && !c.used) ? Math.floor(basePoints / 2) : basePoints;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cell';
+      btn.dataset.i = i;
+      btn.dataset.j = j;
+
+      if(editMode){
+        const hasQ = Boolean(String(c.text || '').trim());
+        btn.classList.add('editable');
+        btn.innerHTML = '<span class="cell-points">' + esc(displayPoints) + '</span>' +
+                        '<span class="cell-status ' + (hasQ ? 'has-question' : 'no-question') + '">' +
+                        (hasQ ? '✓ Frage vorhanden' : '○ Keine Frage') + '</span>';
+        btn.setAttribute('aria-label', 'Feld ' + (i + 1) + ',' + (j + 1) + ' bearbeiten');
+      } else {
+        if(c.used){
+          // P2: used-Zellen sind deaktiviert – kein Doppel-Bepunkten
+          btn.classList.add('used');
+          btn.disabled = true;
+          btn.textContent = '✓';
+          btn.setAttribute('aria-label', 'Bereits gespielt');
+        } else {
+          if(c.reduced) btn.classList.add('reduced');
+          btn.textContent = String(displayPoints);
+          btn.setAttribute('aria-label', displayPoints + ' Punkte, ' + current.colHeaders[j]);
+        }
+      }
+
+      btn.addEventListener('click', () => {
+        if(btn.disabled) return;
+        if(editMode) editCell(i, j);
+        else openCell(i, j);
+      });
+      btn.addEventListener('keydown', e => handleBoardKey(e, i, j));
+
+      boardEl.appendChild(btn);
+    }
+  }
+
+  if(!editMode) renderTeams();
+
+  const btnHome = document.getElementById('btnHome');
+  btnHome.onclick = async () => {
+    if(editMode && dirty){
+      const ok = await customConfirm('Es gibt ungespeicherte Änderungen. Zur Liste zurückkehren und verwerfen?',
+        { danger: true, okLabel: 'Verwerfen', title: 'Ungespeicherte Änderungen' });
+      if(!ok) return;
+    }
+    renderHome();
+  };
+
+  const saveBtn = document.getElementById('btnSave');
+  if(saveBtn) saveBtn.onclick = () => saveCurrent();
+
+  const teamBtn = document.getElementById('btnTeams');
+  if(teamBtn) teamBtn.onclick = () => manageTeams();
+
+  const undoBtn = document.getElementById('btnUndo');
+  if(undoBtn){
+    undoBtn.disabled = undoStack.length === 0;
+    undoBtn.onclick = () => undoLast();
+  }
+
+  const restartBtn = document.getElementById('btnRestart');
+  if(restartBtn) restartBtn.onclick = () => restartGame();
+}
+
+function handleBoardKey(e, i, j){
+  let ni = i, nj = j;
+  switch(e.key){
+    case 'ArrowUp': ni = Math.max(0, i - 1); break;
+    case 'ArrowDown': ni = Math.min(current.rows - 1, i + 1); break;
+    case 'ArrowLeft': nj = Math.max(0, j - 1); break;
+    case 'ArrowRight': nj = Math.min(current.cols - 1, j + 1); break;
+    default: return;
+  }
+  e.preventDefault();
+  const next = document.querySelector('.cell[data-i="' + ni + '"][data-j="' + nj + '"]');
+  if(next && !next.disabled) next.focus();
+}
+
+function focusCellOrNext(i, j){
+  let el = document.querySelector('.cell[data-i="' + i + '"][data-j="' + j + '"]');
+  if(el && !el.disabled){ el.focus(); return; }
+  for(let jj = j + 1; jj < current.cols; jj++){
+    el = document.querySelector('.cell[data-i="' + i + '"][data-j="' + jj + '"]');
+    if(el && !el.disabled){ el.focus(); return; }
+  }
+  for(let ii = i + 1; ii < current.rows; ii++){
+    for(let jj = 0; jj < current.cols; jj++){
+      el = document.querySelector('.cell[data-i="' + ii + '"][data-j="' + jj + '"]');
+      if(el && !el.disabled){ el.focus(); return; }
+    }
+  }
+}
+
+/* ============ Edit Cell ============ */
+function editCell(i, j){
+  const c = current.cells[i + ',' + j] || { text: '', answer: '', type: 'text', data: '', name: '' };
+  const currentMedia = c.data
+    ? '<div class="hint" style="margin-top:6px">Aktuelle Datei: <b>' + esc(c.name || 'eingebettete Datei') + '</b> (' + esc(c.type) + ')</div>'
+    : '<div class="hint" style="margin-top:6px">Keine Datei hinterlegt.</div>';
+
+  openModalWithFocus(
+    '<h2>Feld bearbeiten</h2>' +
+    '<div class="field"><label for="ctext">Frage / Aufgabe</label>' +
+      '<textarea id="ctext" placeholder="Hier die Frage eingeben...">' + esc(c.text || '') + '</textarea></div>' +
+    '<div class="field" style="margin-top:10px"><label for="canswer">Antwort</label>' +
+      '<textarea id="canswer" placeholder="Hier die richtige Antwort eingeben...">' + esc(c.answer || '') + '</textarea></div>' +
+    '<div class="field" style="margin-top:10px"><label for="ctype">Medientyp</label>' +
+      '<select id="ctype">' +
+        '<option value="text">Nur Text</option>' +
+        '<option value="image">Bild</option>' +
+        '<option value="audio">MP3 / Audio</option>' +
+        '<option value="video">Video</option>' +
+      '</select></div>' +
+    '<div class="field" style="margin-top:10px"><label for="cfile">Datei auswählen</label>' +
+      '<input id="cfile" type="file" accept="image/*,audio/*,video/*">' +
+      currentMedia +
+      '<div class="hint">Die Datei wird beim Speichern direkt in die gewählte Spiele-Datei eingebettet. Dateien über ' + (MAX_MEDIA_SIZE / 1024 / 1024) + ' MB blähen die JSON-Datei stark auf.</div>' +
+    '</div>' +
+    '<div class="row" style="margin-top:15px">' +
+      '<button id="btnCellSave">Übernehmen</button>' +
+      (c.data ? '<button class="danger" id="btnCellRemoveMedia">Medien entfernen</button>' : '') +
+      '<button class="secondary" id="btnCellCancel">Abbrechen</button>' +
+    '</div>',
+    { focus: '#ctext' }
+  );
+
+  document.getElementById('ctype').value = c.type || 'text';
+  document.getElementById('btnCellCancel').onclick = () => closeModal();
+  document.getElementById('btnCellSave').onclick = () => saveCell(i, j, c);
+  const rm = document.getElementById('btnCellRemoveMedia');
+  if(rm) rm.onclick = () => {
+    current.cells[i + ',' + j] = { ...c, data: '', name: '', type: 'text' };
+    dirty = true;
+    closeModal();
+    renderBoard();
+    toast('Medien entfernt');
+  };
+}
+
+function saveCell(i, j, old){
+  const type = document.getElementById('ctype').value;
+  const text = document.getElementById('ctext').value;
+  const answer = document.getElementById('canswer').value;
+  const file = document.getElementById('cfile').files[0];
+
+  if(file){
+    if(file.size > MAX_MEDIA_SIZE){
+      customConfirm(
+        'Die Datei ist ' + (file.size / 1024 / 1024).toFixed(1) + ' MB groß. Das kann die JSON-Datei stark vergrößern. Fortfahren?',
+        { danger: true, okLabel: 'Fortfahren', title: 'Große Datei' }
+      ).then(ok => { if(ok) readAndStoreFile(file, i, j, type, text, answer); });
+      return;
+    }
+    readAndStoreFile(file, i, j, type, text, answer);
+  } else {
+    current.cells[i + ',' + j] = {
+      ...old,
+      text, answer,
+      type: type || 'text',
+      data: type === 'text' ? '' : (old.data || ''),
+      name: type === 'text' ? '' : (old.name || ''),
+      used: false, reduced: false
+    };
+    dirty = true;
+    closeModal();
+    renderBoard();
+  }
+}
+
+function readAndStoreFile(file, i, j, type, text, answer){
+  setLoading(true, 'Lese Datei …');
+  const fr = new FileReader();
+  fr.onload = () => {
+    current.cells[i + ',' + j] = {
+      text, answer, type,
+      data: fr.result,
+      name: file.name,
+      used: false, reduced: false
+    };
+    dirty = true;
+    setLoading(false);
+    closeModal();
+    renderBoard();
+  };
+  fr.onerror = () => {
+    setLoading(false);
+    customAlert('Datei konnte nicht gelesen werden.', {title: 'Fehler'});
+  };
+  fr.readAsDataURL(file);
+}
+
+async function saveCurrent(){
+  const idx = games.findIndex(x => x.id === current.id);
+  if(idx < 0) games.push(current);
+  else games[idx] = current;
+  const ok = await saveGamesFile(false);
+  if(ok) renderHome();
+}
+
+function editGame(id){
+  const g = games.find(x => x.id === id);
+  if(g) openSetup(g);
+}
+
+async function deleteGame(id){
+  const ok = await customConfirm('Spiel wirklich löschen?', { danger: true, okLabel: 'Löschen', title: 'Spiel löschen' });
+  if(!ok) return;
+  games = games.filter(g => g.id !== id);
+  if(gamesFileHandle){
+    const saved = await saveGamesFile(false);
+    if(saved) renderHome();
+  } else {
+    renderHome();
+    toast('Spiel entfernt. Noch nicht auf Datei gespeichert.');
+  }
+}
+
+/* ============ Teams ============ */
+function renderTeams(){
+  const bar = document.getElementById('scorebar');
+  if(!bar) return;
+  bar.innerHTML = teams.map((t, i) =>
+    '<div class="team" data-team="' + i + '">' +
+      '<input value="' + esc(t.name) + '" data-role="name" aria-label="Teamname">' +
+      '<div class="score" data-role="score" role="button" tabindex="0" aria-label="Punktestand von ' + esc(t.name) + ': ' + t.score + '. Zum Ändern klicken.">' + t.score + '</div>' +
+    '</div>'
+  ).join('');
+
+  document.querySelectorAll('.team').forEach(el => {
+    const i = +el.getAttribute('data-team');
+    el.querySelector('[data-role="name"]').addEventListener('change', e => { teams[i].name = e.target.value; });
+    const scoreEl = el.querySelector('[data-role="score"]');
+    scoreEl.addEventListener('click', () => changeScore(i));
+    scoreEl.addEventListener('keydown', e => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); changeScore(i); }
+    });
+  });
+}
+
+function flashTeam(i, delta){
+  const el = document.querySelector('.team[data-team="' + i + '"]');
+  if(!el) return;
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 600);
+  const d = document.createElement('div');
+  d.className = 'score-delta' + (delta < 0 ? ' neg' : '');
+  d.textContent = (delta > 0 ? '+' : '') + delta;
+  el.querySelector('.score').appendChild(d);
+  setTimeout(() => d.remove(), 1300);
+}
+
+async function changeScore(i){
+  const v = await customPrompt('Neuen Punktestand eingeben:', String(teams[i].score), { title: 'Punktestand ändern', type: 'number' });
+  if(v === null) return;
+  const n = Number(v);
+  if(Number.isFinite(n)){ teams[i].score = n; renderTeams(); }
+}
+
+async function manageTeams(){
+  function listHTML(){
+    return teams.map((t, i) =>
+      '<div class="row" style="margin-bottom:6px">' +
+        '<input value="' + esc(t.name) + '" data-team-name="' + i + '" style="flex:1;background:#071a38;color:white;border:1px solid var(--line);border-radius:8px;padding:.5rem">' +
+        '<button class="danger" data-team-del="' + i + '" ' + (teams.length <= 1 ? 'disabled' : '') + '>Entfernen</button>' +
+      '</div>'
+    ).join('');
+  }
+  openModalWithFocus(
+    '<h2>Teams verwalten</h2>' +
+    '<div id="teamList">' + listHTML() + '</div>' +
+    '<div class="row" style="margin-top:12px">' +
+      '<button id="btnAddTeam" ' + (teams.length >= 8 ? 'disabled' : '') + '>＋ Team hinzufügen</button>' +
+    '</div>' +
+    '<div class="row" style="margin-top:16px"><button id="btnTeamDone">Fertig</button></div>',
+    { focus: '#btnTeamDone' }
+  );
+
+  function collect(){
+    document.querySelectorAll('[data-team-name]').forEach(inp => {
+      const i = +inp.getAttribute('data-team-name');
+      if(teams[i]) teams[i].name = inp.value;
+    });
+  }
+  function refresh(){
+    document.getElementById('teamList').innerHTML = listHTML();
+    document.getElementById('btnAddTeam').disabled = teams.length >= 8;
+    bind();
+  }
+  function bind(){
+    document.querySelectorAll('[data-team-del]').forEach(b => {
+      b.onclick = () => {
+        collect();
+        const i = +b.getAttribute('data-team-del');
+        if(teams.length <= 1) return;
+        teams.splice(i, 1);
+        refresh();
+      };
+    });
+  }
+  bind();
+  document.getElementById('btnAddTeam').onclick = () => {
+    collect();
+    if(teams.length >= 8) return;
+    teams.push({ name: 'Team ' + (teams.length + 1), score: 0 });
+    refresh();
+  };
+  document.getElementById('btnTeamDone').onclick = () => {
+    collect();
+    closeModal();
+    renderTeams();
+  };
+}
+
+/* ============ Game Flow ============ */
+async function startGame(id){
+  const selected = games.find(g => g.id === id);
+  if(!selected) return;
+  const nStr = await customPrompt('Wie viele Teams? (1–8)', '2', { title: 'Teams', type: 'number', min: 1, max: 8 });
+  if(nStr === null) return;
+  const n = Math.max(1, Math.min(8, parseInt(nStr, 10) || 2));
+
+  current = JSON.parse(JSON.stringify(selected));
+  for(const cell of Object.values(current.cells || {})){ cell.used = false; cell.reduced = false; }
+  teams = Array.from({length: n}, (_, i) => ({ name: 'Team ' + (i + 1), score: 0 }));
+  editMode = false;
+  currentView = 'board';
+  undoStack = [];
+  dirty = false;
+  renderBoard();
+}
+
+async function restartGame(){
+  if(!current) return;
+  const ok = await customConfirm(
+    'Spiel neu starten? Alle gespielten Felder und Punktestände werden auf den Anfangszustand zurückgesetzt.',
+    { danger: true, okLabel: 'Neu starten', title: 'Neu starten' }
+  );
+  if(!ok) return;
+  for(const cell of Object.values(current.cells || {})){ cell.used = false; cell.reduced = false; }
+  teams = teams.map((t, i) => ({ name: t.name || ('Team ' + (i + 1)), score: 0 }));
+  undoStack = [];
+  renderBoard();
+  toast('Spiel wurde neu gestartet');
+}
+
+/* ============ Undo ============ */
+function snapshot(){
+  return {
+    teams: teams.map(t => ({...t})),
+    cells: Object.fromEntries(Object.entries(current.cells).map(([k, v]) => [k, {...v}]))
+  };
+}
+function restoreSnapshot(snap){
+  teams = snap.teams.map(t => ({...t}));
+  current.cells = Object.fromEntries(Object.entries(snap.cells).map(([k, v]) => [k, {...v}]));
+}
+function pushUndo(){
+  undoStack.push(snapshot());
+  if(undoStack.length > 50) undoStack.shift();
+}
+async function undoLast(){
+  if(!undoStack.length) return;
+  const snap = undoStack.pop();
+  restoreSnapshot(snap);
+  renderBoard();
+  toast('Letzte Aktion rückgängig gemacht');
+}
+
+/* ============ Cell Play ============ */
+function openCell(i, j){
+  const c = current.cells[i + ',' + j];
+  if(!c || c.used) return;
+
+  const basePoints = Number((current.points && current.points[i] && current.points[i][j]) ?? Number(current.rowHeaders[i]) ?? (i + 1) * 100);
+  const points = c.reduced ? Math.floor(basePoints / 2) : basePoints;
+  const half = Math.floor(points / 2);
+  const valueNote = c.reduced
+    ? '<div class="hint" style="margin-top:8px;color:#ffe37a">Dieses Feld wurde bereits einmal zum Abstauben freigegeben. Es ist jetzt nur noch ' + points + ' Punkte wert.</div>'
+    : '';
+  const hasQuestion = Boolean(String(c.text || '').trim());
+
+  openModalWithFocus(
+    '<h2>' + esc(points) + ' Punkte · ' + esc(current.colHeaders[j]) + '</h2>' +
+    valueNote +
+    '<div class="question-box" style="font-size:1.25rem;line-height:1.5;padding:16px;background:#071a38;border-radius:10px;margin-top:8px">' + esc(c.text || '') + '</div>' +
+    (c.type === 'image' && c.data ? '<img class="media-preview" src="' + c.data + '" alt="">' : '') +
+    (c.type === 'audio' && c.data ? '<audio class="media-preview" controls src="' + c.data + '"></audio>' : '') +
+    (c.type === 'video' && c.data ? '<video class="media-preview" controls src="' + c.data + '"></video>' : '') +
+    '<div id="answerArea" style="margin-top:16px"></div>' +
+    '<div class="action-block"><h4>Antwort anzeigen</h4>' +
+      '<button class="gold" id="btnShowAnswer">Antwort anzeigen</button></div>' +
+    '<div id="outcomeActions">' +
+      '<div class="action-block"><h4>✅ Richtige Antwort · +' + points + ' Punkte</h4>' +
+        '<div class="row">' + teams.map((t, idx) =>
+          '<button class="team-award" data-award="' + idx + '">' + esc(t.name || ('Team ' + (idx + 1))) + '</button>').join('') +
+        '</div></div>' +
+      '<div class="action-block"><h4>❌ Falsche Antwort · −' + half + ' Punkte</h4>' +
+        '<div class="row">' + teams.map((t, idx) =>
+          '<button class="team-deduct" data-wrong="' + idx + '">' + esc(t.name || ('Team ' + (idx + 1))) + '</button>').join('') +
+        '</div></div>' +
+      '<div class="action-block"><h4>⏸ Keine Antwort</h4>' +
+        '<button class="secondary" id="btnNoAnswer">Keine Antwort</button></div>' +
+    '</div>' +
+    (!hasQuestion ? '<div class="hint" style="margin-top:14px;color:#ffc0c8">Hinweis: Für dieses Feld wurde noch keine Frage hinterlegt.</div>' : '') +
+    '<div class="row" style="margin-top:18px"><button class="secondary" id="btnCloseCell">Schließen</button></div>',
+    { focus: '#btnShowAnswer' }
+  );
+
+  document.getElementById('btnShowAnswer').onclick = () => showAnswer(i, j);
+  document.getElementById('btnCloseCell').onclick = () => closeModal();
+  document.getElementById('btnNoAnswer').onclick = () => finishCell(i, j);
+  document.querySelectorAll('[data-award]').forEach(b =>
+    b.onclick = () => awardTeam(i, j, +b.getAttribute('data-award'), points));
+  document.querySelectorAll('[data-wrong]').forEach(b =>
+    b.onclick = () => wrongAnswer(i, j, +b.getAttribute('data-wrong'), points));
+}
+
+function showAnswer(i, j){
+  const c = current.cells[i + ',' + j] || {};
+  document.getElementById('answerArea').innerHTML =
+    '<div style="padding:16px;background:#143c69;border:1px solid #3c6bc0;border-radius:10px">' +
+      '<div class="muted" style="margin-bottom:5px">Antwort</div>' +
+      '<div style="font-size:1.2rem;font-weight:700">' + esc(c.answer || 'Keine Antwort hinterlegt.') + '</div>' +
+    '</div>';
+}
+
+function awardTeam(i, j, ti, p){
+  if(ti < 0 || ti >= teams.length) return;
+  pushUndo();
+  teams[ti].score += Number(p) || 0;
+  current.cells[i + ',' + j].used = true;
+  closeModal();
+  renderBoard();
+  flashTeam(ti, Number(p) || 0);
+  toast('+' + (Number(p) || 0) + ' Punkte für ' + (teams[ti].name || ('Team ' + (ti + 1))));
+  focusCellOrNext(i, j);
+}
+
+function wrongAnswer(i, j, ti, p){
+  if(ti < 0 || ti >= teams.length) return;
+  pushUndo();
+  const points = Number(p) || 0;
+  const half = Math.floor(points / 2);
+  teams[ti].score -= half;
+
+  const scoreEl = document.querySelector('.team[data-team="' + ti + '"] .score');
+  if(scoreEl){
+    scoreEl.textContent = teams[ti].score;
+    flashTeam(ti, -half);
+  } else {
+    renderTeams();
+  }
+
+  const area = document.getElementById('answerArea');
+  const outcome = document.getElementById('outcomeActions');
+  if(outcome){
+    outcome.innerHTML =
+      '<div class="action-block" style="margin-top:14px">' +
+        '<h4>❌ ' + esc(teams[ti].name || ('Team ' + (ti + 1))) + ' hat falsch geantwortet</h4>' +
+        '<div class="action-help">' + half + ' Punkte wurden abgezogen. Jetzt dürfen die anderen Teams abstauben.</div>' +
+        '<div class="row" style="margin-top:10px">' +
+          teams.map((t, idx) => idx === ti ? '' :
+            '<button class="team-award" data-steal="' + idx + '">' + esc(t.name || ('Team ' + (idx + 1))) + '</button>').join('') +
+        '</div>' +
+        '<button class="secondary" style="margin-top:10px" id="btnNoSteal">Niemand staubt ab</button>' +
+      '</div>';
+    document.querySelectorAll('[data-steal]').forEach(b =>
+      b.onclick = () => stealTeam(i, j, +b.getAttribute('data-steal'), half));
+    document.getElementById('btnNoSteal').onclick = () => finishCell(i, j);
+  }
+  if(area){
+    area.innerHTML =
+      '<div style="padding:14px;background:#5b2430;border:1px solid #b84b60;border-radius:10px">' +
+        '<b>' + esc(teams[ti].name || ('Team ' + (ti + 1))) + '</b> hat die Frage falsch beantwortet und erhält <b>-' + half + '</b> Punkte.' +
+      '</div>';
+  }
+  toast('-' + half + ' Punkte für ' + (teams[ti].name || ('Team ' + (ti + 1))));
+}
+
+function stealTeam(i, j, ti, p){
+  if(ti < 0 || ti >= teams.length) return;
+  pushUndo();
+  teams[ti].score += Number(p) || 0;
+  current.cells[i + ',' + j].used = true;
+  closeModal();
+  renderBoard();
+  flashTeam(ti, Number(p) || 0);
+  toast('+' + (Number(p) || 0) + ' Abstauberpunkte für ' + (teams[ti].name || ('Team ' + (ti + 1))));
+  focusCellOrNext(i, j);
+}
+
+function finishCell(i, j){
+  pushUndo();
+  const c = current.cells[i + ',' + j] || {};
+  c.used = false;
+  c.reduced = true;
+  current.cells[i + ',' + j] = c;
+  closeModal();
+  renderBoard();
+  toast('Niemand staubt ab – das Feld ist jetzt nur noch die Hälfte wert.');
+  focusCellOrNext(i, j);
+}
+
+/* ============ Init ============ */
+window.addEventListener('beforeunload', e => {
+  if(dirty){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && document.getElementById('modalRoot').innerHTML){
+    // Fallback – wird normalerweise vom Modal-Listener abgefangen
+  }
+});
+
+renderHome();
+restoreLastFile();
+</script>
+</body>
+</html>
