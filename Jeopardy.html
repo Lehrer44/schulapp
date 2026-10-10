@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Jeopardy – Offline</title>
+<title>Jeopardy Studio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{color-scheme:light;--bg:#f3f1e9;--surface:#fffefa;--surface-soft:#faf8f1;--surface-muted:#eeeadd;--line:#d9d2c2;--line-strong:#b9ad93;--text:#34352e;--muted:#777668;--accent:#88784f;--accent-dark:#665a3d;--accent-soft:#eee7d5;--board:#f8f4e9;--board-hover:#eee5d1;--danger:#b9504e;--danger-soft:#f8e8e5;--ok:#36795d;--ok-soft:#e5f1e8;--shadow:0 14px 36px rgba(69,59,37,.07);--shadow-soft:0 5px 16px rgba(69,59,37,.06)}
 *{box-sizing:border-box}
@@ -105,6 +106,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div id="loading" class="loading hidden" role="status" aria-live="polite"><span class="spinner"></span><span id="loadingText">Lade …</span></div>
 <script>
 'use strict';
+
+const SUPABASE_URL = 'https://mqtcwiiawmuxrpkjfrfc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-';
+const gameCloud = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const GAME_STORAGE_BUCKET = 'jeopardy-games';
+let cloudUser = null;
+let cloudLibraryLoaded = false;
 
 /* ============ State ============ */
 let games = [];
@@ -393,6 +401,99 @@ async function loadPublishedGamesFile(){
   }
 }
 
+async function detectCloudUser(){
+  try{
+    const {data, error} = await gameCloud.auth.getUser();
+    cloudUser = !error && data && data.user ? data.user : null;
+  }catch(e){
+    cloudUser = null;
+  }
+  return cloudUser;
+}
+
+async function loadCloudGames(){
+  if(!cloudUser) return false;
+  setLoading(true, 'Lade gespeicherte Spielesammlung …');
+  try{
+    const path = cloudUser.id + '/Jeopardy-Spiele.json';
+    const {data, error} = await gameCloud.storage.from(GAME_STORAGE_BUCKET).download(path);
+    if(error){
+      const message = String(error.message || '');
+      const status = String(error.statusCode || error.status || '');
+      if(status === '404' || /not found|does not exist|no such object/i.test(message)) return false;
+      toast('Cloud-Datei konnte nicht geladen werden: ' + message);
+      return false;
+    }
+    const parsed = JSON.parse(await data.text());
+    if(!Array.isArray(parsed.games)) throw new Error('Die gespeicherte Datei enthält keine gültige Spieleliste.');
+    games = parsed.games.map(normalizeGame);
+    gamesFileHandle = null;
+    gamesFileName = 'Supabase Cloud';
+    lastFileAvailable = false;
+    current = null;
+    dirty = false;
+    cloudLibraryLoaded = true;
+    toast(games.length + ' Spiele aus der Cloud geladen');
+    return true;
+  }catch(e){
+    toast('Cloud-Spielesammlung konnte nicht geladen werden: ' + (e.message || 'Unbekannter Fehler'));
+    return false;
+  }finally{
+    setLoading(false);
+  }
+}
+
+async function saveGamesToCloud(){
+  setLoading(true, 'Speichere Spielesammlung in der Cloud …');
+  try{
+    const {data: authData, error: authError} = await gameCloud.auth.getUser();
+    if(authError || !authData || !authData.user){
+      cloudUser = null;
+      throw new Error('Bitte melde dich zuerst im Lehrerbereich an und öffne Jeopardy erneut über das Dashboard.');
+    }
+    cloudUser = authData.user;
+    const path = cloudUser.id + '/Jeopardy-Spiele.json';
+    const json = JSON.stringify(packGames(), null, 2);
+    const file = new Blob([json], {type: 'application/json;charset=utf-8'});
+    const {error} = await gameCloud.storage.from(GAME_STORAGE_BUCKET).upload(path, file, {
+      contentType: 'application/json',
+      cacheControl: '0',
+      upsert: true
+    });
+    if(error) throw error;
+    cloudLibraryLoaded = true;
+    gamesFileName = 'Supabase Cloud';
+    gamesFileHandle = null;
+    lastFileAvailable = false;
+    dirty = false;
+    toast('Spielesammlung dauerhaft in Supabase gespeichert');
+    return true;
+  }catch(e){
+    await customAlert(
+      'Die Spielesammlung konnte nicht in der Cloud gespeichert werden.\n\n' +
+      (e.message || 'Unbekannter Fehler') +
+      '\n\nDu kannst zusätzlich über „JSON exportieren“ eine lokale Sicherung erstellen.',
+      {title: 'Speichern fehlgeschlagen'}
+    );
+    return false;
+  }finally{
+    setLoading(false);
+  }
+}
+
+function exportGamesJson(){
+  const blob = new Blob([JSON.stringify(packGames(), null, 2)], {type: 'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'Jeopardy-Spiele.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('JSON-Sicherung heruntergeladen');
+}
+
 async function openGamesFile(){
   try{
     if(!('showOpenFilePicker' in window)) return fallbackOpenGamesFile();
@@ -452,6 +553,7 @@ function fallbackOpenGamesFile(){
 }
 
 async function saveGamesFile(asNew){
+  if(!asNew && cloudUser) return await saveGamesToCloud();
   try{
     if(asNew || !gamesFileHandle){
       if(!('showSaveFilePicker' in window)) return fallbackSaveGamesFile();
@@ -535,14 +637,18 @@ function renderHome(){
       '<div class="row">' +
         '<button class="secondary" id="btnOpen">📂 Spiele-Datei öffnen</button>' +
         (lastFileAvailable ? '<button class="secondary" id="btnReload">↻ Letzte Datei laden</button>' : '') +
-        '<button class="gold" id="btnSaveAs">💾 Speichern unter …</button>' +
+        '<button class="gold" id="btnSaveAs">↓ JSON exportieren</button>' +
         '<button class="gold" id="btnNew">＋ Spiel erstellen</button>' +
       '</div>' +
     '</div>' +
     '<div class="panel library-panel"><div class="library-heading"><div><div class="eyebrow">SPIELBIBLIOTHEK</div><h2>Meine Spiele</h2><p class="panel-lead">Wähle eine Vorlage, bearbeite Fragen oder starte eine Quizrunde mit deinen Teams.</p></div><div class="library-count">' + games.length + (games.length === 1 ? ' Spiel' : ' Spiele') + '</div></div>' +
       '<div class="muted" style="margin-bottom:12px">' +
-        (gamesFileName ? 'Aktive Datei: <b>' + esc(gamesFileName) + '</b>' : 'Noch keine Spiele-Datei geöffnet. Öffne eine vorhandene JSON-Datei oder erstelle eine neue über „Speichern unter …“.') +
-        (gamesFileName && lastFileAvailable ? ' Die Datei wird bei zukünftigen Starts automatisch geladen, sofern der Browser die Dateiberechtigung beibehält.' : '') +
+        (cloudUser
+          ? (cloudLibraryLoaded
+              ? 'Speicherort: <b>Supabase Cloud</b> · Diese Spielesammlung wird bei deinem nächsten Besuch automatisch wieder geladen.'
+              : 'Startvorlage geladen · Beim ersten Speichern wird eine persönliche Cloud-Kopie für dein Lehrerkonto angelegt.')
+          : (gamesFileName ? 'Aktive Datei: <b>' + esc(gamesFileName) + '</b>' : 'Noch keine Spiele-Datei geöffnet. Öffne eine vorhandene JSON-Datei, um zu beginnen.')) +
+        (!cloudUser && gamesFileName && lastFileAvailable ? ' Die lokale Datei kann beim nächsten Besuch nur mit gespeicherter Browserberechtigung automatisch geladen werden.' : '') +
       '</div>' +
       '<div class="games">' +
         (games.length
@@ -559,12 +665,16 @@ function renderHome(){
           : '<div class="empty">Noch kein Spiel geladen. Erstelle ein Spiel und speichere anschließend die Spiele-Datei über „Speichern unter …“.</div>') +
       '</div>' +
     '</div>' +
-    '<div class="storage-note"><span aria-hidden="true">ⓘ</span><div><b>Speicherprinzip:</b> Die Spielesammlung liegt in einer normalen <code>Jeopardy-Spiele.json</code>-Datei. Bilder, MP3s und Videos werden direkt in diese Datei eingebettet.</div></div>';
+    '<div class="storage-note"><span aria-hidden="true">ⓘ</span><div>' +
+      (cloudUser
+        ? '<b>Automatisches Cloud-Speichern:</b> Mit „Speichern“ wird die Spielesammlung sicher in deinem Supabase-Konto abgelegt und beim nächsten Öffnen automatisch geladen. „JSON exportieren“ erstellt zusätzlich eine lokale Sicherung.'
+        : '<b>Lokales Speichern:</b> Du bist nicht über den Lehrerbereich angemeldet. Änderungen können als JSON exportiert werden. Für automatisches Cloud-Speichern öffne Jeopardy über das angemeldete Dashboard.') +
+      ' Fragen, Antworten und eingebettete Medien bleiben zusammen in der Spielesammlung.</div></div>';
 
   document.getElementById('btnOpen').onclick = () => openGamesFile();
   const rel = document.getElementById('btnReload');
   if(rel) rel.onclick = () => useLastFile();
-  document.getElementById('btnSaveAs').onclick = async () => { const ok = await saveGamesFile(true); if(ok) renderHome(); };
+  document.getElementById('btnSaveAs').onclick = exportGamesJson;
   document.getElementById('btnNew').onclick = () => openSetup(null);
 
   document.querySelectorAll('.game-card').forEach(card => {
@@ -953,12 +1063,13 @@ async function deleteGame(id){
   const ok = await customConfirm('Spiel wirklich löschen?', { danger: true, okLabel: 'Löschen', title: 'Spiel löschen' });
   if(!ok) return;
   games = games.filter(g => g.id !== id);
-  if(gamesFileHandle){
+  if(cloudUser || gamesFileHandle){
     const saved = await saveGamesFile(false);
-    if(saved) renderHome();
+    renderHome();
+    if(!saved) toast('Spiel lokal entfernt; die Änderung wurde noch nicht gespeichert.');
   } else {
     renderHome();
-    toast('Spiel entfernt. Noch nicht auf Datei gespeichert.');
+    toast('Spiel entfernt. Zum dauerhaften Speichern bitte anmelden oder JSON exportieren.');
   }
 }
 
@@ -1264,8 +1375,14 @@ document.addEventListener('keydown', e => {
 
 async function initializeJeopardy(){
   renderHome();
+  await detectCloudUser();
+  if(cloudUser && await loadCloudGames()){
+    renderHome();
+    return;
+  }
   await restoreLastFile();
   if(!games.length) await loadPublishedGamesFile();
+  renderHome();
 }
 initializeJeopardy();
 </script>
