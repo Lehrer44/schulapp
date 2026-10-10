@@ -264,3 +264,47 @@ revoke all on function public.delete_all_owned_sessions() from public, anon, aut
 grant execute on function public.end_all_owned_sessions() to authenticated;
 grant execute on function public.delete_all_owned_sessions() to authenticated;
 
+
+-- Jeopardy game library: each authenticated teacher has a private JSON collection.
+-- The browser may overwrite only its own fixed object in the private bucket.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('jeopardy-games', 'jeopardy-games', false, 52428800, array['application/json'])
+on conflict (id) do update
+set name = excluded.name,
+    public = false,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "jeopardy_games_read_own" on storage.objects;
+create policy "jeopardy_games_read_own"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'jeopardy-games'
+  and name = ((select auth.uid())::text || '/Jeopardy-Spiele.json')
+);
+
+drop policy if exists "jeopardy_games_insert_own" on storage.objects;
+create policy "jeopardy_games_insert_own"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'jeopardy-games'
+  and name = ((select auth.uid())::text || '/Jeopardy-Spiele.json')
+);
+
+drop policy if exists "jeopardy_games_update_own" on storage.objects;
+create policy "jeopardy_games_update_own"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'jeopardy-games'
+  and name = ((select auth.uid())::text || '/Jeopardy-Spiele.json')
+)
+with check (
+  bucket_id = 'jeopardy-games'
+  and name = ((select auth.uid())::text || '/Jeopardy-Spiele.json')
+);
