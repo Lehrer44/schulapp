@@ -42,10 +42,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .field input:hover,.field select:hover,.field textarea:hover,.team-name-input:hover{border-color:var(--line-strong)}
 .field textarea{min-height:110px;resize:vertical;line-height:1.5}
 .hidden{display:none!important}
-.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px}
-.game-card{min-width:0;background:linear-gradient(160deg,#fffefa,var(--surface-soft));border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:var(--shadow-soft);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
-.game-card:hover{transform:translateY(-2px);border-color:var(--line-strong);box-shadow:0 12px 26px rgba(69,59,37,.09)}
-.game-card h3{margin:0 0 6px;font-size:1.05rem;letter-spacing:-.02em;overflow-wrap:anywhere}.game-card .row{margin-top:14px}
+.games{display:flex;flex-direction:column;gap:10px}
+.game-card{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;background:linear-gradient(160deg,#fffefa,var(--surface-soft));border:1px solid var(--line);border-radius:15px;padding:15px 17px;box-shadow:var(--shadow-soft);transition:border-color .18s ease,box-shadow .18s ease}
+.game-card:hover{border-color:var(--line-strong);box-shadow:0 8px 20px rgba(69,59,37,.07)}
+.game-card h3{margin:0 0 4px;font-size:1.03rem;letter-spacing:-.02em;overflow-wrap:anywhere}.game-card .row{margin-top:0;justify-content:flex-end}
+.game-card .game-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.game-card .order-actions{display:flex;gap:5px;margin-right:3px}
+.game-card .order-button{padding:.55rem .7rem;min-width:38px;background:var(--surface);border:1px solid var(--line);color:var(--text);box-shadow:none;font-size:.95rem}
+.game-card .order-button:hover:not(:disabled){background:var(--surface-muted);border-color:var(--line-strong)}
+@media(max-width:760px){.game-card{grid-template-columns:1fr;align-items:stretch}.game-card .game-actions{justify-content:flex-start}.game-card .order-actions{margin-right:2px}}
+@media(max-width:440px){.game-card .game-actions button{flex:1}.game-card .order-actions button{flex:0 0 auto}}
 .muted{color:var(--muted);font-size:.9rem;line-height:1.5}
 .empty{color:var(--muted);padding:24px 18px;text-align:center;border:1px dashed var(--line-strong);border-radius:14px;background:rgba(250,248,241,.6)}
 .storage-note{display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);border:1px solid #ded3b8;border-radius:15px;padding:15px 17px;color:var(--accent-dark);font-size:.9rem;line-height:1.55}
@@ -703,7 +709,7 @@ function renderHome(){
 
   document.getElementById('app').innerHTML =
     '<div class="top">' +
-      '<div class="brand-lockup"><div class="brand-symbol" aria-hidden="true">J</div><div><div class="brand">Jeopardy <span>Studio</span></div><div class="brand-sub">Deine Unterrichtsquizze auf einen Blick</div></div></div>' +
+      '<div class="brand-lockup"><div class="brand-symbol" aria-hidden="true">J</div><div><div class="brand">Jeopardy <span>Studio</span></div></div></div>' +
       '<div class="row">' +
         '<button class="secondary" id="btnOpen">📂 Spiele-Datei öffnen</button>' +
         (lastFileAvailable ? '<button class="secondary" id="btnReload">↻ Letzte Datei laden</button>' : '') +
@@ -711,28 +717,27 @@ function renderHome(){
         '<button class="gold" id="btnNew">＋ Spiel erstellen</button>' +
       '</div>' +
     '</div>' +
-    '<div class="panel library-panel"><div class="library-heading"><div><div class="eyebrow">SPIELBIBLIOTHEK</div><h2>Meine Spiele</h2><p class="panel-lead">Wähle eine Vorlage, bearbeite Fragen oder starte eine Quizrunde mit deinen Teams.</p></div><div class="library-count">' + games.length + (games.length === 1 ? ' Spiel' : ' Spiele') + '</div></div>' +
-      '<div class="muted" style="margin-bottom:12px">' +
-        (cloudUser
-          ? (cloudLibraryLoaded
-              ? 'Speicherort: <b>Supabase Cloud</b> · Diese Spielesammlung wird bei deinem nächsten Besuch automatisch wieder geladen.'
-              : 'Startvorlage geladen · Beim ersten Speichern wird eine persönliche Cloud-Kopie für dein Lehrerkonto angelegt.')
-          : (gamesFileName ? 'Aktive Datei: <b>' + esc(gamesFileName) + '</b>' : 'Noch keine Spiele-Datei geöffnet. Öffne eine vorhandene JSON-Datei, um zu beginnen.')) +
-        (!cloudUser && gamesFileName && lastFileAvailable ? ' Die lokale Datei kann beim nächsten Besuch nur mit gespeicherter Browserberechtigung automatisch geladen werden.' : '') +
-      '</div>' +
+    '<div class="panel library-panel"><div class="library-heading"><div><div class="eyebrow">SPIELBIBLIOTHEK</div></div><div class="library-count">' + games.length + (games.length === 1 ? ' Spiel' : ' Spiele') + '</div></div>' +
+      (!cloudUser && gamesFileName
+        ? '<div class="muted" style="margin-bottom:12px">Aktive Datei: <b>' + esc(gamesFileName) + '</b>' + (lastFileAvailable ? ' · Lokale Datei kann automatisch geladen werden.' : '') + '</div>'
+        : '') +
       '<div class="games">' +
         (games.length
-          ? games.map(g =>
+          ? games.map((g, index) =>
               '<div class="game-card" data-game-id="' + esc(g.id) + '">' +
-                '<h3>' + esc(g.name) + '</h3>' +
-                '<div class="muted">' + g.rows + ' Reihen · ' + g.cols + ' Spalten</div>' +
-                '<div class="row" style="margin-top:12px">' +
+                '<div class="game-info"><h3>' + esc(g.name) + '</h3>' +
+                '<div class="muted">' + g.rows + ' Reihen · ' + g.cols + ' Spalten</div></div>' +
+                '<div class="game-actions">' +
+                  '<div class="order-actions" aria-label="Reihenfolge ändern">' +
+                    '<button class="order-button" data-action="up" aria-label="Spiel ' + esc(g.name) + ' nach oben verschieben" title="Nach oben" ' + (index === 0 ? 'disabled' : '') + '>↑</button>' +
+                    '<button class="order-button" data-action="down" aria-label="Spiel ' + esc(g.name) + ' nach unten verschieben" title="Nach unten" ' + (index === games.length - 1 ? 'disabled' : '') + '>↓</button>' +
+                  '</div>' +
                   '<button data-action="start">▶ Starten</button>' +
                   '<button class="secondary" data-action="edit">✎ Bearbeiten</button>' +
                   '<button class="danger" data-action="delete">Löschen</button>' +
                 '</div>' +
               '</div>').join('')
-          : '<div class="empty">Noch kein Spiel geladen. Erstelle ein Spiel und speichere anschließend die Spiele-Datei über „Speichern unter …“.</div>') +
+          : '<div class="empty">Noch kein Spiel vorhanden. Erstelle ein Spiel, um zu beginnen.</div>') +
       '</div>' +
     '</div>' +
     '<div class="storage-note"><span aria-hidden="true">ⓘ</span><div>' +
@@ -752,7 +757,24 @@ function renderHome(){
     card.querySelector('[data-action="start"]').onclick = () => startGame(id);
     card.querySelector('[data-action="edit"]').onclick = () => editGame(id);
     card.querySelector('[data-action="delete"]').onclick = () => deleteGame(id);
+    card.querySelector('[data-action="up"]').onclick = () => moveGame(id, -1);
+    card.querySelector('[data-action="down"]').onclick = () => moveGame(id, 1);
   });
+}
+
+async function moveGame(id, direction){
+  const from = games.findIndex(g => g.id === id);
+  const to = from + direction;
+  if(from < 0 || to < 0 || to >= games.length) return;
+  [games[from], games[to]] = [games[to], games[from]];
+  dirty = true;
+  renderHome();
+  if(cloudUser && cloudLibraryLoaded){
+    const saved = await saveGamesToCloud();
+    if(saved) renderHome();
+  }else{
+    toast('Reihenfolge geändert. Mit „JSON exportieren“ kannst du sie sichern.');
+  }
 }
 
 /* ============ Setup / Editor ============ */
