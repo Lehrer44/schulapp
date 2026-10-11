@@ -437,30 +437,36 @@ async function restoreLastFile(){
   }
 }
 
-async function loadPublishedGamesFile(){
+async function loadSharedCatalog(){
   try{
-    const response = await fetch(new URL('Jeopardy-Spiele.json', window.location.href), {cache: 'no-store'});
-    if(!response.ok) throw new Error('HTTP ' + response.status);
-    const data = await response.json();
-    if(!Array.isArray(data.games)) throw new Error('Keine gültige Jeopardy-Spieldatei.');
+    setLoading(true, 'Lade Jeopardy-Vorlagen aus Supabase …');
+    const {data, error} = await gameCloud
+      .from('jeopardy_catalog')
+      .select('payload')
+      .eq('id', 'default')
+      .single();
+    if(error) throw error;
+    const catalog = data && data.payload;
+    if(!catalog || !Array.isArray(catalog.games)) throw new Error('Der Supabase-Katalog enthält keine gültige Spieleliste.');
 
-    games = data.games.map(normalizeGame);
+    games = catalog.games.map(normalizeGame);
     gamesFileHandle = null;
-    gamesFileName = 'Jeopardy-Spiele.json';
+    gamesFileName = cloudUser ? 'Supabase-Katalog' : 'Supabase-Vorlagen';
     lastFileAvailable = false;
     current = null;
     dirty = false;
-    renderHome();
-    toast(games.length + ' Spiele aus der veröffentlichten JSON-Datei geladen');
+    cloudLibraryLoaded = false;
+    toast(games.length + ' Jeopardy-Vorlagen aus Supabase geladen');
     return true;
   }catch(e){
     games = [];
     gamesFileHandle = null;
     gamesFileName = '';
     lastFileAvailable = false;
-    renderHome();
-    toast('Veröffentlichte Spiele-Datei konnte nicht geladen werden. Du kannst sie über „Spiele-Datei öffnen“ auswählen.');
+    toast('Jeopardy-Vorlagen konnten nicht geladen werden: ' + (e.message || 'Unbekannter Fehler'));
     return false;
+  }finally{
+    setLoading(false);
   }
 }
 
@@ -1471,7 +1477,7 @@ async function initializeJeopardy(){
     return;
   }
   await restoreLastFile();
-  if(!games.length) await loadPublishedGamesFile();
+  if(!games.length) await loadSharedCatalog();
   renderHome();
 }
 initializeJeopardy();
