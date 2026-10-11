@@ -134,6 +134,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .grid-points-input:focus{outline:3px solid #b6a26a;outline-offset:1px}
 .editor-board .cell{min-width:0;min-height:110px;font-size:1rem;white-space:normal}
 .editor-board .cell.editable{cursor:pointer}
+.editor-board .cell.editor-answer-cell{padding:7px;align-items:stretch;justify-content:stretch;gap:5px;cursor:default}
+.grid-answer-input{display:block;flex:1 1 auto;width:100%;min-width:0;min-height:58px;height:calc(100% - 28px);resize:vertical;border:1px solid transparent;border-radius:9px;padding:8px;background:rgba(255,255,255,.68);color:var(--text);font-family:inherit;font-size:.9rem;font-weight:650;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
+.grid-answer-input::placeholder{color:var(--muted);font-weight:550}
+.grid-answer-input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);background:var(--surface)}
+.grid-answer-input.has-answer{background:rgba(255,255,255,.9)}
+.editor-cell-edit-question{flex:0 0 auto;width:100%;padding:4px 6px;min-height:26px;border-radius:7px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:.72rem;font-weight:700;line-height:1.2;box-shadow:none}
+.editor-cell-edit-question:hover:not(:disabled){background:var(--surface-muted);border-color:var(--line-strong);color:var(--text);transform:none;box-shadow:none}
 .editor-board .cell-status{font-size:.74rem;line-height:1.25;white-space:normal}
 .play-screen{height:100dvh;overflow:hidden}
 .play-screen #app{width:100%;max-width:none;height:100dvh;min-height:0;display:flex;flex-direction:column;gap:clamp(8px,1.15vh,14px);padding:clamp(8px,1.15vh,16px) clamp(10px,1.1vw,18px);overflow:hidden}
@@ -976,9 +983,7 @@ function renderBoard(){
       '<div class="brand-lockup"><div class="brand-symbol" aria-hidden="true">J</div><div><div class="brand">' + esc(current.name) + '</div><div class="brand-sub">' + (editMode ? 'Spielvorlage bearbeiten' : 'Moderation und Spielstand') + '</div></div></div>' +
       '<div class="row">' + topButtons + '</div>' +
     '</div>' +
-    (editMode
-      ? '<div class="panel editor-instructions"><b>Spielraster bearbeiten</b><p class="hint">Kategorien und Punktwerte direkt im Raster ändern. Ein Spielfeld anklicken, um Frage, Antwort oder Medien zu bearbeiten. Danach „Speichern“ wählen.</p></div>'
-      : '<div id="scorebar" class="scorebar"></div>') +
+    (editMode ? '' : '<div id="scorebar" class="scorebar"></div>') +
     '<div class="panel board-wrap ' + (editMode ? 'editor-board-wrap' : 'play-board-wrap') + '">' +
       '<div class="board ' + (editMode ? 'editor-board' : 'play-board') + '" id="board" style="grid-template-columns:' +
         (editMode ? 'minmax(78px,.62fr) ' : '') +
@@ -1055,11 +1060,28 @@ function renderBoard(){
       btn.dataset.j = j;
 
       if(editMode){
-        const hasQ = Boolean(String(c.text || '').trim());
-        btn.classList.add('editable');
-        btn.innerHTML = '<span class="cell-status ' + (hasQ ? 'has-question' : 'no-question') + '">' +
-                        (hasQ ? '✓ Frage bearbeiten' : '＋ Frage ergänzen') + '</span>';
-        btn.setAttribute('aria-label', 'Frage für ' + current.colHeaders[j] + ', Reihe ' + (i + 1) + ' bearbeiten');
+        btn.classList.add('editable', 'editor-answer-cell');
+        btn.innerHTML =
+          '<textarea class="grid-answer-input' + (String(c.answer || '').trim() ? ' has-answer' : '') +
+            '" data-answer-cell="' + k + '" aria-label="Antwort für ' + esc(current.colHeaders[j] || ('Kategorie ' + (j + 1))) +
+            ', Reihe ' + (i + 1) + '" placeholder="Antwort direkt hier eingeben…">' + esc(c.answer || '') + '</textarea>' +
+          '<button class="editor-cell-edit-question" type="button" data-edit-question="' + k + '">Frage / Medien bearbeiten</button>';
+        const answerInput = btn.querySelector('.grid-answer-input');
+        answerInput.addEventListener('input', e => {
+          const cell = current.cells[k] || { text: '', answer: '', type: 'text', data: '', name: '', used: false, reduced: false };
+          cell.answer = e.target.value;
+          current.cells[k] = cell;
+          e.target.classList.toggle('has-answer', Boolean(e.target.value.trim()));
+          dirty = true;
+        });
+        answerInput.addEventListener('click', e => e.stopPropagation());
+        answerInput.addEventListener('keydown', e => e.stopPropagation());
+        const editQuestionButton = btn.querySelector('.editor-cell-edit-question');
+        editQuestionButton.addEventListener('click', e => {
+          e.stopPropagation();
+          editCell(i, j);
+        });
+        btn.setAttribute('aria-label', 'Antwort direkt bearbeiten. Für Frage und Medien die Schaltfläche im Feld verwenden.');
       } else {
         if(c.used){
           btn.classList.add('used');
@@ -1164,8 +1186,6 @@ function editCell(i, j){
     '<h2>Feld bearbeiten</h2>' +
     '<div class="field"><label for="ctext">Frage / Aufgabe</label>' +
       '<textarea id="ctext" placeholder="Hier die Frage eingeben...">' + esc(c.text || '') + '</textarea></div>' +
-    '<div class="field" style="margin-top:10px"><label for="canswer">Antwort</label>' +
-      '<textarea id="canswer" placeholder="Hier die richtige Antwort eingeben...">' + esc(c.answer || '') + '</textarea></div>' +
     '<div class="field" style="margin-top:10px"><label for="ctype">Medientyp</label>' +
       '<select id="ctype">' +
         '<option value="text">Nur Text</option>' +
@@ -1202,7 +1222,8 @@ function editCell(i, j){
 function saveCell(i, j, old){
   const type = document.getElementById('ctype').value;
   const text = document.getElementById('ctext').value;
-  const answer = document.getElementById('canswer').value;
+  const latestCell = current.cells[i + ',' + j] || old;
+  const answer = typeof latestCell.answer === 'string' ? latestCell.answer : '';
   const file = document.getElementById('cfile').files[0];
 
   if(file){
@@ -1216,7 +1237,7 @@ function saveCell(i, j, old){
     readAndStoreFile(file, i, j, type, text, answer);
   } else {
     current.cells[i + ',' + j] = {
-      ...old,
+      ...latestCell,
       text, answer,
       type: type || 'text',
       data: type === 'text' ? '' : (old.data || ''),
@@ -1230,6 +1251,8 @@ function saveCell(i, j, old){
 }
 
 function readAndStoreFile(file, i, j, type, text, answer){
+  const latestCell = current.cells[i + ',' + j];
+  if(latestCell && typeof latestCell.answer === 'string') answer = latestCell.answer;
   setLoading(true, 'Lese Datei …');
   const fr = new FileReader();
   fr.onload = () => {
