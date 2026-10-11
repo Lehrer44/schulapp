@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quiz Studio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   color-scheme: light;
@@ -316,7 +317,7 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 <body>
 <div class="wrap">
   <div id="app"></div>
-  <div class="footer-note">Quiz Studio · Alle Daten liegen lokal in diesem Browser (localStorage).</div>
+  <div class="footer-note" id="cloudStatus">Quiz Studio · Quizze und Medien werden in deinem Supabase-Konto gespeichert.</div>
 </div>
 <div id="toast"></div>
 
@@ -326,7 +327,12 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
    ========================================================= */
 
 /* ---------- Konstanten ---------- */
-const LS_KEY = 'quizstudio.v1';
+const LEGACY_LS_KEY = 'quizstudio.v1';
+const SUPABASE_URL = 'https://mqtcwiiawmuxrpkjfrfc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-';
+const QUIZ_STORAGE_BUCKET = 'quiz-studio';
+const MAX_CLOUD_FILE_SIZE = 50 * 1024 * 1024;
+const cloudClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const TYPES = {
   single:      { label:'Einfachauswahl', icon:'◉' },
   multiple:    { label:'Mehrfachauswahl', icon:'☑' },
@@ -341,7 +347,9 @@ let state = { view:'list', draft:null, session:null };
 let saveTimer = null;
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 let indexedDbPromise = null;
-let saveQueue = Promise.resolve();
+let cloudUser = null;
+let cloudReady = false;
+let cloudSaveQueue = Promise.resolve();
 let mediaRecoveryWarning = false;
 
 /* ---------- Helpers ---------- */
@@ -385,14 +393,22 @@ function toast(msg){
   toastTimer = setTimeout(()=>el.classList.remove('show'), 2200);
 }
 
-/* ---------- Persistenz ---------- */
-/*
-  Quiztexte und Metadaten bleiben als schneller Fallback in localStorage.
-  Medien und der vollständige Quizstand werden in IndexedDB gespeichert,
-  da Bilder, Audio und Video das localStorage-Quota schnell überschreiten.
-*/
-function openQuizDatabase(){
-  if(!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB wird von diesem Browser nicht unterstützt.'));
+/* ---------- Cloud-Persistenz ---------- */
+function setCloudStatus(message){
+  const el = document.getElementById('cloudStatus');
+  if(el) el.textContent = 'Quiz Studio · ' + message;
+}
+function isMissingCloudFile(error){
+  const status = String(error && (error.statusCode || error.status) || '');
+  const message = String(error && error.message || '');
+  return status === '404' || /not found|does not exist|no such object|object not found/i.test(message);
+}
+function cloudFilePath(){
+  if(!cloudUser) throw new Error('Du bist nicht angemeldet.');
+  return cloudUser.id + '/Quiz-Studio.json';
+}
+function openLegacyDatabase(){
+  if(!('indexedDB' in window)) return Promise.reject(new Error('Keine alte lokale Datenbank vorhanden.'));
   if(!indexedDbPromise){
     indexedDbPromise = new Promise((resolve,reject)=>{
       const request = indexedDB.open('quizstudio-local-data',1);
@@ -401,110 +417,132 @@ function openQuizDatabase(){
         if(!idb.objectStoreNames.contains('state')) idb.createObjectStore('state');
       };
       request.onsuccess = ()=>resolve(request.result);
-      request.onerror = ()=>reject(request.error || new Error('Datenbank konnte nicht geöffnet werden.'));
+      request.onerror = ()=>reject(request.error || new Error('Alte lokale Datenbank konnte nicht geöffnet werden.'));
     });
   }
   return indexedDbPromise;
 }
-function readIndexedState(){
-  return openQuizDatabase().then(idb=>new Promise((resolve,reject)=>{
-    const tx = idb.transaction('state','readonly');
-    const request = tx.objectStore('state').get('quizzes');
-    request.onsuccess = ()=>resolve(request.result || null);
-    request.onerror = ()=>reject(request.error || new Error('Quizdaten konnten nicht geladen werden.'));
-  }));
-}
-function writeIndexedState(snapshot){
-  return openQuizDatabase().then(idb=>new Promise((resolve,reject)=>{
-    const tx = idb.transaction('state','readwrite');
-    tx.objectStore('state').put(snapshot,'quizzes');
-    tx.oncomplete = ()=>resolve(true);
-    tx.onerror = ()=>reject(tx.error || new Error('Quizdaten konnten nicht gespeichert werden.'));
-    tx.onabort = ()=>reject(tx.error || new Error('Speichern der Quizdaten wurde abgebrochen.'));
-  }));
-}
-function makeLocalBackup(source){
-  const backup = deepCopy(source);
-  (backup.quizzes || []).forEach(quiz=>{
-    (quiz.questions || []).forEach(question=>{
-      if(question.media && question.media.data){
-        question.media = {
-          type: question.media.type,
-          name: question.media.name || '',
-          storedInIndexedDB: true
-        };
-      }
-    });
-  });
-  return backup;
-}
-function clearUnavailableMedia(source){
-  let lost = false;
-  (source.quizzes || []).forEach(quiz=>{
-    (quiz.questions || []).forEach(question=>{
-      if(question.media && question.media.storedInIndexedDB && !question.media.data){
-        question.media = null;
-        lost = true;
-      }
-    });
-  });
-  return lost;
-}
-async function load(){
-  let localData = null;
-  let localTimestamp = 0;
+async function readLegacyLocalState(){
+  // Nur für die einmalige Übernahme vorhandener Quizze, falls es noch keine Cloud-Datei gibt.
   try{
-    const raw = localStorage.getItem(LS_KEY);
+    const idb = await openLegacyDatabase();
+    const indexed = await new Promise((resolve,reject)=>{
+      const tx = idb.transaction('state','readonly');
+      const request = tx.objectStore('state').get('quizzes');
+      request.onsuccess = ()=>resolve(request.result || null);
+      request.onerror = ()=>reject(request.error || new Error('Alte Quizdaten konnten nicht gelesen werden.'));
+    });
+    if(indexed && Array.isArray(indexed.quizzes)){
+      delete indexed.__quizStudioSavedAt;
+      return indexed;
+    }
+  }catch(e){ console.info('Keine übernehmbaren Quizdaten in der alten Browserdatenbank.'); }
+
+  try{
+    const raw = localStorage.getItem(LEGACY_LS_KEY);
     if(raw){
       const parsed = JSON.parse(raw);
       if(parsed && Array.isArray(parsed.quizzes)){
-        localTimestamp = Number(parsed.__quizStudioSavedAt) || 0;
         delete parsed.__quizStudioSavedAt;
-        localData = parsed;
-        db = parsed;
+        (parsed.quizzes || []).forEach(quiz=>(quiz.questions || []).forEach(question=>{
+          if(question.media && question.media.storedInIndexedDB && !question.media.data){
+            question.media = null;
+            mediaRecoveryWarning = true;
+          }
+        }));
+        return parsed;
       }
     }
-  }catch(e){ console.warn('Laden aus localStorage fehlgeschlagen', e); }
-
+  }catch(e){ console.warn('Alte Quiz-Sicherung konnte nicht übernommen werden.',e); }
+  return null;
+}
+function cleanupLegacyLocalState(){
+  try{ localStorage.removeItem(LEGACY_LS_KEY); }catch(e){}
   try{
-    const indexed = await readIndexedState();
-    const indexedTimestamp = indexed ? (Number(indexed.__quizStudioSavedAt) || 0) : 0;
-    if(indexed && Array.isArray(indexed.quizzes) && indexedTimestamp >= localTimestamp){
-      delete indexed.__quizStudioSavedAt;
-      db = indexed;
-    }else if(localData){
-      if(clearUnavailableMedia(db)) mediaRecoveryWarning = true;
-      const migrated = deepCopy(db);
-      migrated.__quizStudioSavedAt = localTimestamp || Date.now();
-      await writeIndexedState(migrated);
+    if(indexedDbPromise){
+      indexedDbPromise.then(idb=>idb.close()).catch(()=>{});
+      indexedDbPromise = null;
     }
-  }catch(e){
-    console.warn('IndexedDB konnte nicht geladen werden', e);
-    if(clearUnavailableMedia(db)) mediaRecoveryWarning = true;
+    if('indexedDB' in window) indexedDB.deleteDatabase('quizstudio-local-data');
+  }catch(e){ console.info('Alte Browserdatenbank konnte nicht entfernt werden.'); }
+}
+async function load(){
+  setCloudStatus('Verbinde mit Supabase …');
+  const {data:authData,error:authError} = await cloudClient.auth.getUser();
+  if(authError || !authData || !authData.user){
+    window.location.href = 'teacher.html';
+    return false;
   }
+  cloudUser = authData.user;
+  const path = cloudFilePath();
+  setCloudStatus('Lade Quizbibliothek aus der Cloud …');
+
+  const {data:file,error} = await cloudClient.storage.from(QUIZ_STORAGE_BUCKET).download(path);
+  if(!error && file){
+    const parsed = JSON.parse(await file.text());
+    if(!parsed || !Array.isArray(parsed.quizzes)) throw new Error('Die Cloud-Datei enthält keine gültige Quizbibliothek.');
+    db = parsed;
+    cloudReady = true;
+    cleanupLegacyLocalState();
+    setCloudStatus('Mit Supabase synchronisiert');
+    return true;
+  }
+  if(error && !isMissingCloudFile(error)){
+    throw new Error('Quizbibliothek konnte nicht aus Supabase geladen werden: ' + (error.message || 'Unbekannter Fehler'));
+  }
+
+  // Beim ersten Cloud-Start lokale Altbestände einmalig übernehmen und danach lokal entfernen.
+  const legacy = await readLegacyLocalState();
+  db = legacy && Array.isArray(legacy.quizzes) ? legacy : {quizzes:[]};
+  cloudReady = true;
+  if(db.quizzes.length){
+    setCloudStatus('Übernehme vorhandene Quizze in die Cloud …');
+    const migrated = await save();
+    if(!migrated) {
+      cloudReady = false;
+      throw new Error('Die vorhandenen Quizze konnten nicht in die Cloud übernommen werden. Die lokale Sicherung wurde beibehalten.');
+    }
+    cleanupLegacyLocalState();
+    toast('Vorhandene Quizze wurden in dein Supabase-Konto übernommen');
+  }else{
+    setCloudStatus('Cloud-Speicherung bereit');
+  }
+  return true;
 }
 function save(){
-  const stamp = Date.now();
-  const snapshot = deepCopy(db);
-  snapshot.__quizStudioSavedAt = stamp;
-  try{
-    localStorage.setItem(LS_KEY, JSON.stringify(makeLocalBackup(snapshot)));
-  }catch(e){
-    console.warn('Lokale Sicherung fehlgeschlagen', e);
+  if(!cloudReady || !cloudUser){
+    setCloudStatus('Nicht gespeichert – keine Cloud-Verbindung');
+    return Promise.resolve(false);
   }
-  saveQueue = saveQueue.catch(()=>{}).then(()=>writeIndexedState(snapshot)).catch(err=>{
-    console.warn('IndexedDB-Speicherung fehlgeschlagen', err);
-    try{
-      // Letzter Ausweg für kleinere Quizze, falls IndexedDB nicht verfügbar ist.
-      localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
-    }catch(localError){
-      toast('Speichern fehlgeschlagen. Der Browser konnte die Daten inklusive Medien nicht dauerhaft speichern.');
-    }
+  const snapshot = deepCopy(db);
+  const blob = new Blob([JSON.stringify(snapshot)],{type:'application/json;charset=utf-8'});
+  if(blob.size > MAX_CLOUD_FILE_SIZE){
+    const sizeMB = (blob.size/1024/1024).toFixed(1);
+    toast('Cloud-Speicherung nicht möglich: Quizbibliothek ist '+sizeMB+' MB groß (Limit 50 MB). Bitte Medien verkleinern.');
+    setCloudStatus('Speicherung fehlgeschlagen – Cloud-Datei zu groß');
+    return Promise.resolve(false);
+  }
+  setCloudStatus('Speichere in Supabase …');
+  cloudSaveQueue = cloudSaveQueue.catch(()=>{}).then(async()=>{
+    const {error} = await cloudClient.storage.from(QUIZ_STORAGE_BUCKET).upload(cloudFilePath(),blob,{
+      contentType:'application/json',
+      cacheControl:'0',
+      upsert:true
+    });
+    if(error) throw error;
+    setCloudStatus('Cloud gespeichert · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
+    return true;
+  }).catch(error=>{
+    console.error('Cloud-Speicherung fehlgeschlagen',error);
+    setCloudStatus('Speicherung fehlgeschlagen – bitte Verbindung prüfen');
+    toast('Quiz konnte nicht in Supabase gespeichert werden: '+(error.message || 'Unbekannter Fehler'));
+    return false;
   });
+  return cloudSaveQueue;
 }
 function scheduleSave(){
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(save, 250);
+  saveTimer = setTimeout(()=>save(),800);
 }
 
 /* ---------- Quiz / Fragen erzeugen ---------- */
@@ -1545,52 +1583,60 @@ function importData(){
    Start
    ========================================================= */
 (async function startQuizStudio(){
-  await load();
-  if(db.quizzes.length === 0){
-    const demo = newQuiz();
-    demo.title = 'Willkommen bei Quiz Studio';
-    demo.description = 'Ein kleines Beispiel-Quiz – du kannst es bearbeiten oder löschen.';
+  try{
+    const ready = await load();
+    if(!ready) return;
+    if(db.quizzes.length === 0){
+      const demo = newQuiz();
+      demo.title = 'Willkommen bei Quiz Studio';
+      demo.description = 'Ein kleines Beispiel-Quiz – du kannst es bearbeiten oder löschen.';
 
-    const q1 = createQuestion('single');
-    q1.text = 'Welche dieser Sprachen läuft direkt im Browser?';
-    q1.points = 1;
-    q1.options = [
-      { id: uid(), text:'JavaScript', correct:true },
-      { id: uid(), text:'Python',     correct:false },
-      { id: uid(), text:'Java',       correct:false },
-      { id: uid(), text:'C#',         correct:false }
-    ];
+      const q1 = createQuestion('single');
+      q1.text = 'Welche dieser Sprachen läuft direkt im Browser?';
+      q1.points = 1;
+      q1.options = [
+        { id: uid(), text:'JavaScript', correct:true },
+        { id: uid(), text:'Python',     correct:false },
+        { id: uid(), text:'Java',       correct:false },
+        { id: uid(), text:'C#',         correct:false }
+      ];
 
-    const q2 = createQuestion('multiple');
-    q2.text = 'Welche Aussagen über HTML sind korrekt?';
-    q2.points = 2;
-    q2.options = [
-      { id: uid(), text:'HTML beschreibt die Struktur einer Seite', correct:true },
-      { id: uid(), text:'HTML ist eine Programmiersprache',         correct:false },
-      { id: uid(), text:'HTML besteht aus Elementen/Tags',          correct:true },
-      { id: uid(), text:'HTML ersetzt CSS vollständig',             correct:false }
-    ];
+      const q2 = createQuestion('multiple');
+      q2.text = 'Welche Aussagen über HTML sind korrekt?';
+      q2.points = 2;
+      q2.options = [
+        { id: uid(), text:'HTML beschreibt die Struktur einer Seite', correct:true },
+        { id: uid(), text:'HTML ist eine Programmiersprache',         correct:false },
+        { id: uid(), text:'HTML besteht aus Elementen/Tags',          correct:true },
+        { id: uid(), text:'HTML ersetzt CSS vollständig',             correct:false }
+      ];
 
-    const q3 = createQuestion('ranking');
-    q3.text = 'Bringe die Schritte des Wasserzyklus in die richtige Reihenfolge.';
-    q3.points = 3;
-    q3.items = [
-      { id: uid(), text:'Verdunstung' },
-      { id: uid(), text:'Kondensation' },
-      { id: uid(), text:'Niederschlag' }
-    ];
+      const q3 = createQuestion('ranking');
+      q3.text = 'Bringe die Schritte des Wasserzyklus in die richtige Reihenfolge.';
+      q3.points = 3;
+      q3.items = [
+        { id: uid(), text:'Verdunstung' },
+        { id: uid(), text:'Kondensation' },
+        { id: uid(), text:'Niederschlag' }
+      ];
 
-    const q4 = createQuestion('shortanswer');
-    q4.text = 'Wie heißt die zentrale Speicher-API des Browsers für kleine Datenmengen?';
-    q4.points = 1;
-    q4.answers = ['localStorage', 'local storage', 'web storage'];
+      const q4 = createQuestion('shortanswer');
+      q4.text = 'Wie heißt die zentrale Speicher-API des Browsers für kleine Datenmengen?';
+      q4.points = 1;
+      q4.answers = ['localStorage', 'local storage', 'web storage'];
 
-    demo.questions = [q1, q2, q3, q4];
-    db.quizzes.push(demo);
-    save();
+      demo.questions = [q1, q2, q3, q4];
+      db.quizzes.push(demo);
+      const saved = await save();
+      if(!saved) throw new Error('Das Startquiz konnte nicht in der Cloud gespeichert werden.');
+    }
+    render();
+    if(mediaRecoveryWarning) toast('Einige alte Medien konnten nicht wiederhergestellt werden. Bitte füge sie erneut hinzu.');
+  }catch(error){
+    console.error('Quiz Studio konnte nicht gestartet werden',error);
+    setCloudStatus('Fehler beim Laden der Cloud-Daten');
+    toast(error.message || 'Quiz Studio konnte nicht geladen werden.');
   }
-  render();
-  if(mediaRecoveryWarning) toast('Einige früher gespeicherte Medien konnten nicht wiederhergestellt werden. Bitte füge sie erneut hinzu.');
 })();
 </script>
 </body>
