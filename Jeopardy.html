@@ -108,6 +108,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @media(max-width:760px){#app{padding:12px}.top{align-items:flex-start;flex-direction:column;padding:17px;border-radius:17px}.top>.row{width:100%}.top>.row button{flex:1}.panel{border-radius:17px;padding:16px}.library-heading{flex-direction:column}.library-count{align-self:flex-start}.cell{min-height:76px;font-size:1.13rem;border-radius:11px;padding:8px}.cell.header{font-size:.82rem;min-height:62px}.scorebar{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}.team{padding:11px 12px}.score{font-size:1.7rem}.modal{padding:10px}.modalbox{border-radius:17px}}
 @media(max-width:440px){.brand-symbol{width:42px;height:42px;flex-basis:42px;border-radius:13px}.brand{font-size:1.03rem}.brand-sub{font-size:.78rem}.games{grid-template-columns:1fr}.game-card .row button{flex:1}.scorebar{grid-template-columns:1fr 1fr}.team input{font-size:.88rem}.score{font-size:1.45rem;min-width:0}.board{min-width:610px;gap:7px}.cell{min-height:70px;font-size:1rem}.cell.header{min-height:58px;font-size:.75rem}.toast{right:12px;bottom:12px}}
 .score.positive{color:#287650}.score.negative{color:#b44240}.score.zero{color:var(--accent-dark)}
+.cell.used{color:#777467;text-decoration:none;background:#e9e7e0;border-color:#d7d3c8}
+.cell.used:hover{color:#777467;background:#e9e7e0;transform:none;box-shadow:none}
+.played-team{font-size:clamp(.78rem,1.1vw,.98rem);font-weight:850;line-height:1.2;white-space:normal;overflow-wrap:anywhere;text-decoration:none}
+.played-points{font-size:clamp(.78rem,1.05vw,.94rem);font-weight:900;line-height:1.1;color:#686456;text-decoration:none}
+.award-confirmation{display:flex;align-items:center;gap:10px;padding:11px 14px;margin-top:0;border:1px solid #bfdbc7;border-radius:13px;background:var(--ok-soft);color:#286347;font-weight:750}
+.award-confirmation strong{font-weight:900}
 .outcome-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
 .outcome-grid .action-block{margin-top:0;min-width:0}
 .action-team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -1058,8 +1064,14 @@ function renderBoard(){
         if(c.used){
           btn.classList.add('used');
           btn.disabled = true;
-          btn.textContent = '✓';
-          btn.setAttribute('aria-label', 'Bereits gespielt');
+          if(c.awardedTeam){
+            btn.innerHTML = '<span class="played-team">' + esc(c.awardedTeam) + '</span>' +
+                            '<span class="played-points">(' + (Number(c.awardedPoints) > 0 ? '+' : '') + esc(Number(c.awardedPoints) || 0) + ')</span>';
+            btn.setAttribute('aria-label', 'Gewonnen von ' + c.awardedTeam + ', ' + (Number(c.awardedPoints) || 0) + ' Punkte');
+          }else{
+            btn.textContent = '✓';
+            btn.setAttribute('aria-label', 'Bereits gespielt');
+          }
         } else {
           if(c.reduced) btn.classList.add('reduced');
           btn.textContent = String(displayPoints);
@@ -1376,7 +1388,12 @@ async function startGame(id){
   const n = Math.max(1, Math.min(8, parseInt(nStr, 10) || 2));
 
   current = JSON.parse(JSON.stringify(selected));
-  for(const cell of Object.values(current.cells || {})){ cell.used = false; cell.reduced = false; }
+  for(const cell of Object.values(current.cells || {})){
+    cell.used = false;
+    cell.reduced = false;
+    delete cell.awardedTeam;
+    delete cell.awardedPoints;
+  }
   teams = Array.from({length: n}, (_, i) => ({ name: 'Team ' + (i + 1), score: 0 }));
   editMode = false;
   currentView = 'board';
@@ -1392,7 +1409,12 @@ async function restartGame(){
     { danger: true, okLabel: 'Neu starten', title: 'Neu starten' }
   );
   if(!ok) return;
-  for(const cell of Object.values(current.cells || {})){ cell.used = false; cell.reduced = false; }
+  for(const cell of Object.values(current.cells || {})){
+    cell.used = false;
+    cell.reduced = false;
+    delete cell.awardedTeam;
+    delete cell.awardedPoints;
+  }
   teams = teams.map((t, i) => ({ name: t.name || ('Team ' + (i + 1)), score: 0 }));
   undoStack = [];
   renderBoard();
@@ -1442,9 +1464,7 @@ function openCell(i, j){
     (c.type === 'image' && c.data ? '<img class="media-preview" src="' + c.data + '" alt="">' : '') +
     (c.type === 'audio' && c.data ? '<audio class="media-preview" controls src="' + c.data + '"></audio>' : '') +
     (c.type === 'video' && c.data ? '<video class="media-preview" controls src="' + c.data + '"></video>' : '') +
-    '<div id="answerArea">' +
-      '<button class="answer-reveal-trigger" id="btnShowAnswer" type="button">Lösung einblenden</button>' +
-    '</div>' +
+    '<div id="answerArea" aria-live="polite"></div>' +
     '<div id="outcomeActions">' +
       '<div class="outcome-grid">' +
         '<div class="action-block"><h4>✓ Richtig · +' + points + ' Punkte</h4>' +
@@ -1460,10 +1480,9 @@ function openCell(i, j){
     '</div>' +
     (!hasQuestion ? '<div class="hint warning-note" style="margin-top:14px">Hinweis: Für dieses Feld wurde noch keine Frage hinterlegt.</div>' : '') +
     '<div class="row" style="margin-top:18px"><button class="secondary" id="btnCloseCell">Schließen</button></div>',
-    { focus: '#btnShowAnswer' }
+    { focus: '#btnCloseCell' }
   );
 
-  document.getElementById('btnShowAnswer').onclick = () => showAnswer(i, j);
   document.getElementById('btnCloseCell').onclick = () => closeModal();
   document.getElementById('btnNoAnswer').onclick = () => finishCell(i, j);
   document.querySelectorAll('[data-award]').forEach(b =>
@@ -1472,7 +1491,7 @@ function openCell(i, j){
     b.onclick = () => wrongAnswer(i, j, +b.getAttribute('data-wrong'), points));
 }
 
-function showAnswer(i, j){
+function revealSolution(i, j){
   const c = current.cells[i + ',' + j] || {};
   const area = document.getElementById('answerArea');
   if(!area) return;
@@ -1483,16 +1502,56 @@ function showAnswer(i, j){
     '</div>';
 }
 
+function showAwardConfirmation(teamName, points){
+  const outcome = document.getElementById('outcomeActions');
+  if(!outcome) return;
+  outcome.innerHTML =
+    '<div class="award-confirmation" role="status">' +
+      '<span aria-hidden="true">✓</span><span><strong>' + esc(teamName) + '</strong> erhält (' +
+      (Number(points) > 0 ? '+' : '') + esc(Number(points) || 0) + ' Punkte).</span>' +
+    '</div>';
+}
+
+function updatePlayedBoardCell(i, j, cell){
+  const btn = document.querySelector('.cell[data-i="' + i + '"][data-j="' + j + '"]');
+  if(!btn) return;
+  btn.classList.add('used');
+  btn.classList.remove('reduced');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="played-team">' + esc(cell.awardedTeam || '') + '</span>' +
+                  '<span class="played-points">(' + (Number(cell.awardedPoints) > 0 ? '+' : '') + esc(Number(cell.awardedPoints) || 0) + ')</span>';
+  btn.setAttribute('aria-label', 'Gewonnen von ' + (cell.awardedTeam || 'unbekannt') + ', ' + (Number(cell.awardedPoints) || 0) + ' Punkte');
+}
+
+function updateTeamScore(ti, delta){
+  const team = teams[ti];
+  if(!team) return;
+  const el = document.querySelector('.team[data-team="' + ti + '"] .score');
+  if(el){
+    el.textContent = String(team.score);
+    el.classList.remove('positive', 'negative', 'zero');
+    el.classList.add(scoreToneClass(team.score));
+    flashTeam(ti, delta);
+  }
+}
+
 function awardTeam(i, j, ti, p){
   if(ti < 0 || ti >= teams.length) return;
+  const cell = current.cells[i + ',' + j];
+  if(!cell || cell.used) return;
   pushUndo();
-  teams[ti].score += Number(p) || 0;
-  current.cells[i + ',' + j].used = true;
-  closeModal();
-  renderBoard();
-  flashTeam(ti, Number(p) || 0);
-  toast('+' + (Number(p) || 0) + ' Punkte für ' + (teams[ti].name || ('Team ' + (ti + 1))));
-  focusCellOrNext(i, j);
+  const points = Number(p) || 0;
+  const teamName = teams[ti].name || ('Team ' + (ti + 1));
+  teams[ti].score += points;
+  cell.used = true;
+  cell.reduced = false;
+  cell.awardedTeam = teamName;
+  cell.awardedPoints = points;
+  updateTeamScore(ti, points);
+  updatePlayedBoardCell(i, j, cell);
+  revealSolution(i, j);
+  showAwardConfirmation(teamName, points);
+  toast('+' + points + ' Punkte für ' + teamName);
 }
 
 function wrongAnswer(i, j, ti, p){
@@ -1540,14 +1599,21 @@ function wrongAnswer(i, j, ti, p){
 
 function stealTeam(i, j, ti, p){
   if(ti < 0 || ti >= teams.length) return;
+  const cell = current.cells[i + ',' + j];
+  if(!cell || cell.used) return;
   pushUndo();
-  teams[ti].score += Number(p) || 0;
-  current.cells[i + ',' + j].used = true;
-  closeModal();
-  renderBoard();
-  flashTeam(ti, Number(p) || 0);
-  toast('+' + (Number(p) || 0) + ' Abstauberpunkte für ' + (teams[ti].name || ('Team ' + (ti + 1))));
-  focusCellOrNext(i, j);
+  const points = Number(p) || 0;
+  const teamName = teams[ti].name || ('Team ' + (ti + 1));
+  teams[ti].score += points;
+  cell.used = true;
+  cell.reduced = false;
+  cell.awardedTeam = teamName;
+  cell.awardedPoints = points;
+  updateTeamScore(ti, points);
+  updatePlayedBoardCell(i, j, cell);
+  revealSolution(i, j);
+  showAwardConfirmation(teamName, points);
+  toast('+' + points + ' Abstauberpunkte für ' + teamName);
 }
 
 function finishCell(i, j){
