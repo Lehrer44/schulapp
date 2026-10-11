@@ -265,6 +265,27 @@ grant execute on function public.end_all_owned_sessions() to authenticated;
 grant execute on function public.delete_all_owned_sessions() to authenticated;
 
 
+
+-- Shared, read-only Jeopardy starter catalog.
+-- Personal teacher edits remain in the private jeopardy-games Storage bucket.
+create table if not exists public.jeopardy_catalog (
+  id text primary key,
+  payload jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.jeopardy_catalog enable row level security;
+
+drop policy if exists "jeopardy_catalog_read_published" on public.jeopardy_catalog;
+create policy "jeopardy_catalog_read_published"
+on public.jeopardy_catalog
+for select
+to anon, authenticated
+using (id = 'default');
+
+grant select on public.jeopardy_catalog to anon, authenticated;
+revoke insert, update, delete on public.jeopardy_catalog from anon, authenticated;
+
 -- Jeopardy game library: each authenticated teacher has a private JSON collection.
 -- The browser may overwrite only its own fixed object in the private bucket.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
