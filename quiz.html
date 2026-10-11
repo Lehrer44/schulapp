@@ -76,7 +76,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .small{font-size:13px}
 .spacer{flex:1}
 
-.wrap{max-width:1080px;margin:0 auto;padding:clamp(16px,3vw,38px)}
+.wrap{width:100%;max-width:1500px;margin:0 auto;padding:clamp(16px,3vw,38px)}
 
 /* ---------- Top bar ---------- */
 .top{
@@ -122,15 +122,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 
 /* ---------- Quiz cards ---------- */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.grid{display:flex;flex-direction:column;gap:10px}
 .qzcard{
-  margin:0;display:flex;flex-direction:column;gap:9px;
+  min-width:0;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;
   background:linear-gradient(160deg,#fffefa,var(--surface-soft));
-  border:1px solid var(--line);border-radius:var(--radius-sm);
-  padding:17px 18px;box-shadow:var(--shadow-soft);
+  border:1px solid var(--line);border-radius:15px;
+  padding:15px 17px;box-shadow:var(--shadow-soft);
   transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
 }
 .qzcard:hover{border-color:var(--line-strong);box-shadow:0 8px 20px rgba(69,59,37,.07);transform:translateY(-1px)}
+.qzcard h3,.qzcard p,.qzcard .chips{grid-column:1;min-width:0}
+.qzcard .chips{margin-top:0}
+.qzcard .card-actions{grid-column:2;grid-row:1 / span 3;justify-content:flex-end;align-self:center;margin:0;padding:0}
 .qzcard h3{font-size:1.03rem;letter-spacing:-.02em;margin:0;overflow-wrap:anywhere}
 .qzcard p{margin:0;min-height:20px;line-height:1.5;font-size:.9rem}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
@@ -285,7 +288,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .top{flex-direction:column;align-items:flex-start;padding:17px}
   .hero-actions{width:100%}
   .hero-actions .btn{flex:1}
-  .grid{grid-template-columns:1fr}
+  .grid{display:flex;flex-direction:column}
+  .qzcard{grid-template-columns:1fr;align-items:stretch}
+  .qzcard .card-actions{grid-column:1;grid-row:auto;justify-content:flex-start;flex-wrap:wrap;padding-top:10px}
   .title-input{font-size:1.28rem}
   .qhead{gap:6px}
 }
