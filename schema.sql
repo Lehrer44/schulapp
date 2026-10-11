@@ -329,3 +329,34 @@ with check (
   bucket_id = 'jeopardy-games'
   and name = ((select auth.uid())::text || '/Jeopardy-Spiele.json')
 );
+
+-- Quiz Studio cloud library: one private JSON file per authenticated teacher.
+-- The browser uses the publishable key; RLS limits every object to its owner.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('quiz-studio', 'quiz-studio', false, 52428800, array['application/json'])
+on conflict (id) do update
+set name = excluded.name,
+    public = false,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "quiz_studio_read_own" on storage.objects;
+create policy "quiz_studio_read_own"
+on storage.objects for select to authenticated
+using (bucket_id = 'quiz-studio' and name = ((select auth.uid())::text || '/Quiz-Studio.json'));
+
+drop policy if exists "quiz_studio_insert_own" on storage.objects;
+create policy "quiz_studio_insert_own"
+on storage.objects for insert to authenticated
+with check (bucket_id = 'quiz-studio' and name = ((select auth.uid())::text || '/Quiz-Studio.json'));
+
+drop policy if exists "quiz_studio_update_own" on storage.objects;
+create policy "quiz_studio_update_own"
+on storage.objects for update to authenticated
+using (bucket_id = 'quiz-studio' and name = ((select auth.uid())::text || '/Quiz-Studio.json'))
+with check (bucket_id = 'quiz-studio' and name = ((select auth.uid())::text || '/Quiz-Studio.json'));
+
+drop policy if exists "quiz_studio_delete_own" on storage.objects;
+create policy "quiz_studio_delete_own"
+on storage.objects for delete to authenticated
+using (bucket_id = 'quiz-studio' and name = ((select auth.uid())::text || '/Quiz-Studio.json'));
