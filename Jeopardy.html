@@ -269,6 +269,51 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .play-screen .answer-reveal-trigger{min-height:34px;padding:5px 12px}
 }
 
+
+/* Give question images real presentation size instead of thumbnail height. */
+.play-screen .modalbox:has(img.media-preview){gap:clamp(4px,.55vh,7px)}
+.play-screen .modalbox:has(img.media-preview) .question-box{
+  flex:0 1 auto;
+  min-height:clamp(76px,10vh,128px);
+  max-height:22vh;
+  padding:clamp(10px,1.5vh,18px) clamp(14px,2.5vw,30px);
+  font-size:clamp(1.15rem,2.25vw,1.85rem);
+}
+.play-screen .modalbox:has(img.media-preview) img.media-preview{
+  flex:0 1 auto;
+  display:block;
+  width:min(100%,960px);
+  height:min(44vh,480px);
+  max-width:100%;
+  max-height:min(44vh,480px);
+  min-height:0;
+  margin:0 auto;
+  object-fit:contain;
+  object-position:center;
+}
+@media(max-width:760px){
+  .play-screen .modalbox:has(img.media-preview) .question-box{min-height:68px;max-height:19vh}
+  .play-screen .modalbox:has(img.media-preview) img.media-preview{
+    width:min(100%,820px);
+    height:min(32vh,280px);
+    max-height:min(32vh,280px);
+  }
+}
+@media(max-width:520px){
+  .play-screen .modalbox:has(img.media-preview) .question-box{min-height:60px;max-height:17vh;padding:10px}
+  .play-screen .modalbox:has(img.media-preview) img.media-preview{
+    height:min(28vh,220px);
+    max-height:min(28vh,220px);
+  }
+}
+@media(max-height:650px){
+  .play-screen .modalbox:has(img.media-preview) .question-box{min-height:54px;max-height:17vh;padding:8px 12px}
+  .play-screen .modalbox:has(img.media-preview) img.media-preview{
+    height:min(34vh,230px);
+    max-height:min(34vh,230px);
+  }
+}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
