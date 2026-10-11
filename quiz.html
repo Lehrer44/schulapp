@@ -141,6 +141,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .card-actions{display:flex;gap:6px;align-items:center;margin-top:auto;padding-top:10px;flex-wrap:wrap}
 .card-actions .btn.small{padding:.42rem .75rem;font-size:.82rem}
 .empty{text-align:center;padding:48px 20px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:14px;background:rgba(250,248,241,.6)}
+.question-media-editor{margin:10px 0 2px;padding:12px;background:var(--surface-soft);border:1px solid var(--line);border-radius:12px}
+.media-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.media-upload-label{position:relative;overflow:hidden;cursor:pointer}
+.media-upload-label input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.media-paste-hint{font-size:.82rem;color:var(--muted);line-height:1.5;margin-top:8px}
+.media-preview-editor{display:block;max-width:100%;max-height:220px;margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:#fffefa;object-fit:contain}
+audio.media-preview-editor{width:min(100%,560px);height:42px}
+video.media-preview-editor{width:auto;max-width:100%;max-height:220px}
+.question-media-play{display:block;max-width:100%;max-height:320px;margin:0 auto 18px;border-radius:12px;object-fit:contain}
+audio.question-media-play{width:min(100%,560px);height:42px}
+video.question-media-play{width:auto;max-width:100%;max-height:320px}
 
 /* ---------- Editor ---------- */
 .topbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
@@ -328,6 +339,10 @@ const TYPES = {
 let db = { quizzes: [] };
 let state = { view:'list', draft:null, session:null };
 let saveTimer = null;
+const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
+let indexedDbPromise = null;
+let saveQueue = Promise.resolve();
+let mediaRecoveryWarning = false;
 
 /* ---------- Helpers ---------- */
 const $app = document.getElementById('app');
@@ -371,18 +386,121 @@ function toast(msg){
 }
 
 /* ---------- Persistenz ---------- */
-function load(){
+/*
+  Quiztexte und Metadaten bleiben als schneller Fallback in localStorage.
+  Medien und der vollständige Quizstand werden in IndexedDB gespeichert,
+  da Bilder, Audio und Video das localStorage-Quota schnell überschreiten.
+*/
+function openQuizDatabase(){
+  if(!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB wird von diesem Browser nicht unterstützt.'));
+  if(!indexedDbPromise){
+    indexedDbPromise = new Promise((resolve,reject)=>{
+      const request = indexedDB.open('quizstudio-local-data',1);
+      request.onupgradeneeded = ()=>{
+        const idb = request.result;
+        if(!idb.objectStoreNames.contains('state')) idb.createObjectStore('state');
+      };
+      request.onsuccess = ()=>resolve(request.result);
+      request.onerror = ()=>reject(request.error || new Error('Datenbank konnte nicht geöffnet werden.'));
+    });
+  }
+  return indexedDbPromise;
+}
+function readIndexedState(){
+  return openQuizDatabase().then(idb=>new Promise((resolve,reject)=>{
+    const tx = idb.transaction('state','readonly');
+    const request = tx.objectStore('state').get('quizzes');
+    request.onsuccess = ()=>resolve(request.result || null);
+    request.onerror = ()=>reject(request.error || new Error('Quizdaten konnten nicht geladen werden.'));
+  }));
+}
+function writeIndexedState(snapshot){
+  return openQuizDatabase().then(idb=>new Promise((resolve,reject)=>{
+    const tx = idb.transaction('state','readwrite');
+    tx.objectStore('state').put(snapshot,'quizzes');
+    tx.oncomplete = ()=>resolve(true);
+    tx.onerror = ()=>reject(tx.error || new Error('Quizdaten konnten nicht gespeichert werden.'));
+    tx.onabort = ()=>reject(tx.error || new Error('Speichern der Quizdaten wurde abgebrochen.'));
+  }));
+}
+function makeLocalBackup(source){
+  const backup = deepCopy(source);
+  (backup.quizzes || []).forEach(quiz=>{
+    (quiz.questions || []).forEach(question=>{
+      if(question.media && question.media.data){
+        question.media = {
+          type: question.media.type,
+          name: question.media.name || '',
+          storedInIndexedDB: true
+        };
+      }
+    });
+  });
+  return backup;
+}
+function clearUnavailableMedia(source){
+  let lost = false;
+  (source.quizzes || []).forEach(quiz=>{
+    (quiz.questions || []).forEach(question=>{
+      if(question.media && question.media.storedInIndexedDB && !question.media.data){
+        question.media = null;
+        lost = true;
+      }
+    });
+  });
+  return lost;
+}
+async function load(){
+  let localData = null;
+  let localTimestamp = 0;
   try{
     const raw = localStorage.getItem(LS_KEY);
     if(raw){
       const parsed = JSON.parse(raw);
-      if(parsed && Array.isArray(parsed.quizzes)) db = parsed;
+      if(parsed && Array.isArray(parsed.quizzes)){
+        localTimestamp = Number(parsed.__quizStudioSavedAt) || 0;
+        delete parsed.__quizStudioSavedAt;
+        localData = parsed;
+        db = parsed;
+      }
     }
-  }catch(e){ console.warn('Laden fehlgeschlagen', e); }
+  }catch(e){ console.warn('Laden aus localStorage fehlgeschlagen', e); }
+
+  try{
+    const indexed = await readIndexedState();
+    const indexedTimestamp = indexed ? (Number(indexed.__quizStudioSavedAt) || 0) : 0;
+    if(indexed && Array.isArray(indexed.quizzes) && indexedTimestamp >= localTimestamp){
+      delete indexed.__quizStudioSavedAt;
+      db = indexed;
+    }else if(localData){
+      if(clearUnavailableMedia(db)) mediaRecoveryWarning = true;
+      const migrated = deepCopy(db);
+      migrated.__quizStudioSavedAt = localTimestamp || Date.now();
+      await writeIndexedState(migrated);
+    }
+  }catch(e){
+    console.warn('IndexedDB konnte nicht geladen werden', e);
+    if(clearUnavailableMedia(db)) mediaRecoveryWarning = true;
+  }
 }
 function save(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(db)); }
-  catch(e){ toast('Speichern fehlgeschlagen: ' + e.message); }
+  const stamp = Date.now();
+  const snapshot = deepCopy(db);
+  snapshot.__quizStudioSavedAt = stamp;
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(makeLocalBackup(snapshot)));
+  }catch(e){
+    console.warn('Lokale Sicherung fehlgeschlagen', e);
+  }
+  saveQueue = saveQueue.catch(()=>{}).then(()=>writeIndexedState(snapshot)).catch(err=>{
+    console.warn('IndexedDB-Speicherung fehlgeschlagen', err);
+    try{
+      // Letzter Ausweg für kleinere Quizze, falls IndexedDB nicht verfügbar ist.
+      localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
+    }catch(localError){
+      toast('Speichern fehlgeschlagen. Der Browser konnte die Daten inklusive Medien nicht dauerhaft speichern.');
+    }
+  });
 }
 function scheduleSave(){
   clearTimeout(saveTimer);
@@ -533,6 +651,37 @@ function viewEditor(){
   </div>`;
 }
 
+function mediaMarkup(media, className){
+  if(!media || typeof media.data !== 'string' || !media.data) return '';
+  const src = esc(media.data);
+  if(media.type === 'image' && /^data:image\//i.test(media.data)){
+    return `<img class="${className}" src="${src}" alt="${esc(media.name || 'Bild zur Frage')}">`;
+  }
+  if(media.type === 'audio' && /^data:audio\//i.test(media.data)){
+    return `<audio class="${className}" controls preload="metadata" src="${src}">Dein Browser unterstützt die Audiowiedergabe nicht.</audio>`;
+  }
+  if(media.type === 'video' && /^data:video\//i.test(media.data)){
+    return `<video class="${className}" controls preload="metadata" src="${src}">Dein Browser unterstützt die Videowiedergabe nicht.</video>`;
+  }
+  return '';
+}
+function questionMediaEditor(q){
+  const hasMedia = Boolean(q.media && q.media.data);
+  const missingMedia = Boolean(q.media && q.media.storedInIndexedDB && !q.media.data);
+  return `
+    <div class="question-media-editor">
+      <div class="media-tools">
+        <label class="btn secondary small media-upload-label">＋ Medien auswählen
+          <input type="file" accept="image/*,audio/*,video/*" data-qid="${q.id}" data-media-input aria-label="Bild-, Audio- oder Videodatei auswählen">
+        </label>
+        ${hasMedia ? `<button class="btn danger small" data-action="remove-question-media" data-qid="${q.id}">Medien entfernen</button>` : ''}
+      </div>
+      <div class="media-paste-hint">Ein Bild kannst du kopieren und direkt im Fragenfeld mit Strg+V einfügen. Audio- und Videodateien wählst du über „Medien auswählen“ aus. Bei größeren Dateien fragt das Studio vor dem Einfügen nach.</div>
+      ${mediaMarkup(q.media,'media-preview-editor')}
+      ${missingMedia ? '<div class="media-paste-hint">Die frühere Mediendatei konnte nicht wiederhergestellt werden. Bitte füge sie erneut hinzu.</div>' : ''}
+      ${hasMedia ? `<div class="media-paste-hint">Aktuelle Datei: ${esc(q.media.name || 'Eingebettete Mediendatei')}</div>` : ''}
+    </div>`;
+}
 function questionCard(q,i){
   const t = TYPES[q.type] || { label:q.type, icon:'?' };
   return `
@@ -549,6 +698,7 @@ function questionCard(q,i){
       <button class="icon-btn danger" data-action="del-question" data-qid="${q.id}" title="Frage löschen">✕</button>
     </div>
     <textarea class="qtext" data-qid="${q.id}" data-field="text" placeholder="Fragestellung …">${esc(q.text)}</textarea>
+    ${questionMediaEditor(q)}
     <div class="qbody">${questionBody(q)}</div>
   </div>`;
 }
@@ -695,6 +845,7 @@ function viewPlay(){
   <div class="panel play-panel">
     <div class="play-meta">Frage ${s.index+1} von ${total} · ${fmt(q.points)} ${Number(q.points)===1?'Punkt':'Punkte'}</div>
     <h2 class="play-question">${esc(q.text) || '<em class="muted">Keine Frage formuliert</em>'}</h2>
+    ${mediaMarkup(q.media,'question-media-play')}
     ${playBody(q, ans, s.checked)}
     ${(s.checked && s.immediate) ? feedbackBox(q, res) : ''}
     <div class="play-actions">
@@ -967,6 +1118,16 @@ document.addEventListener('click', (e)=>{
       }
       break;
     }
+    case 'remove-question-media': {
+      const q = findQ();
+      if(q){
+        q.media = null;
+        save();
+        render();
+        toast('Medien aus der Frage entfernt');
+      }
+      break;
+    }
     case 'play-quiz': {
       startPlay(id);
       break;
@@ -1155,6 +1316,94 @@ document.addEventListener('input', (e)=>{
   else if(state.view === 'play') playInput(t);
 });
 
+/* ---------- Medien in Fragen ---------- */
+document.addEventListener('paste', (event)=>{
+  const input = event.target;
+  if(state.view !== 'editor' || !input.matches('textarea.qtext')) return;
+  const clipboard = event.clipboardData;
+  if(!clipboard || !clipboard.items) return;
+  const imageItem = Array.from(clipboard.items).find(item=>
+    item.kind === 'file' && /^image\//i.test(item.type || '')
+  );
+  if(!imageItem) return;
+  const imageFile = imageItem.getAsFile();
+  if(!imageFile) return;
+  event.preventDefault();
+
+  const qid = input.dataset.qid;
+  const question = state.draft && state.draft.questions.find(item=>item.id === qid);
+  if(!question) return;
+
+  const plainText = clipboard.getData('text/plain');
+  if(plainText) input.setRangeText(plainText,input.selectionStart,input.selectionEnd,'end');
+  question.text = input.value;
+
+  if(imageFile.size > MAX_MEDIA_SIZE){
+    save();
+    toast('Das kopierte Bild ist '+(imageFile.size/1024/1024).toFixed(1)+' MB groß. Bitte kopiere ein kleineres Bild (max. 5 MB), wie bei Jeopardy.');
+    return;
+  }
+
+  const scrollY = window.scrollY;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const data = String(reader.result || '');
+    if(!data.startsWith('data:image/')){
+      toast('Das eingefügte Element wurde nicht als Bild erkannt.');
+      return;
+    }
+    const ext = (imageFile.type.split('/')[1] || 'png').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');
+    question.media = {type:'image',data,name:imageFile.name || ('clipboard-image.'+ext)};
+    save();
+    render();
+    window.scrollTo(0,scrollY);
+    toast('Bild eingefügt und der Frage zugeordnet');
+  };
+  reader.onerror = ()=>toast('Das kopierte Bild konnte nicht gelesen werden. Bitte füge es erneut ein.');
+  reader.readAsDataURL(imageFile);
+});
+
+document.addEventListener('change', (event)=>{
+  const input = event.target;
+  if(!input.matches('input[data-media-input]')) return;
+  if(state.view !== 'editor' || !state.draft) return;
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const question = state.draft.questions.find(item=>item.id === input.dataset.qid);
+  if(!question) return;
+
+  const type = file.type.startsWith('image/') ? 'image'
+             : file.type.startsWith('audio/') ? 'audio'
+             : file.type.startsWith('video/') ? 'video' : '';
+  if(!type){
+    toast('Bitte wähle eine Bild-, Audio- oder Videodatei aus.');
+    input.value = '';
+    return;
+  }
+  if(file.size > MAX_MEDIA_SIZE && !confirm('Die Datei ist '+(file.size/1024/1024).toFixed(1)+' MB groß. Das vergrößert auch die Quiz-Sicherung. Möchtest du die Datei trotzdem einfügen?')){
+    input.value = '';
+    return;
+  }
+
+  question.text = input.closest('.qcard')?.querySelector('textarea.qtext')?.value ?? question.text;
+  const scrollY = window.scrollY;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const data = String(reader.result || '');
+    if(!data.startsWith('data:'+type+'/')){
+      toast('Die ausgewählte Datei konnte nicht als unterstütztes Medium gelesen werden.');
+      return;
+    }
+    question.media = {type,data,name:file.name || type};
+    save();
+    render();
+    window.scrollTo(0,scrollY);
+    toast(type === 'image' ? 'Bild zur Frage hinzugefügt' : type === 'audio' ? 'Audio zur Frage hinzugefügt' : 'Video zur Frage hinzugefügt');
+  };
+  reader.onerror = ()=>toast('Die Datei konnte nicht gelesen werden.');
+  reader.readAsDataURL(file);
+});
+
 function editorInput(t){
   const quiz = state.draft;
   if(!quiz) return;
@@ -1295,51 +1544,54 @@ function importData(){
 /* =========================================================
    Start
    ========================================================= */
-load();
-if(db.quizzes.length === 0){
-  const demo = newQuiz();
-  demo.title = 'Willkommen bei Quiz Studio';
-  demo.description = 'Ein kleines Beispiel-Quiz – du kannst es bearbeiten oder löschen.';
+(async function startQuizStudio(){
+  await load();
+  if(db.quizzes.length === 0){
+    const demo = newQuiz();
+    demo.title = 'Willkommen bei Quiz Studio';
+    demo.description = 'Ein kleines Beispiel-Quiz – du kannst es bearbeiten oder löschen.';
 
-  const q1 = createQuestion('single');
-  q1.text = 'Welche dieser Sprachen läuft direkt im Browser?';
-  q1.points = 1;
-  q1.options = [
-    { id: uid(), text:'JavaScript', correct:true },
-    { id: uid(), text:'Python',     correct:false },
-    { id: uid(), text:'Java',       correct:false },
-    { id: uid(), text:'C#',         correct:false }
-  ];
+    const q1 = createQuestion('single');
+    q1.text = 'Welche dieser Sprachen läuft direkt im Browser?';
+    q1.points = 1;
+    q1.options = [
+      { id: uid(), text:'JavaScript', correct:true },
+      { id: uid(), text:'Python',     correct:false },
+      { id: uid(), text:'Java',       correct:false },
+      { id: uid(), text:'C#',         correct:false }
+    ];
 
-  const q2 = createQuestion('multiple');
-  q2.text = 'Welche Aussagen über HTML sind korrekt?';
-  q2.points = 2;
-  q2.options = [
-    { id: uid(), text:'HTML beschreibt die Struktur einer Seite', correct:true },
-    { id: uid(), text:'HTML ist eine Programmiersprache',         correct:false },
-    { id: uid(), text:'HTML besteht aus Elementen/Tags',          correct:true },
-    { id: uid(), text:'HTML ersetzt CSS vollständig',             correct:false }
-  ];
+    const q2 = createQuestion('multiple');
+    q2.text = 'Welche Aussagen über HTML sind korrekt?';
+    q2.points = 2;
+    q2.options = [
+      { id: uid(), text:'HTML beschreibt die Struktur einer Seite', correct:true },
+      { id: uid(), text:'HTML ist eine Programmiersprache',         correct:false },
+      { id: uid(), text:'HTML besteht aus Elementen/Tags',          correct:true },
+      { id: uid(), text:'HTML ersetzt CSS vollständig',             correct:false }
+    ];
 
-  const q3 = createQuestion('ranking');
-  q3.text = 'Bringe die Schritte des Wasserzyklus in die richtige Reihenfolge.';
-  q3.points = 3;
-  q3.items = [
-    { id: uid(), text:'Verdunstung' },
-    { id: uid(), text:'Kondensation' },
-    { id: uid(), text:'Niederschlag' }
-  ];
+    const q3 = createQuestion('ranking');
+    q3.text = 'Bringe die Schritte des Wasserzyklus in die richtige Reihenfolge.';
+    q3.points = 3;
+    q3.items = [
+      { id: uid(), text:'Verdunstung' },
+      { id: uid(), text:'Kondensation' },
+      { id: uid(), text:'Niederschlag' }
+    ];
 
-  const q4 = createQuestion('shortanswer');
-  q4.text = 'Wie heißt die zentrale Speicher-API des Browsers für kleine Datenmengen?';
-  q4.points = 1;
-  q4.answers = ['localStorage', 'local storage', 'web storage'];
+    const q4 = createQuestion('shortanswer');
+    q4.text = 'Wie heißt die zentrale Speicher-API des Browsers für kleine Datenmengen?';
+    q4.points = 1;
+    q4.answers = ['localStorage', 'local storage', 'web storage'];
 
-  demo.questions = [q1, q2, q3, q4];
-  db.quizzes.push(demo);
-  save();
-}
-render();
+    demo.questions = [q1, q2, q3, q4];
+    db.quizzes.push(demo);
+    save();
+  }
+  render();
+  if(mediaRecoveryWarning) toast('Einige früher gespeicherte Medien konnten nicht wiederhergestellt werden. Bitte füge sie erneut hinzu.');
+})();
 </script>
 </body>
 </html>
