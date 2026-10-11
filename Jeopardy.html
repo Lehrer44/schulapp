@@ -170,6 +170,88 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
  .play-screen .panel.board-wrap{padding:5px}
  .play-screen .cell.header{font-size:clamp(.78rem,1.3vw,1.1rem);padding:4px}
 }
+
+/* Compact, viewport-aware question dialog: keep controls small and the question dominant. */
+.play-screen .modal:has(.question-box){padding:clamp(8px,1.5vh,16px);overflow:hidden}
+.play-screen .modalbox:has(.question-box){
+  width:min(1100px,100%);
+  max-height:calc(100dvh - clamp(16px,3vh,32px));
+  padding:clamp(14px,2vh,24px) clamp(16px,2vw,28px);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  gap:clamp(5px,.8vh,10px);
+}
+.play-screen .modalbox:has(.question-box) h2{flex:0 0 auto;margin:0;font-size:.95rem}
+.play-screen .question-box{
+  flex:1 1 auto;
+  min-height:clamp(100px,18vh,190px);
+  max-height:38vh;
+  margin-top:0;
+  padding:clamp(14px,2.5vh,30px) clamp(16px,3vw,38px);
+  font-size:clamp(1.35rem,2.8vw,2.35rem);
+  line-height:1.22;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+.play-screen .media-preview{
+  flex:0 1 auto;
+  max-height:clamp(90px,20vh,210px);
+  width:auto;
+  margin:0 auto;
+}
+.play-screen .modalbox:has(.question-box) audio.media-preview{width:min(100%,560px);height:42px}
+.play-screen .answer-reveal-trigger{
+  flex:0 0 auto;
+  min-height:42px;
+  margin-top:0;
+  padding:8px 16px;
+  border-radius:12px;
+  font-size:1rem;
+  box-shadow:0 4px 10px rgba(102,90,61,.12);
+}
+.play-screen .answer-reveal-trigger:hover:not(:disabled){transform:translateY(-1px)}
+.play-screen .outcome-actions{flex:0 0 auto;margin-top:0}
+.play-screen .outcome-grid{gap:8px;margin-top:0}
+.play-screen .outcome-grid .action-block{padding:10px 12px}
+.play-screen .outcome-grid .action-block h4{margin:0 0 7px;font-size:.88rem}
+.play-screen .action-team-grid{gap:6px}
+.play-screen .action-team-grid button{padding:.5rem .55rem;font-size:.9rem}
+.play-screen .no-answer-trigger{min-height:40px;margin-top:8px;padding:7px 12px;font-size:.95rem;border-radius:11px}
+.play-screen .answer-reveal{
+  flex:1 1 auto;
+  min-height:100px;
+  max-height:38vh;
+  padding:clamp(14px,2.5vh,28px);
+  overflow:auto;
+}
+.play-screen .answer-text{font-size:clamp(1.35rem,2.5vw,2.1rem)}
+@media(max-width:760px){
+  .play-screen .modal:has(.question-box){padding:8px}
+  .play-screen .modalbox:has(.question-box){max-height:calc(100dvh - 16px);padding:14px;gap:7px}
+  .play-screen .question-box{min-height:90px;max-height:32vh;font-size:clamp(1.25rem,5vw,1.9rem);padding:16px}
+  .play-screen .media-preview{max-height:17vh}
+  .play-screen .outcome-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .play-screen .outcome-grid .action-block{padding:8px}
+  .play-screen .action-team-grid button{padding:.45rem .3rem;font-size:.82rem}
+}
+@media(max-width:520px){
+  .play-screen .modalbox:has(.question-box){padding:11px}
+  .play-screen .question-box{min-height:82px;max-height:28vh;font-size:clamp(1.15rem,4.8vw,1.55rem)}
+  .play-screen .outcome-grid .action-block h4{font-size:.78rem}
+  .play-screen .no-answer-trigger{min-height:36px}
+}
+@media(max-height:650px){
+  .play-screen .modalbox:has(.question-box){gap:5px;padding:10px 16px}
+  .play-screen .modalbox:has(.question-box) h2{font-size:.82rem}
+  .play-screen .question-box{min-height:70px;max-height:30vh;padding:10px 16px;font-size:clamp(1.15rem,2.3vw,1.8rem)}
+  .play-screen .media-preview{max-height:14vh}
+  .play-screen .outcome-grid .action-block{padding:6px 9px}
+  .play-screen .action-team-grid button{padding:.35rem .4rem}
+  .play-screen .no-answer-trigger{min-height:32px;margin-top:5px}
+  .play-screen .answer-reveal-trigger{min-height:34px;padding:5px 12px}
+}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
