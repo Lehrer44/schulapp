@@ -136,6 +136,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .editor-board .cell.editable{cursor:pointer}
 .editor-board .cell.editor-answer-cell{padding:7px;align-items:stretch;justify-content:stretch;gap:5px;cursor:default}
 .grid-answer-input{display:block;flex:1 1 auto;width:100%;min-width:0;min-height:58px;height:calc(100% - 28px);resize:vertical;border:1px solid transparent;border-radius:9px;padding:8px;background:rgba(255,255,255,.68);color:var(--text);font-family:inherit;font-size:.9rem;font-weight:650;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
+.clipboard-image-status{margin-top:7px;padding:8px 10px;border-radius:9px;background:var(--surface-soft);border:1px dashed var(--line-strong)}
+.clipboard-image-status.ready{background:var(--ok-soft);border-style:solid;border-color:#bfdbc7;color:#286347}
+.clipboard-image-preview{display:none;max-width:100%;max-height:180px;margin:10px auto 0;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft)}
+.clipboard-image-preview.visible{display:block}
 .grid-answer-input::placeholder{color:var(--muted);font-weight:550}
 .grid-answer-input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);background:var(--surface)}
 .grid-answer-input.has-answer{background:rgba(255,255,255,.9)}
@@ -1178,6 +1182,7 @@ function focusCellOrNext(i, j){
 /* ============ Edit Cell ============ */
 function editCell(i, j){
   const c = current.cells[i + ',' + j] || { text: '', answer: '', type: 'text', data: '', name: '' };
+  let pastedImage = null;
   const currentMedia = c.data
     ? '<div class="hint" style="margin-top:6px">Aktuelle Datei: <b>' + esc(c.name || 'eingebettete Datei') + '</b> (' + esc(c.type) + ')</div>'
     : '<div class="hint" style="margin-top:6px">Keine Datei hinterlegt.</div>';
@@ -1185,7 +1190,10 @@ function editCell(i, j){
   openModalWithFocus(
     '<h2>Feld bearbeiten</h2>' +
     '<div class="field"><label for="ctext">Frage / Aufgabe</label>' +
-      '<textarea id="ctext" placeholder="Hier die Frage eingeben...">' + esc(c.text || '') + '</textarea></div>' +
+      '<textarea id="ctext" placeholder="Hier die Frage eingeben...">' + esc(c.text || '') + '</textarea>' +
+      '<div id="clipboardImageStatus" class="hint clipboard-image-status">Tipp: Kopiere ein Bild und füge es hier mit Strg+V ein. Du musst es nicht erst herunterladen.</div>' +
+      '<img id="clipboardImagePreview" class="clipboard-image-preview' + (c.type === 'image' && c.data ? ' visible' : '') + '" alt="Bildvorschau" ' + (c.type === 'image' && c.data ? 'src="' + c.data + '"' : '') + '>' +
+    '</div>' +
     '<div class="field" style="margin-top:10px"><label for="ctype">Medientyp</label>' +
       '<select id="ctype">' +
         '<option value="text">Nur Text</option>' +
@@ -1196,7 +1204,7 @@ function editCell(i, j){
     '<div class="field" style="margin-top:10px"><label for="cfile">Datei auswählen</label>' +
       '<input id="cfile" type="file" accept="image/*,audio/*,video/*">' +
       currentMedia +
-      '<div class="hint">Die Datei wird beim Speichern direkt in die gewählte Spiele-Datei eingebettet. Dateien über ' + (MAX_MEDIA_SIZE / 1024 / 1024) + ' MB blähen die JSON-Datei stark auf.</div>' +
+      '<div class="hint">Alternativ kannst du hier eine Bild-, Audio- oder Videodatei auswählen. Medien werden direkt in der Spielvorlage gespeichert (max. ' + (MAX_MEDIA_SIZE / 1024 / 1024) + ' MB).</div>' +
     '</div>' +
     '<div class="row" style="margin-top:15px">' +
       '<button id="btnCellSave">Übernehmen</button>' +
@@ -1206,9 +1214,66 @@ function editCell(i, j){
     { focus: '#ctext' }
   );
 
-  document.getElementById('ctype').value = c.type || 'text';
+  const typeSelect = document.getElementById('ctype');
+  typeSelect.value = c.type || 'text';
+  const questionInput = document.getElementById('ctext');
+  questionInput.addEventListener('paste', event => {
+    const clipboard = event.clipboardData;
+    if(!clipboard || !clipboard.items) return;
+    const imageItem = Array.from(clipboard.items).find(item =>
+      item.kind === 'file' && /^image\//i.test(item.type || '')
+    );
+    if(!imageItem) return;
+    const imageFile = imageItem.getAsFile();
+    if(!imageFile) return;
+    event.preventDefault();
+
+    const plainText = clipboard.getData('text/plain');
+    if(plainText){
+      questionInput.setRangeText(plainText, questionInput.selectionStart, questionInput.selectionEnd, 'end');
+    }
+    if(imageFile.size > MAX_MEDIA_SIZE){
+      customAlert('Das kopierte Bild ist ' + (imageFile.size / 1024 / 1024).toFixed(1) +
+        ' MB groß. Bitte verwende ein kleineres Bild (max. ' + (MAX_MEDIA_SIZE / 1024 / 1024) + ' MB).',
+        {title: 'Bild zu groß'});
+      return;
+    }
+
+    const status = document.getElementById('clipboardImageStatus');
+    const preview = document.getElementById('clipboardImagePreview');
+    if(status){
+      status.classList.remove('ready');
+      status.textContent = 'Bild wird übernommen …';
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = String(reader.result || '');
+      if(!data.startsWith('data:image/')){
+        if(status) status.textContent = 'Das eingefügte Element wurde nicht als Bild erkannt.';
+        return;
+      }
+      const ext = (imageFile.type.split('/')[1] || 'png').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');
+      pastedImage = {
+        data,
+        name: imageFile.name || ('clipboard-image.' + ext)
+      };
+      typeSelect.value = 'image';
+      if(status){
+        status.classList.add('ready');
+        status.textContent = 'Bild übernommen. Klicke auf „Übernehmen“, um es im Feld zu speichern.';
+      }
+      if(preview){
+        preview.src = data;
+        preview.classList.add('visible');
+      }
+    };
+    reader.onerror = () => {
+      if(status) status.textContent = 'Das kopierte Bild konnte nicht gelesen werden. Bitte füge es erneut ein.';
+    };
+    reader.readAsDataURL(imageFile);
+  });
   document.getElementById('btnCellCancel').onclick = () => closeModal();
-  document.getElementById('btnCellSave').onclick = () => saveCell(i, j, c);
+  document.getElementById('btnCellSave').onclick = () => saveCell(i, j, c, pastedImage);
   const rm = document.getElementById('btnCellRemoveMedia');
   if(rm) rm.onclick = () => {
     current.cells[i + ',' + j] = { ...c, data: '', name: '', type: 'text' };
@@ -1219,7 +1284,7 @@ function editCell(i, j){
   };
 }
 
-function saveCell(i, j, old){
+function saveCell(i, j, old, pastedImage){
   const type = document.getElementById('ctype').value;
   const text = document.getElementById('ctext').value;
   const latestCell = current.cells[i + ',' + j] || old;
@@ -1235,13 +1300,26 @@ function saveCell(i, j, old){
       return;
     }
     readAndStoreFile(file, i, j, type, text, answer);
+  } else if(pastedImage && type === 'image'){
+    current.cells[i + ',' + j] = {
+      ...latestCell,
+      text, answer,
+      type: 'image',
+      data: pastedImage.data,
+      name: pastedImage.name,
+      used: false, reduced: false
+    };
+    dirty = true;
+    closeModal();
+    renderBoard();
+    toast('Bild eingefügt und dem Feld zugeordnet');
   } else {
     current.cells[i + ',' + j] = {
       ...latestCell,
       text, answer,
       type: type || 'text',
-      data: type === 'text' ? '' : (old.data || ''),
-      name: type === 'text' ? '' : (old.name || ''),
+      data: type === 'text' ? '' : (latestCell.data || old.data || ''),
+      name: type === 'text' ? '' : (latestCell.name || old.name || ''),
       used: false, reduced: false
     };
     dirty = true;
