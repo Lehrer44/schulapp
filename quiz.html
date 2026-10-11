@@ -131,16 +131,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
 }
 .qzcard:hover{border-color:var(--line-strong);box-shadow:0 8px 20px rgba(69,59,37,.07);transform:translateY(-1px)}
-.qzcard h3,.qzcard p,.qzcard .chips{grid-column:1;min-width:0}
-.qzcard .chips{margin-top:0}
-.qzcard .card-actions{grid-column:2;grid-row:1 / span 3;justify-content:flex-end;align-self:center;margin:0;padding:0}
-.qzcard h3{font-size:1.03rem;letter-spacing:-.02em;margin:0;overflow-wrap:anywhere}
-.qzcard p{margin:0;min-height:20px;line-height:1.5;font-size:.9rem}
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
-.chip{
-  background:var(--accent-soft);color:var(--accent-dark);
-  font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:999px;letter-spacing:.02em;
-}
+.qzcard .quiz-info{grid-column:1;min-width:0}
+.qzcard .quiz-info h3{font-size:1.03rem;letter-spacing:-.02em;margin:0 0 4px;overflow-wrap:anywhere}
+.qzcard .quiz-info .muted{font-size:.9rem;line-height:1.5}
+.qzcard .card-actions{grid-column:2;grid-row:1;justify-content:flex-end;align-self:center;margin:0;padding:0}
+.qzcard .order-actions{display:flex;gap:5px;margin-right:3px}
+.qzcard .order-button{padding:.55rem .7rem;min-width:38px;background:var(--surface);border:1px solid var(--line);color:var(--text);box-shadow:none;font-size:.95rem}
+.qzcard .order-button:hover:not(:disabled){background:var(--surface-muted);border-color:var(--line-strong)}
 .card-actions{display:flex;gap:6px;align-items:center;margin-top:auto;padding-top:10px;flex-wrap:wrap}
 .card-actions .btn.small{padding:.42rem .75rem;font-size:.82rem}
 .empty{text-align:center;padding:48px 20px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:14px;background:rgba(250,248,241,.6)}
@@ -291,6 +288,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .grid{display:flex;flex-direction:column}
   .qzcard{grid-template-columns:1fr;align-items:stretch}
   .qzcard .card-actions{grid-column:1;grid-row:auto;justify-content:flex-start;flex-wrap:wrap;padding-top:10px}
+  .qzcard .quiz-info{min-width:0}
   .title-input{font-size:1.28rem}
   .qhead{gap:6px}
 }
@@ -444,7 +442,6 @@ function viewList(){
       <div class="brand-symbol" aria-hidden="true">Q</div>
       <div>
         <div class="brand">Quiz <span>Studio</span></div>
-        <div class="brand-sub">Quizze erstellen, verwalten und direkt im Browser spielen</div>
       </div>
     </div>
     <div class="hero-actions">
@@ -456,10 +453,7 @@ function viewList(){
 
   <div class="panel">
     <div class="library-heading">
-      <div>
-        <div class="eyebrow">Quizbibliothek</div>
-        <h2>Meine Quizze</h2>
-      </div>
+      <div></div>
       <div class="library-count">${quizzes.length} ${quizzes.length === 1 ? 'Quiz' : 'Quizze'}</div>
     </div>
     ${ quizzes.length === 0
@@ -467,25 +461,26 @@ function viewList(){
            <p style="margin:0 0 16px">Noch keine Quizze vorhanden. Erstelle dein erstes Quiz, um zu beginnen.</p>
            <button class="btn primary" data-action="new-quiz">＋ Quiz erstellen</button>
          </div>`
-      : `<div class="grid">${quizzes.map(quizCard).join('')}</div>` }
+      : `<div class="grid">${quizzes.map((q, index) => quizCard(q, index)).join('')}</div>` }
   </div>
   `;
 }
 
-function quizCard(q){
+function quizCard(q, index){
   const pts = q.questions.reduce((s,x)=>s + (Number(x.points)||0), 0);
   return `
-  <div class="panel qzcard">
-    <h3>${esc(q.title) || 'Ohne Titel'}</h3>
-    <p class="muted small">${esc(q.description) || 'Keine Beschreibung'}</p>
-    <div class="chips">
-      <span class="chip">${q.questions.length} ${q.questions.length === 1 ? 'Frage' : 'Fragen'}</span>
-      <span class="chip">${fmt(pts)} Punkte</span>
+  <div class="panel qzcard" data-quiz-id="${q.id}">
+    <div class="quiz-info">
+      <h3>${esc(q.title) || 'Ohne Titel'}</h3>
+      <div class="muted">${q.questions.length} ${q.questions.length === 1 ? 'Frage' : 'Fragen'} · ${fmt(pts)} Punkte</div>
     </div>
     <div class="card-actions">
+      <div class="order-actions" aria-label="Reihenfolge ändern">
+        <button class="order-button" data-action="quiz-up" data-id="${q.id}" aria-label="Quiz nach oben verschieben" title="Nach oben" ${index === 0 ? 'disabled' : ''}>↑</button>
+        <button class="order-button" data-action="quiz-down" data-id="${q.id}" aria-label="Quiz nach unten verschieben" title="Nach unten" ${index === db.quizzes.length - 1 ? 'disabled' : ''}>↓</button>
+      </div>
       <button class="btn primary small" data-action="play-quiz" data-id="${q.id}">▶ Starten</button>
       <button class="btn secondary small" data-action="open-quiz" data-id="${q.id}">✎ Bearbeiten</button>
-      <div class="spacer"></div>
       <button class="icon-btn" data-action="dup-quiz" data-id="${q.id}" title="Duplizieren">⧉</button>
       <button class="icon-btn danger" data-action="del-quiz" data-id="${q.id}" title="Löschen">✕</button>
     </div>
@@ -960,6 +955,16 @@ document.addEventListener('click', (e)=>{
     case 'open-quiz': {
       const q = db.quizzes.find(x=>x.id === id);
       if(q){ state.draft = q; state.view = 'editor'; render(); }
+      break;
+    }
+    case 'quiz-up':
+    case 'quiz-down': {
+      const idx = db.quizzes.findIndex(x=>x.id === id);
+      if(idx >= 0 && moveInArray(db.quizzes, idx, action === 'quiz-up' ? -1 : 1)){
+        save();
+        render();
+        toast('Reihenfolge geändert');
+      }
       break;
     }
     case 'play-quiz': {
