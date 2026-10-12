@@ -313,11 +313,16 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
   .tf{flex-direction:column}
 }
 </style>
+<script src="cloud-library.js"></script>
+<link rel="stylesheet" href="app-status.css">
+<script src="connection-status.js"></script>
+<link rel="stylesheet" href="accessibility.css">
+<script src="accessibility.js"></script>
 </head>
 <body>
 <div class="wrap">
   <div id="app"></div>
-  <div class="footer-note" id="cloudStatus">Quiz Studio · Quizze und Medien werden in deinem Supabase-Konto gespeichert.</div>
+  <button type="button" id="retryCloudSave">Erneut speichern</button><div class="footer-note" role="status" aria-live="polite" id="cloudStatus">Quiz Studio · Quizze und Medien werden in deinem Supabase-Konto gespeichert.</div>
 </div>
 <div id="toast"></div>
 
@@ -347,6 +352,8 @@ let state = { view:'list', draft:null, session:null };
 let saveTimer = null;
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 let indexedDbPromise = null;
+const libraryStore=createLibraryStore(cloudClient,'quiz');
+let cloudDirty=false;
 let cloudUser = null;
 let cloudReady = false;
 let cloudSaveQueue = Promise.resolve();
@@ -397,6 +404,7 @@ function toast(msg){
 function setCloudStatus(message){
   const el = document.getElementById('cloudStatus');
   if(el) el.textContent = 'Quiz Studio · ' + message;
+  setConnectionStatus(/fehlgeschlagen|Nicht gespeichert|konflikt|Fehler/i.test(message)?'error':/Verbinde|Lade|Speichere|Ungespeicherte|Übernehme|Nicht gespeichert/i.test(message)?'waiting':'ready',message);
 }
 function isMissingCloudFile(error){
   const status = String(error && (error.statusCode || error.status) || '');
@@ -477,18 +485,10 @@ async function load(){
   const path = cloudFilePath();
   setCloudStatus('Lade Quizbibliothek aus der Cloud …');
 
-  const {data:file,error} = await cloudClient.storage.from(QUIZ_STORAGE_BUCKET).download(path);
-  if(!error && file){
-    const parsed = JSON.parse(await file.text());
-    if(!parsed || !Array.isArray(parsed.quizzes)) throw new Error('Die Cloud-Datei enthält keine gültige Quizbibliothek.');
-    db = parsed;
-    cloudReady = true;
-    cleanupLegacyLocalState();
-    setCloudStatus('Mit Supabase synchronisiert');
-    return true;
-  }
-  if(error && !isMissingCloudFile(error)){
-    throw new Error('Quizbibliothek konnte nicht aus Supabase geladen werden: ' + (error.message || 'Unbekannter Fehler'));
+  const parsed=await libraryStore.load(cloudUser);
+  if(parsed){
+    if(!Array.isArray(parsed.quizzes))throw new Error('Ungültige Quizbibliothek.');
+    db=parsed;cloudReady=true;cleanupLegacyLocalState();setCloudStatus('Mit Supabase synchronisiert');return true;
   }
 
   // Beim ersten Cloud-Start lokale Altbestände einmalig übernehmen und danach lokal entfernen.
@@ -510,10 +510,12 @@ async function load(){
   return true;
 }
 function save(){
+  clearTimeout(saveTimer);saveTimer=null;
   if(!cloudReady || !cloudUser){
     setCloudStatus('Nicht gespeichert – keine Cloud-Verbindung');
     return Promise.resolve(false);
   }
+  cloudDirty=true;
   const snapshot = deepCopy(db);
   const blob = new Blob([JSON.stringify(snapshot)],{type:'application/json;charset=utf-8'});
   if(blob.size > MAX_CLOUD_FILE_SIZE){
@@ -524,26 +526,26 @@ function save(){
   }
   setCloudStatus('Speichere in Supabase …');
   cloudSaveQueue = cloudSaveQueue.catch(()=>{}).then(async()=>{
-    const {error} = await cloudClient.storage.from(QUIZ_STORAGE_BUCKET).upload(cloudFilePath(),blob,{
-      contentType:'application/json',
-      cacheControl:'0',
-      upsert:true
-    });
-    if(error) throw error;
+    await libraryStore.save(snapshot);
+    cloudDirty=JSON.stringify(db)!==JSON.stringify(snapshot);
     setCloudStatus('Cloud gespeichert · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
     return true;
   }).catch(error=>{
     console.error('Cloud-Speicherung fehlgeschlagen',error);
-    setCloudStatus('Speicherung fehlgeschlagen – bitte Verbindung prüfen');
-    toast('Quiz konnte nicht in Supabase gespeichert werden: '+(error.message || 'Unbekannter Fehler'));
+    setCloudStatus(error.code==='LIBRARY_CONFLICT'?'Speicherkonflikt: Änderungen sichern, dann neu laden.':'Nicht gespeichert – bitte Verbindung prüfen und erneut speichern.');
+    toast(error.code==='LIBRARY_CONFLICT'?'Ein anderer Tab hat die Bibliothek geändert. Deine Änderungen bleiben hier erhalten. Exportiere eine Sicherung und lade dann neu.':'Nicht gespeichert. Deine Änderungen bleiben hier erhalten. Bitte erneut speichern.');
     return false;
   });
   return cloudSaveQueue;
 }
 function scheduleSave(){
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>save(),800);
+  cloudDirty=true;setCloudStatus('Ungespeicherte Änderungen');
+  saveTimer = setTimeout(()=>{saveTimer=null;save();},800);
 }
+
+document.getElementById('retryCloudSave').onclick=()=>save();
+window.addEventListener('beforeunload',e=>{if(cloudDirty||saveTimer||libraryStore.unsaved){e.preventDefault();e.returnValue='';}});
 
 /* ---------- Quiz / Fragen erzeugen ---------- */
 function newQuiz(){
@@ -1118,7 +1120,7 @@ function viewResult(){
    ========================================================= */
 
 /* ---------- Klicks ---------- */
-document.addEventListener('click', (e)=>{
+document.addEventListener('click', async (e)=>{
   const el = e.target.closest('[data-action]');
   if(!el) return;
   const action = el.dataset.action;
@@ -1168,7 +1170,7 @@ document.addEventListener('click', (e)=>{
       break;
     }
     case 'live-quiz': {
-      window.location.href = 'quiz-live.html?quiz=' + encodeURIComponent(id);
+      clearTimeout(saveTimer);if(await save())window.location.href = 'quiz-live.html?quiz=' + encodeURIComponent(id);
       break;
     }
     case 'play-quiz': {

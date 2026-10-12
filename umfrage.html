@@ -25,6 +25,10 @@ body{min-height:100vh}.wrap{max-width:1380px;margin:0 auto;padding:22px 18px 38p
 @media(max-width:1050px){.layout{grid-template-columns:280px minmax(0,1fr)}.editorGrid{grid-template-columns:1fr}.preview{order:-1}.previewStage{min-height:280px}}
 @media(max-width:760px){.wrap{padding:16px 12px 28px}.top{align-items:flex-start;flex-direction:column}.top .actions{width:100%}.top .actions .btn{flex:1}.layout{grid-template-columns:1fr}.slidesPanel{position:static;max-height:none}.typePicker{grid-template-columns:1fr}.two{grid-template-columns:1fr}.previewQuestion{font-size:24px}}
 </style>
+<link rel="stylesheet" href="app-status.css">
+<script src="connection-status.js"></script>
+<link rel="stylesheet" href="accessibility.css">
+<script src="accessibility.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -92,7 +96,7 @@ let activeSlide=0;
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');clearTimeout(window.__toast);window.__toast=setTimeout(()=>$('toast').classList.add('hidden'),3400)}
-function setSaveState(text){$('saveState').textContent=text}
+function setSaveState(text){$('saveState').textContent=text;setConnectionStatus(text==='Gespeichert'?'ready':/erforderlich|fehlgeschlagen/i.test(text)?'error':'waiting',text)}
 function typeMeta(type){return types.find(x=>x.id===type)||types[0]}
 function newSlide(){return {type:'Multiple-Choice',question:'Neue Frage',options:['Option 1','Option 2'],scaleMax:5,scaleItems:[{statement:'Neue Aussage',min:0,max:10}],media:null}}
 function ensureSlideData(s){const base=newSlide();const merged=Object.assign(base,s||{});merged.options=Array.isArray(s?.options)?s.options.slice():base.options;merged.scaleItems=Array.isArray(s?.scaleItems)&&s.scaleItems.length?s.scaleItems.map(x=>({statement:x?.statement||'Aussage',min:Number.isFinite(Number(x?.min))?Number(x.min):0,max:Number.isFinite(Number(x?.max))?Number(x.max):10})):base.scaleItems;return merged}

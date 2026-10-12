@@ -2,7 +2,7 @@
 do $test$
 declare owner uuid:=gen_random_uuid(); survey uuid:=gen_random_uuid(); sid uuid:=gen_random_uuid(); qsid uuid:=gen_random_uuid();
  code text:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,5)); qcode text:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,5));
- a jsonb; b jsonb; pid uuid; qpid uuid; token text:=repeat('a',64); other_token text:=repeat('b',64); result jsonb;
+ a jsonb; b jsonb; pid uuid; qpid uuid; token text:=repeat('a',64); other_token text:=repeat('b',64); result jsonb; op uuid:=gen_random_uuid();
 begin
  perform set_config('request.headers','{"x-forwarded-for":"security-regression-test"}',true);
  insert into auth.users(id,email) values(owner,'security-regression-'||owner::text||'@example.invalid');
@@ -37,6 +37,44 @@ begin
  b:=public.quiz_live_submit_response_secure(qsid,qpid,0,'"yes"',other_token);assert b->>'error'='INVALID_PARTICIPANT_TOKEN','foreign quiz write rejected';
  b:=public.quiz_live_student_state_secure(qsid,qpid,token);assert not (b->'question'->'options'->0 ? 'correct'),'unrevealed solution stays private';
  b:=public.quiz_live_submit_response_secure(qsid,qpid,0,'"yes"',token);assert b->>'ok'='true','valid quiz write';
+ -- Timer reads must never overwrite navigation or reveal state.
+ update public.quiz_live_sessions set question_states=jsonb_build_array(jsonb_build_object('locked',false,'revealed',false,'timer_deadline',now()-interval '1 second')) where id=qsid;
+ b:=public.quiz_live_student_state_secure(qsid,qpid,token);assert b->>'locked'='true','expiry computed by server';
+ assert (select question_states->0->>'locked'='false' from public.quiz_live_sessions where id=qsid),'read must not mutate shared state';
+ perform set_config('request.jwt.claim.sub',owner::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner,'role','authenticated')::text,true);
+ b:=public.quiz_live_start_timer_at(qsid,30,1);assert b->>'error'='STATE_CHANGED','stale timer action rejected';
+ b:=public.quiz_live_submit_response_secure(qsid,qpid,0,'"no"',token);assert b->>'error'='QUESTION_LOCKED','late answer rejected';
+ b:=public.quiz_live_reveal_question(qsid,0);assert b->>'ok'='true','reveal after expiry works';
+ b:=public.quiz_live_reveal_question(qsid,0);assert b->>'already_revealed'='true','duplicate reveal is idempotent';
+ b:=public.quiz_live_navigate_from(qsid,1,0);assert b->>'ok'='true','navigation binds expected index';
+ b:=public.quiz_live_navigate_from(qsid,1,0);assert b->>'error'='STATE_CHANGED','duplicate navigation rejected';
+ b:=public.classroom_resolve_code(code,null);assert b->'kinds'='["survey"]'::jsonb,'entry routes survey codes';
+ b:=public.classroom_resolve_code(qcode,'quiz');assert b->>'error'='SESSION_NOT_FOUND','ended quizzes cannot be joined';
+ update public.quiz_live_sessions set status='running',current_index=0 where id=qsid;
+ b:=public.classroom_resolve_code(qcode,'quiz');assert b->'kinds'='["quiz"]'::jsonb,'entry routes quiz QR links';
+ update public.quiz_live_sessions set join_code=code where id=qsid;
+ b:=public.classroom_resolve_code(code,null);assert jsonb_array_length(b->'kinds')=2,'colliding codes are not silently guessed';
+ b:=public.classroom_resolve_code(code,'survey');assert b->'kinds'='["survey"]'::jsonb,'hint resolves collisions';
+ b:=public.survey_student_state_compact(sid,pid,token,false);assert not(b->'session' ? 'survey_snapshot'),'polling omits unchanged survey payload';
+ b:=public.survey_student_state_compact(sid,pid,token,true);assert b->'session' ? 'survey_snapshot','initial join includes survey payload';
+ insert into public.quiz_live_participants(session_id,name) select qsid,'Bulk participant '||n from generate_series(1,1201) n;
+ update public.quiz_live_sessions set current_index=0,status='running' where id=qsid;
+ insert into public.quiz_live_responses(session_id,participant_id,question_index,answer) select qsid,p.id,0,'"no"' from public.quiz_live_participants p where p.session_id=qsid and p.id<>qpid order by p.id limit 1001;
+ b:=public.quiz_live_teacher_state(qsid);assert jsonb_array_length(b->'leaderboard')=1202,'leaderboard exceeds REST row limit without truncation';
+ assert jsonb_array_length(b->'responses')=1002,'current responses complete beyond 1000 rows';
+ assert not(b->'session' ? 'quiz_snapshot'),'teacher polling omits quiz snapshot';
+ perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',gen_random_uuid(),'role','authenticated')::text,true);
+ b:=public.quiz_live_teacher_state(qsid);assert b->>'error'='NOT_OWNER','aggregates inaccessible to other teachers';
+ perform set_config('request.jwt.claim.sub',owner::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner,'role','authenticated')::text,true);
+ b:=public.save_teacher_library(owner,'quiz',0,op,'{"quizzes":[{"title":"first"}]}');assert b->>'revision'='1','first library version saved';
+ b:=public.save_teacher_library(owner,'quiz',0,op,'{"quizzes":[{"title":"first"}]}');assert b->>'revision'='1','lost-response retry idempotent';
+ b:=public.save_teacher_library(owner,'quiz',0,gen_random_uuid(),'{"quizzes":[{"title":"stale tab"}]}');assert b->>'error'='LIBRARY_CONFLICT','stale tab cannot overwrite';
+ assert (select payload->'quizzes'->0->>'title'='first' from public.teacher_libraries where owner_id=owner and kind='quiz'),'cloud contents preserved';
+ b:=public.save_teacher_library(gen_random_uuid(),'quiz',1,gen_random_uuid(),'{"quizzes":[]}');assert b->>'error'='NOT_OWNER','foreign library rejected';
+ assert not has_table_privilege('authenticated','public.teacher_libraries','UPDATE'),'direct library updates forbidden';
  assert not has_function_privilege('anon','public.get_participant_session(uuid,uuid)','EXECUTE'),'legacy read revoked';
  assert not has_function_privilege('anon','public.quiz_live_submit_response(uuid,uuid,integer,jsonb)','EXECUTE'),'legacy quiz write revoked';
  assert not has_function_privilege('authenticated','public.quiz_live_join(text,text,uuid)','EXECUTE'),'legacy authenticated join revoked';

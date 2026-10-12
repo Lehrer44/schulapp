@@ -150,25 +150,23 @@ declare
 begin
   select * into v_session from public.quiz_live_sessions s
   where s.id=p_session_id
-    and exists(select 1 from public.quiz_live_participants p where p.id=p_participant_id and p.session_id=s.id) for update of s;
+    and exists(select 1 from public.quiz_live_participants p where p.id=p_participant_id and p.session_id=s.id);
   if not found then return jsonb_build_object('ok',false,'error','SESSION_NOT_FOUND'); end if;
 
   update public.quiz_live_participants set last_seen_at=pg_catalog.now()
-    where id=p_participant_id and session_id=p_session_id;
+    where id=p_participant_id and session_id=p_session_id and last_seen_at < pg_catalog.now()-interval '30 seconds';
 
   v_index := v_session.current_index;
   v_count := pg_catalog.jsonb_array_length(v_session.quiz_snapshot -> 'questions');
   v_qstate := case when v_index>=0 and v_index<v_count then coalesce(v_session.question_states -> v_index,'{}'::jsonb) else '{}'::jsonb end;
 
-  -- Enforce timer expiry on the server even when no student tries to submit after time has run out.
+  -- Reads compute expiry without mutating the shared question state.
+  -- All state-changing teacher actions and submissions lock the session row.
   if v_index>=0 and v_index<v_count
      and not coalesce((v_qstate ->> 'revealed')::boolean,false)
      and nullif(v_qstate ->> 'timer_deadline','') is not null
      and (v_qstate ->> 'timer_deadline')::timestamptz <= pg_catalog.clock_timestamp() then
-    v_qstate := pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_qstate,'{locked}','true'::jsonb,true),'{timer_deadline}','null'::jsonb,true);
-    v_states := pg_catalog.jsonb_set(v_session.question_states,array[v_index::text],v_qstate,true);
-    update public.quiz_live_sessions set question_states=v_states,updated_at=pg_catalog.now() where id=p_session_id;
-    v_session.question_states := v_states;
+    v_qstate := pg_catalog.jsonb_set(v_qstate,'{locked}','true'::jsonb,true);
   end if;
 
   v_revealed := coalesce((v_qstate ->> 'revealed')::boolean,false);
