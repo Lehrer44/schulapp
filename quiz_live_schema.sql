@@ -569,6 +569,9 @@ begin
   if p_question_index<0 or p_question_index>=pg_catalog.jsonb_array_length(v_session.quiz_snapshot -> 'questions') then
     return jsonb_build_object('ok',false,'error','INVALID_INDEX');
   end if;
+  if v_session.status<>'running' or p_question_index<>v_session.current_index then
+    return jsonb_build_object('ok',false,'error','QUESTION_NOT_ACTIVE');
+  end if;
   v_state := coalesce(v_session.question_states -> p_question_index,'{}'::jsonb);
   v_state := pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_state,'{locked}','true'::jsonb,true),'{timer_deadline}','null'::jsonb,true);
   v_states := pg_catalog.jsonb_set(v_session.question_states,array[p_question_index::text],v_state,true);
@@ -576,7 +579,6 @@ begin
   return jsonb_build_object('ok',true);
 end;
 $function$;
-
 
 CREATE OR REPLACE FUNCTION public.quiz_live_reveal_question(p_session_id uuid, p_question_index integer)
  RETURNS jsonb
