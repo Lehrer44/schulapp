@@ -54,7 +54,7 @@ function drawQR(){
 function renderQuestion(){
  const q=activeQuestion();const idx=session.current_index;const st=qstate();const revealed=!!st.revealed;const count=session.quiz_snapshot.questions.length;
  if(session.status==='lobby')return '<div class="panel"><div class="eyebrow">Wartelobby</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Die erste Frage ist noch verborgen. Warte, bis alle bereit sind, und starte dann das Quiz.</p><div class="board-status">Teilnehmende: '+participants.length+' · Alle Antworten und Punkte werden erst nach „Lösung einblenden“ ausgewertet.</div><div class="controls"><button data-action="start">▶ Quiz starten</button><button class="secondary" data-action="refresh">Aktualisieren</button></div></div>';
- if(session.status==='ended'||idx>=count)return '<div class="panel"><div class="eyebrow">Quiz beendet</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Das Quiz ist abgeschlossen. Die Rangliste enthält die endgültigen Punktstände.</p>'+leaderboardMarkup()+'<div class="controls"><button class="secondary" data-action="back-dashboard">← Zum Dashboard</button></div></div>';
+ if(session.status==='ended'||idx>=count)return '<div class="panel"><div class="eyebrow">Quiz beendet</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Das Quiz ist abgeschlossen. Die Rangliste enthält die endgültigen Punktstände.</p>'+leaderboardMarkup()+'<div class="controls"><button class="secondary" data-action="back" '+(count===0?'disabled':'')+'>← Zur letzten Frage</button><button class="secondary" data-action="back-dashboard">Zum Dashboard</button></div></div>';
  if(!q)return '<div class="panel"><div class="board-status">Frage wird geladen …</div></div>';
  const options=choices(q);
  let body='';
