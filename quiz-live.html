@@ -13,6 +13,11 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 @media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.side-col{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}.join-layout{grid-template-columns:minmax(0,1fr) 150px}.qr{width:145px;height:145px}}
 @media(max-width:560px){.wrap{padding:9px}.top{padding:14px;border-radius:15px}.top-actions{width:100%}.top-actions button{flex:1}.join-layout{grid-template-columns:minmax(0,1fr)}.qr{width:140px;height:140px}.answers-board{grid-template-columns:minmax(0,1fr)}.response-row{grid-template-columns:minmax(0,1fr) auto}.response-answer{grid-column:1 / -1;grid-row:2}.response-points{grid-column:2;grid-row:1}.question-text{font-size:1.45rem}.side-col{display:flex}}
 </style>
+<script src="cloud-library.js"></script>
+<link rel="stylesheet" href="app-status.css">
+<script src="connection-status.js"></script>
+<link rel="stylesheet" href="accessibility.css">
+<script src="accessibility.js"></script>
 </head>
 <body>
 <div class="wrap"><div id="app"><div class="panel">Live-Quiz wird geladen …</div></div><div class="foot" id="saveStatus">Verbindung wird hergestellt</div></div>
@@ -24,7 +29,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const BUCKET='quiz-studio';
 const app=document.getElementById('app');
 const params=new URLSearchParams(location.search);
-let user=null,session=null,participants=[],responses=[],lastSignature='',refreshBusy=false,autoLockKey='',timerInterval=null;
+let user=null,session=null,participants=[],responses=[],serverLeaderboard=[],lastSignature='',refreshBusy=false,autoLockKey='',timerInterval=null,actionBusy=false;
 const esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
 const errText=function(e){return e&&e.message?e.message:String(e||'Unbekannter Fehler');};
 function toast(message){const el=document.getElementById('saveStatus');if(el)el.textContent=message;}
@@ -34,17 +39,13 @@ function activeQuestion(){const qs=session&&session.quiz_snapshot&&session.quiz_
 function displayMedia(media){if(!media||!media.data)return '';const src=esc(media.data);if(media.type==='image'&&/^data:image\//i.test(media.data))return '<img class="media" src="'+src+'" alt="Bild zur Frage">';if(media.type==='audio'&&/^data:audio\//i.test(media.data))return '<audio class="media media-audio" controls preload="metadata" src="'+src+'"></audio>';if(media.type==='video'&&/^data:video\//i.test(media.data))return '<video class="media" controls preload="metadata" src="'+src+'"></video>';return '';}
 function choices(q){if(!q)return [];if(q.type==='single'||q.type==='multiple')return q.options||[];if(q.type==='truefalse')return [{id:'true',text:'Wahr',correct:q.correct===true},{id:'false',text:'Falsch',correct:q.correct===false}];if(q.type==='ranking')return q.items||[];return [];}
 function responseText(q,a){if(a===null||a===undefined)return 'Keine Antwort';if(q.type==='single'){const o=(q.options||[]).find(x=>x.id===a);return o?o.text:'Antwort';}if(q.type==='multiple'){return Array.isArray(a)?a.map(id=>{const o=(q.options||[]).find(x=>x.id===id);return o?o.text:id;}).join(' · '):String(a);}if(q.type==='truefalse')return a===true?'Wahr':a===false?'Falsch':'Keine Antwort';if(q.type==='ranking')return Array.isArray(a)?a.map((id,i)=>{const o=(q.items||[]).find(x=>x.id===id);return (i+1)+'. '+(o?o.text:id);}).join(' → '):String(a);return String(a);}
-function leaderboardRows(){
- const tally={};participants.forEach(p=>tally[p.id]={participant:p,score:0,answered:false});
- responses.forEach(r=>{if(tally[r.participant_id]){tally[r.participant_id].score+=Number(r.awarded_points)||0;if(r.question_index===session.current_index)tally[r.participant_id].answered=true;}});
- return Object.values(tally).sort((a,b)=>b.score-a.score||a.participant.name.localeCompare(b.participant.name,'de'));
-}
+function leaderboardRows(){return serverLeaderboard;}
 function leaderboardMarkup(){
  const rows=leaderboardRows();
  if(!rows.length)return '<div class="board-status">Noch keine Schülerinnen oder Schüler beigetreten.</div>';
  return '<div class="ranking-list">'+rows.map((r,i)=>'<div class="rank-item '+(r.answered?'answered':'')+'"><span class="rank-num">'+(i+1)+'</span><span class="rank-name">'+esc(r.participant.name)+' '+(r.answered?'<span class="status-pill green">Antwort da</span>':'')+'</span><span class="rank-score">'+(Math.round(r.score*100)/100).toLocaleString('de-DE')+' P</span></div>').join('')+'</div>';
 }
-function joinUrl(){const u=new URL('quiz-student.html',location.href);u.search='';u.searchParams.set('code',session.join_code);return u.href;}
+function joinUrl(){const u=new URL('join.html',location.href);u.search='';u.searchParams.set('code',session.join_code);u.searchParams.set('kind','quiz');return u.href;}
 function drawQR(){
  const canvas=document.getElementById('qrCanvas');if(!canvas||!session)return;
  const url=joinUrl();const link=document.getElementById('joinLink');if(link){link.href=url;link.textContent=url;}
@@ -86,9 +87,8 @@ async function loadSession(){
  session=r.data;
 }
 async function createFromQuiz(quizId){
- const {data:file,error}=await db.storage.from(BUCKET).download(user.id+'/Quiz-Studio.json');
- if(error)throw new Error('Quizbibliothek konnte nicht geladen werden: '+error.message);
- const library=JSON.parse(await file.text());
+ const store=createLibraryStore(db,'quiz');const library=await store.load(user);
+ if(!library)throw new Error('Noch keine Quizbibliothek gespeichert.');
  const quiz=(library.quizzes||[]).find(q=>q.id===quizId);
  if(!quiz)throw new Error('Quiz nicht gefunden. Prüfe, ob es bereits in der Cloud gespeichert wurde.');
  if(!quiz.questions||!quiz.questions.length)throw new Error('Dieses Quiz enthält noch keine Fragen.');
@@ -99,18 +99,14 @@ async function createFromQuiz(quizId){
 async function refresh(force){
  if(refreshBusy||!session)return;refreshBusy=true;
  try{
-  const s=await db.from('quiz_live_sessions').select('*').eq('id',session.id).single();if(s.error)throw s.error;
-  if(s.data.owner_id!==user.id)throw new Error('Keine Berechtigung für diese Sitzung.');session=s.data;
-  const [p,r]=await Promise.all([
-   db.from('quiz_live_participants').select('*').eq('session_id',session.id).order('joined_at',{ascending:true}),
-   db.from('quiz_live_responses').select('*').eq('session_id',session.id)
-  ]);
-  if(p.error)throw p.error;if(r.error)throw r.error;
-  participants=p.data||[];responses=r.data||[];
-  const sig=[session.updated_at,session.status,session.current_index,JSON.stringify(session.question_states),participants.map(x=>x.id+':'+x.name).join('|'),responses.map(x=>x.id+':'+x.submitted_at+':'+x.awarded_points+':'+x.is_correct).join('|')].join('~');
+  const state=await rpc('quiz_live_teacher_state',{p_session_id:session.id});
+  session={...session,...state.session};serverLeaderboard=state.leaderboard||[];
+  participants=serverLeaderboard.map(r=>r.participant);responses=state.responses||[];
+  const sig=[session.updated_at,session.status,session.current_index,JSON.stringify(session.question_states),JSON.stringify(serverLeaderboard),responses.map(x=>x.id+':'+x.submitted_at+':'+x.awarded_points+':'+x.is_correct).join('|')].join('~');
   if(force||sig!==lastSignature){lastSignature=sig;render();}
+  setConnectionStatus('ready','Verbunden · Sitzungsstand aktualisiert.');
   toast('Cloud verbunden · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
- }catch(e){toast('Live-Quiz: '+errText(e));}
+ }catch(e){setConnectionStatus('error','Verbindung unterbrochen. Der letzte bestätigte Stand bleibt sichtbar; wir versuchen es automatisch erneut.');toast('Live-Quiz: '+errText(e));}
  finally{refreshBusy=false;}
 }
 async function act(name,args){await rpc(name,args);lastSignature='';await refresh(true);}
@@ -120,24 +116,24 @@ async function updateTimer(){
  if(!deadline||st.revealed||st.locked){el.textContent='';el.classList.remove('expired');return;}
  const secs=Math.max(0,Math.ceil((new Date(deadline).getTime()-Date.now())/1000));
  el.textContent=secs>0?'Noch '+secs+' s':'Zeit abgelaufen';el.classList.toggle('expired',secs===0);
- const key=session.id+':'+session.current_index+':'+deadline;
- if(secs===0&&autoLockKey!==key){autoLockKey=key;try{await rpc('quiz_live_lock_question',{p_session_id:session.id,p_question_index:session.current_index});lastSignature='';await refresh(true);}catch(e){toast(errText(e));}}
+
 }
+window.addEventListener('online',()=>refresh(true));
 document.body.addEventListener('click',async function(e){
  const el=e.target.closest('[data-action]');if(!el)return;
- const action=el.dataset.action;el.disabled=true;
+ const action=el.dataset.action;if(actionBusy)return;actionBusy=true;const observedIndex=session?.current_index;app.querySelectorAll('button[data-action]').forEach(b=>b.disabled=true);el.disabled=true;
  try{
   if(action==='start'){await act('quiz_live_start',{p_session_id:session.id});}
-  else if(action==='back'){if(session.current_index>0)await act('quiz_live_navigate',{p_session_id:session.id,p_target_index:session.current_index-1});}
-  else if(action==='next'){const count=session.quiz_snapshot.questions.length;await act('quiz_live_navigate',{p_session_id:session.id,p_target_index:session.current_index+1});}
-  else if(action==='timer'){const seconds=Number(document.getElementById('timerSeconds').value);await act('quiz_live_start_timer',{p_session_id:session.id,p_seconds:seconds});}
+  else if(action==='back'){if(session.current_index>0)await act('quiz_live_navigate_from',{p_session_id:session.id,p_target_index:observedIndex-1,p_expected_index:observedIndex});}
+  else if(action==='next'){const count=session.quiz_snapshot.questions.length;await act('quiz_live_navigate_from',{p_session_id:session.id,p_target_index:observedIndex+1,p_expected_index:observedIndex});}
+  else if(action==='timer'){const seconds=Number(document.getElementById('timerSeconds').value);await act('quiz_live_start_timer_at',{p_session_id:session.id,p_seconds:seconds,p_question_index:observedIndex});}
   else if(action==='lock'){await act('quiz_live_lock_question',{p_session_id:session.id,p_question_index:session.current_index});}
   else if(action==='reveal'){await act('quiz_live_reveal_question',{p_session_id:session.id,p_question_index:session.current_index});}
   else if(action==='refresh'){await refresh(true);}
   else if(action==='copy-link'){await navigator.clipboard.writeText(joinUrl());toast('Teilnahmelink kopiert');}
   else if(action==='back-dashboard'){location.href='dashboard.html';}
- }catch(err){toast('Aktion fehlgeschlagen: '+errText(err));}
- finally{if(document.body.contains(el))el.disabled=false;}
+ }catch(err){toast(err.message==='STATE_CHANGED'?'Die Frage wurde inzwischen gewechselt. Bitte prüfe die aktuelle Ansicht.':'Aktion fehlgeschlagen: '+errText(err));}
+ finally{actionBusy=false;lastSignature='';await refresh(true);}
 });
 (async function init(){
  try{
@@ -145,7 +141,7 @@ document.body.addEventListener('click',async function(e){
   if(params.get('session')){await loadSession();}
   else if(params.get('quiz')){await createFromQuiz(params.get('quiz'));}
   else throw new Error('Es wurde kein Quiz ausgewählt.');
-  await refresh(true);timerInterval=setInterval(function(){updateTimer();refresh(false);},1500);
+  await refresh(true);timerInterval=setInterval(function(){updateTimer();if(!document.hidden)refresh(false);},1500);
  }catch(e){app.innerHTML='<div class="panel"><h1>Live-Quiz konnte nicht gestartet werden</h1><p class="notice">'+esc(errText(e))+'</p><button onclick="location.href=\'dashboard.html\'">Zum Dashboard</button></div>';toast(errText(e));}
 })();
 </script>

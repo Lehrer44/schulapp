@@ -1,0 +1,4 @@
+.connection-status{box-sizing:border-box;max-width:1320px;margin:10px auto;padding:10px 16px;border:1px solid #82928a;border-radius:9px;background:#edf5ef;color:#234c35;font:600 14px/1.5 system-ui,sans-serif;overflow-wrap:anywhere}
+.connection-status[data-state="waiting"]{background:#fff6d9;border-color:#a68a35;color:#55420c}
+.connection-status[data-state="error"]{background:#fff0ed;border-color:#b25848;color:#792d20}
+@media(max-width:600px){.connection-status{margin:8px 10px}}

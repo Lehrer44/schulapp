@@ -11,11 +11,12 @@ Die SQL-Dateien in dieser Reihenfolge ausführen:
 1. `schema.sql`
 2. `quiz_live_schema.sql`
 3. **`security_hardening.sql`**
+4. **`reliability_upgrade.sql`**
 
 Der letzte Schritt ist erforderlich und wiederholbar. Er installiert die
 Token-geschützten Schüler-RPCs, sperrt alte Zugänge über Teilnehmer-IDs und schützt
 historische Medien vor Löschen und Überschreiben. Eine Wiederholung der ersten
-beiden Dateien erfordert anschließend ebenfalls Schritt 3.
+beiden Dateien erfordert anschließend ebenfalls Schritt 3 und 4.
 
 ## Schülerzugang und Steuerung
 
@@ -79,3 +80,48 @@ rollback;
 Die Tests prüfen Fremdzugriffe, fehlende Tokens, wiederholte Beitritte,
 Antwortabgabe, Lehrkraft-Markierungen und -Rücksetzungen, Lösungsschutz,
 Altrechte, Medienregeln und das persistente Beitrittslimit.
+
+## Zuverlässigkeit und Bedienung
+
+`reliability_upgrade.sql` ergänzt versionsgeprüfte Bibliotheken in
+`teacher_libraries`. Vorhandene Quiz- und Jeopardy-Dateien werden beim ersten
+Öffnen gelesen und bei der nächsten Speicherung in die neue Bibliothek
+übernommen. Die bisherigen Storage-Dateien bleiben als Sicherung erhalten.
+
+Jeder Schreibvorgang muss die geladene Revision angeben. Veraltete Tabs dürfen
+keine neuere Version überschreiben. Nach einem Konflikt bleiben Änderungen im
+Tab erhalten: zuerst eine JSON-Sicherung exportieren, anschließend neu laden.
+Wiederholte Speicheranfragen nach verlorenen Antworten werden über dieselbe
+Vorgangs-ID erkannt. Alte, bereits geöffnete Editor-Tabs vor der Veröffentlichung
+schließen und danach neu öffnen.
+
+Quiz-Statusabfragen berechnen einen abgelaufenen Timer ohne den gemeinsamen
+Zustand zu verändern. Timer- und Navigationsaktionen sind an die erwartete Frage
+gebunden. Live-Quiz-Ranglisten werden serverseitig berechnet; aktuelle Antworten
+werden vollständig ohne die REST-Grenze von 1000 Zeilen zurückgegeben.
+Umfrage-Abfragen laden die aktuelle Folie und paginieren größere Ergebnisse.
+
+`join.html` ist der gemeinsame Schülereinstieg. Code und optionaler Aktivitätstyp
+stehen in den QR-Links. Bei gleichen Codes in Quiz und Umfrage wird die Aktivität
+explizit ausgewählt. Pins können per Maus, Pfeiltasten oder Koordinateneingabe
+gesetzt werden. Dunklere Texte, sichtbarer Tastaturfokus, Formularbeschriftungen
+und reduzierte Animationen gelten auf allen Seiten.
+
+Weitere Komponententests:
+
+```sh
+node tests/library.test.cjs
+node tests/status.test.cjs
+node tests/live-data.test.cjs
+node tests/pin-input.test.cjs
+```
+
+Der GitHub-Prüflauf führt zusätzlich `tests/browser.test.cjs` mit Playwright
+1.62.1 und Chromium aus. Er prüft ausschließlich synthetische Daten und simulierte
+API-Antworten, darunter Schülerbeitritt, Tastatur-Pins, Offline-Eingaben,
+Timeraktionen, doppelte Navigation und die mobile Ansicht. Echte Schülerdaten
+oder Anmeldeinformationen werden dafür nicht verwendet.
+
+Veröffentlichung: zuerst die kompatible Datenbankergänzung
+`reliability_upgrade.sql` anwenden, dann die neuen Frontend-Dateien veröffentlichen.
+Anschließend `tests/security.sql` in BEGIN/ROLLBACK erneut prüfen.
