@@ -309,7 +309,7 @@ begin
   if v_index>=0 and v_index<v_count
      and not coalesce((v_qstate ->> 'revealed')::boolean,false)
      and nullif(v_qstate ->> 'timer_deadline','') is not null
-     and (v_qstate ->> 'timer_deadline')::timestamptz <= pg_catalog.now() then
+     and (v_qstate ->> 'timer_deadline')::timestamptz <= pg_catalog.clock_timestamp() then
     v_qstate := pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_qstate,'{locked}','true'::jsonb,true),'{timer_deadline}','null'::jsonb,true);
     v_states := pg_catalog.jsonb_set(v_session.question_states,array[v_index::text],v_qstate,true);
     update public.quiz_live_sessions set question_states=v_states,updated_at=pg_catalog.now() where id=p_session_id;
@@ -380,7 +380,6 @@ begin
 end;
 $function$;
 
-
 CREATE OR REPLACE FUNCTION public.quiz_live_submit_response(p_session_id uuid, p_participant_id uuid, p_question_index integer, p_answer jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -398,7 +397,8 @@ declare
 begin
   select * into v_session from public.quiz_live_sessions s
   where s.id=p_session_id
-    and exists(select 1 from public.quiz_live_participants p where p.id=p_participant_id and p.session_id=s.id);
+    and exists(select 1 from public.quiz_live_participants p where p.id=p_participant_id and p.session_id=s.id)
+  for update of s;
   if not found then return jsonb_build_object('ok',false,'error','SESSION_NOT_FOUND'); end if;
   if v_session.status<>'running' or p_question_index<>v_session.current_index
      or p_question_index<0 or p_question_index>=pg_catalog.jsonb_array_length(v_session.quiz_snapshot -> 'questions') then
@@ -409,7 +409,7 @@ begin
   if coalesce((v_state ->> 'revealed')::boolean,false) or coalesce((v_state ->> 'locked')::boolean,false) then
     return jsonb_build_object('ok',false,'error','QUESTION_LOCKED');
   end if;
-  if nullif(v_state ->> 'timer_deadline','') is not null and (v_state ->> 'timer_deadline')::timestamptz <= pg_catalog.now() then
+  if nullif(v_state ->> 'timer_deadline','') is not null and (v_state ->> 'timer_deadline')::timestamptz <= pg_catalog.clock_timestamp() then
     v_state := pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_state,'{locked}','true'::jsonb,true),'{timer_deadline}','null'::jsonb,true);
     v_new_states := pg_catalog.jsonb_set(v_session.question_states,array[p_question_index::text],v_state,true);
     update public.quiz_live_sessions set question_states=v_new_states,updated_at=pg_catalog.now() where id=v_session.id;
@@ -462,7 +462,6 @@ begin
   return jsonb_build_object('ok',true,'submitted_at',pg_catalog.now());
 end;
 $function$;
-
 
 CREATE OR REPLACE FUNCTION public.quiz_live_start(p_session_id uuid)
  RETURNS jsonb
