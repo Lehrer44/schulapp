@@ -92,6 +92,7 @@ function stateSignature(s){
 }
 function render(){
  const s=studentState;if(!s)return;
+ const q=s.question, idx=s.current_index;
  document.getElementById('headerSub').textContent=s.title||'Quizteilnahme';
  document.getElementById('headerStatus').innerHTML='<span class="status '+(s.status==='running'&&!s.locked&&!s.revealed?'green':'')+'">'+(s.status==='lobby'?'Wartelobby':s.status==='ended'?'Beendet':s.revealed?'Aufgelöst':s.locked?'Gesperrt':'Live')+'</span>';
  let main='';
@@ -103,7 +104,7 @@ function render(){
  }else if(!s.question){
   main='<div class="panel"><div class="waiting">Die nächste Frage wird vorbereitet …</div></div>';
  }else{
-  const q=s.question,idx=s.current_index,st=s.question_state||{},own=s.own_response||null;
+  const st=s.question_state||{},own=s.own_response||null;
   let answer=getAnswerDraft(q,idx);
   if(own&&own.answer!==undefined&&!Object.prototype.hasOwnProperty.call(draftByQuestion,idx))answer=own.answer;
   const locked=!!s.locked||!!s.revealed;
