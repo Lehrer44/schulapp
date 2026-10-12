@@ -360,3 +360,7 @@ drop policy if exists "quiz_studio_delete_own" on storage.objects;
 create policy "quiz_studio_delete_own"
 on storage.objects for delete to authenticated
 using (bucket_id = 'quiz-studio' and name = ((select auth.uid())::text || '/Quiz-Studio.json'));
+
+-- Live Quiz functionality is maintained separately in quiz_live_schema.sql.
+-- Apply this base schema first, then run quiz_live_schema.sql to install the
+-- teacher-controlled live sessions, student RPCs, timer, and answer reveal logic.
