@@ -33,6 +33,6 @@ jobs:
         with:
           name: synthetische-testansichten
           path: |
-            ../pin-desktop.png
-            ../join-mobile.png
+            test-results/pin-desktop.png
+            test-results/join-mobile.png
           if-no-files-found: ignore
