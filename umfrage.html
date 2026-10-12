@@ -162,7 +162,7 @@ function removeSlide(index){
  if(slides.length===1){toast('Eine Umfrage braucht mindestens eine Folie.');return}
  if(!confirm('Folie '+(index+1)+' wirklich löschen?'))return;
  const removed=slides.splice(index,1)[0];
- if(removed?.media?.path){removeStorageObject(removed.media.path).catch(()=>{})}if(removed?.pinImage?.path){removeStorageObject(removed.pinImage.path).catch(()=>{})}
+ // Historical media remains available to session snapshots.
  activeSlide=Math.max(0,Math.min(activeSlide,slides.length-1));
  renderSlides();renderEditor();renderPreview();setSaveState('Ungespeicherte Änderungen');
 }
@@ -310,55 +310,44 @@ async function persistSurvey(showMessage=true){
 async function save(){await persistSurvey(true)}
 async function ensureSurveySaved(){if(currentSurvey)return currentSurvey;return await persistSurvey(false)}
 
-async function uploadPinImage(file){
+let mediaBusy=false;
+async function uploadSurveyMedia(file,field,prefix){
+ if(mediaBusy){toast('Bitte warte, bis der Upload abgeschlossen ist.');return}
  if(file.size>25*1024*1024){toast('Die Datei ist größer als 25 MB.');return}
+ if(field==='pinImage'&&!file.type.startsWith('image/')){toast('Bitte wähle ein Bild.');return}
+ if(!/^(image|video|audio)\//.test(file.type)){toast('Dieser Dateityp wird nicht unterstützt.');return}
+ const target=slides[activeSlide];mediaBusy=true;
+ try{
  const survey=await ensureSurveySaved();if(!survey)return;
- const user=(await db.auth.getUser()).data.user;if(!user){toast('Bitte erneut anmelden.');return}
- const oldImage=slides[activeSlide].pinImage;
+ const user=await requireUser();if(!user)return;
  const safeName=file.name.toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
- const path=user.id+'/'+survey.id+'/pin-'+crypto.randomUUID()+'-'+safeName;
- setSaveState('Kartenbild wird hochgeladen …');
+ const path=user.id+'/'+survey.id+'/'+prefix+crypto.randomUUID()+'-'+safeName;
+ setSaveState('Datei wird hochgeladen …');
  const {data,error}=await db.storage.from('survey-media').upload(path,file,{contentType:file.type,cacheControl:'3600',upsert:false});
- if(error){toast('Upload fehlgeschlagen: '+error.message);setSaveState('Speichern erforderlich');return}
- const {data:urlData}=db.storage.from('survey-media').getPublicUrl(data.path);
- slides[activeSlide].pinImage={path:data.path,url:urlData.publicUrl,name:file.name,mime:file.type};
- if(oldImage?.path)await removeStorageObject(oldImage.path).catch(()=>{});
- renderEditor();renderPreview();await persistSurvey(false);toast('Kartenbild hinzugefügt.');setSaveState('Gespeichert');
-}
-async function removePinImage(){
- const image=slides[activeSlide].pinImage;if(!image)return;
- try{if(image.path)await removeStorageObject(image.path)}catch(e){toast('Bild konnte nicht entfernt werden: '+(e.message||''));return}
- slides[activeSlide].pinImage=null;
- renderEditor();renderPreview();await persistSurvey(false);toast('Kartenbild entfernt.');setSaveState('Gespeichert');
-}
-async function uploadMedia(file){
- if(file.size>25*1024*1024){toast('Die Datei ist größer als 25 MB.');return}
- const survey=await ensureSurveySaved();if(!survey)return;
- const user=(await db.auth.getUser()).data.user;if(!user){toast('Bitte erneut anmelden.');return}
- const oldMedia=slides[activeSlide].media;
- const safeName=file.name.toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
- const path=user.id+'/'+survey.id+'/'+crypto.randomUUID()+'-'+safeName;
- setSaveState('Medien werden hochgeladen …');
- const {data,error}=await db.storage.from('survey-media').upload(path,file,{contentType:file.type,cacheControl:'3600',upsert:false});
- if(error){toast('Upload fehlgeschlagen: '+error.message);setSaveState('Speichern erforderlich');return}
- const {data:urlData}=db.storage.from('survey-media').getPublicUrl(data.path);
- slides[activeSlide].media={path:data.path,url:urlData.publicUrl,name:file.name,mime:file.type};
- if(oldMedia?.path)await removeStorageObject(oldMedia.path);
- renderEditor();renderPreview();await persistSurvey(false);toast('Medien hinzugefügt.');setSaveState('Gespeichert');
-}
-
-async function removeStorageObject(path){
- if(!path)return;
- const {error}=await db.storage.from('survey-media').remove([path]);
  if(error)throw error;
+ // Never attach a completed upload to another slide after navigation.
+ if(!slides.includes(target)){setSaveState('Ungespeicherte Änderungen');toast('Die ursprüngliche Folie wurde entfernt. Das Medium wurde nicht zugeordnet.');return}
+ const {data:urlData}=db.storage.from('survey-media').getPublicUrl(data.path);
+ target[field]={path:data.path,url:urlData.publicUrl,name:file.name,mime:file.type};
+ // Old versions stay intact: saved surveys and session snapshots may still use them.
+ renderEditor();renderPreview();
+ if(await persistSurvey(false))toast('Medium hinzugefügt und gespeichert.');
+ else{setSaveState('Speichern erforderlich');toast('Upload abgeschlossen. Die Umfrage konnte noch nicht gespeichert werden. Bitte erneut speichern.');}
+ }catch(error){setSaveState('Speichern erforderlich');toast('Upload fehlgeschlagen: '+(error.message||'Verbindungsfehler'));}
+ finally{mediaBusy=false;}
 }
-
-async function removeMedia(){
- const media=slides[activeSlide].media;if(!media)return;
- try{if(media.path)await removeStorageObject(media.path)}catch(e){toast('Datei konnte nicht entfernt werden: '+(e.message||''));return}
- slides[activeSlide].media=null;
- renderEditor();renderPreview();await persistSurvey(false);toast('Medien entfernt.');setSaveState('Gespeichert');
+async function uploadPinImage(file){return uploadSurveyMedia(file,'pinImage','pin-')}
+async function uploadMedia(file){return uploadSurveyMedia(file,'media','')}
+async function detachSurveyMedia(field){
+ if(mediaBusy){toast('Bitte warte, bis der Upload abgeschlossen ist.');return}
+ const target=slides[activeSlide];if(!target?.[field])return;
+ // Detach from the edited survey; preserve the immutable Storage object.
+ target[field]=null;renderEditor();renderPreview();setSaveState('Ungespeicherte Änderungen');
+ if(await persistSurvey(false))toast('Medium aus dieser Umfrage entfernt.');
+ else setSaveState('Speichern erforderlich');
 }
+async function removePinImage(){return detachSurveyMedia('pinImage')}
+async function removeMedia(){return detachSurveyMedia('media')}
 
 async function start(){
  const survey=await persistSurvey(false);if(!survey)return;

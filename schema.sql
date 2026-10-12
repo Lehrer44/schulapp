@@ -125,11 +125,11 @@ revoke all on function public.join_session_by_code(text,text,uuid) from public,a
 revoke all on function public.get_participant_session(uuid,uuid) from public,anon,authenticated;
 revoke all on function public.get_participant_response(uuid,uuid,integer) from public,anon,authenticated;
 revoke all on function private.can_submit_response(uuid,uuid,integer) from public,anon,authenticated;
-grant execute on function public.join_session_by_code(text,text,uuid) to anon;
-grant execute on function public.get_participant_session(uuid,uuid) to anon;
-grant execute on function public.get_participant_response(uuid,uuid,integer) to anon;
+-- Student access is installed by security_hardening.sql.
+
+
 grant usage on schema private to anon,authenticated;
-grant execute on function private.can_submit_response(uuid,uuid,integer) to anon;
+
 drop policy if exists surveys_select on public.surveys; create policy surveys_select on public.surveys for select to authenticated using ((select auth.uid())=owner_id);
 drop policy if exists surveys_insert on public.surveys; create policy surveys_insert on public.surveys for insert to authenticated with check ((select auth.uid())=owner_id);
 drop policy if exists surveys_update on public.surveys; create policy surveys_update on public.surveys for update to authenticated using ((select auth.uid())=owner_id) with check ((select auth.uid())=owner_id);
@@ -142,7 +142,7 @@ drop policy if exists participants_teacher_select on public.participants; create
 drop policy if exists participants_anon_insert on public.participants;
 drop policy if exists responses_teacher_select on public.responses; create policy responses_teacher_select on public.responses for select to authenticated using (exists(select 1 from public.sessions s where s.id=session_id and s.owner_id=(select auth.uid())));
 drop policy if exists responses_teacher_insert on public.responses; create policy responses_teacher_insert on public.responses for insert to authenticated with check (exists(select 1 from public.sessions s where s.id=session_id and s.owner_id=(select auth.uid())));
-drop policy if exists responses_anon_insert on public.responses; create policy responses_anon_insert on public.responses for insert to anon with check (private.can_submit_response(session_id, participant_id, slide_index));
+drop policy if exists responses_anon_insert on public.responses;
 drop policy if exists responses_teacher_delete on public.responses; create policy responses_teacher_delete on public.responses for delete to authenticated using (exists(select 1 from public.sessions s where s.id=session_id and s.owner_id=(select auth.uid())));
 
 create or replace function public.set_updated_at() returns trigger language plpgsql set search_path = '' as $$ begin new.updated_at=pg_catalog.now(); return new; end; $$;
@@ -167,13 +167,7 @@ with check (
 );
 
 drop policy if exists "survey_media_authenticated_delete" on storage.objects;
-create policy "survey_media_authenticated_delete"
-on storage.objects for delete
-to authenticated
-using (
-  bucket_id='survey-media'
-  and (storage.foldername(name))[1]=(select auth.uid()::text)
-);
+-- Media versions are retained; students and teachers cannot delete them through the frontend.
 
 -- Teacher dashboard session management.
 -- These RPCs operate only on sessions owned by the authenticated teacher.
@@ -364,3 +358,6 @@ using (bucket_id = 'quiz-studio' and name = ((select auth.uid())::text || '/Quiz
 -- Live Quiz functionality is maintained separately in quiz_live_schema.sql.
 -- Apply this base schema first, then run quiz_live_schema.sql to install the
 -- teacher-controlled live sessions, student RPCs, timer, and answer reveal logic.
+
+
+-- Required final installation step: apply security_hardening.sql after quiz_live_schema.sql.

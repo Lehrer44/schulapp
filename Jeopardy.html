@@ -483,9 +483,15 @@ function customAlert(message, opts){
 }
 
 /* ============ Game Model ============ */
+function safeMediaData(type,value){
+ if(typeof value!=='string'||value.length>72*1024*1024)return '';
+ const mime={image:'(?:png|jpeg|gif|webp|avif)',audio:'(?:mpeg|mp3|wav|x-wav|ogg|webm|mp4|aac|flac)',video:'(?:mp4|webm|ogg)'}[type];
+ if(!mime)return '';
+ return new RegExp('^data:'+type+'/'+mime+';base64,[A-Za-z0-9+/]+={0,2}$','i').test(value)?value:'';
+}
 function normalizeGame(g){
   g = g || {};
-  g.id = g.id || uid();
+  g.id = typeof g.id === 'string' && /^[a-z0-9_-]{1,100}$/i.test(g.id) ? g.id : uid();
   g.name = g.name || 'Unbenannt';
   g.rows = Math.max(1, Math.min(20, Number(g.rows) || 1));
   g.cols = Math.max(1, Math.min(20, Number(g.cols) || 1));
@@ -509,7 +515,7 @@ function normalizeGame(g){
         text: String(c.text || ''),
         answer: String(c.answer || ''),
         type: c.type || 'text',
-        data: c.data || '',
+        data: safeMediaData(c.type,c.data),
         name: c.name || '',
         used: false,
         reduced: false
@@ -966,7 +972,7 @@ function buildEditor(id){
   const name = document.getElementById('sname').value.trim() || 'Unbenannt';
 
   const g = old ? JSON.parse(JSON.stringify(old)) : { id: uid(), cells: {} };
-  g.id = g.id || uid();
+  g.id = typeof g.id === 'string' && /^[a-z0-9_-]{1,100}$/i.test(g.id) ? g.id : uid();
   const previousRows = old ? old.rows : 0;
   const previousCols = old ? old.cols : 0;
   const previousColHeaders = old && Array.isArray(old.colHeaders) ? old.colHeaders : [];
@@ -1237,7 +1243,7 @@ function editCell(i, j){
     '<div class="field"><label for="ctext">Frage / Aufgabe</label>' +
       '<textarea id="ctext" placeholder="Hier die Frage eingeben...">' + esc(c.text || '') + '</textarea>' +
       '<div id="clipboardImageStatus" class="hint clipboard-image-status">Tipp: Kopiere ein Bild und füge es hier mit Strg+V ein. Du musst es nicht erst herunterladen.</div>' +
-      '<img id="clipboardImagePreview" class="clipboard-image-preview' + (c.type === 'image' && c.data ? ' visible' : '') + '" alt="Bildvorschau" ' + (c.type === 'image' && c.data ? 'src="' + c.data + '"' : '') + '>' +
+      '<img id="clipboardImagePreview" class="clipboard-image-preview' + (c.type === 'image' && c.data ? ' visible' : '') + '" alt="Bildvorschau" ' + (c.type === 'image' && c.data ? 'src="' + esc(safeMediaData(c.type,c.data)) + '"' : '') + '>' +
     '</div>' +
     '<div class="field" style="margin-top:10px"><label for="ctype">Medientyp</label>' +
       '<select id="ctype">' +
@@ -1607,9 +1613,9 @@ function openCell(i, j){
     '<h2>' + esc(points) + ' Punkte · ' + esc(current.colHeaders[j]) + '</h2>' +
     valueNote +
     '<div class="question-box">' + esc(c.text || '') + '</div>' +
-    (c.type === 'image' && c.data ? '<img class="media-preview" src="' + c.data + '" alt="">' : '') +
-    (c.type === 'audio' && c.data ? '<audio class="media-preview" controls src="' + c.data + '"></audio>' : '') +
-    (c.type === 'video' && c.data ? '<video class="media-preview" controls src="' + c.data + '"></video>' : '') +
+    (c.type === 'image' && c.data ? '<img class="media-preview" src="' + esc(safeMediaData(c.type,c.data)) + '" alt="">' : '') +
+    (c.type === 'audio' && c.data ? '<audio class="media-preview" controls src="' + esc(safeMediaData(c.type,c.data)) + '"></audio>' : '') +
+    (c.type === 'video' && c.data ? '<video class="media-preview" controls src="' + esc(safeMediaData(c.type,c.data)) + '"></video>' : '') +
     '<div id="answerArea" aria-live="polite"></div>' +
     '<div id="outcomeActions">' +
       '<div class="outcome-grid">' +

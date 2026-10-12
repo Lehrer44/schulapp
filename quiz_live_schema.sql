@@ -636,11 +636,14 @@ revoke all on function public.quiz_live_reveal_question(uuid,integer) from publi
 revoke all on function private.quiz_live_is_correct(jsonb,jsonb) from public, anon, authenticated;
 
 grant execute on function public.quiz_live_create(jsonb) to authenticated;
-grant execute on function public.quiz_live_join(text,text,uuid) to anon, authenticated;
-grant execute on function public.quiz_live_student_state(uuid,uuid) to anon, authenticated;
-grant execute on function public.quiz_live_submit_response(uuid,uuid,integer,jsonb) to anon, authenticated;
+-- Token-protected student access is installed by security_hardening.sql.
+-- Token-protected student access is installed by security_hardening.sql.
+-- Token-protected student access is installed by security_hardening.sql.
 grant execute on function public.quiz_live_start(uuid) to authenticated;
 grant execute on function public.quiz_live_navigate(uuid,integer) to authenticated;
 grant execute on function public.quiz_live_start_timer(uuid,integer) to authenticated;
 grant execute on function public.quiz_live_lock_question(uuid,integer) to authenticated;
 grant execute on function public.quiz_live_reveal_question(uuid,integer) to authenticated;
+
+
+-- Required final installation step: apply security_hardening.sql.
