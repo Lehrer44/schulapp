@@ -239,7 +239,7 @@ begin
       set window_start=case when r.window_start<pg_catalog.now()-interval '10 minutes' then pg_catalog.now() else r.window_start end,
           attempts=case when r.window_start<pg_catalog.now()-interval '10 minutes' then 1 else r.attempts+1 end
     returning attempts into v_attempts;
-    if v_attempts>12 then return jsonb_build_object('ok',false,'error','RATE_LIMITED'); end if;
+    if v_attempts>50 then return jsonb_build_object('ok',false,'error','RATE_LIMITED'); end if;
     return jsonb_build_object('ok',false,'error','SESSION_NOT_FOUND');
   end if;
 
