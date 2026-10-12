@@ -311,7 +311,7 @@ begin
      and nullif(v_qstate ->> 'timer_deadline','') is not null
      and (v_qstate ->> 'timer_deadline')::timestamptz <= pg_catalog.now() then
     v_qstate := pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_qstate,'{locked}','true'::jsonb,true),'{timer_deadline}','null'::jsonb,true);
-    v_states := pg_catalog.jsonb_set(v_session.question_states,pg_catalog.array[v_index::text],v_qstate,true);
+    v_states := pg_catalog.jsonb_set(v_session.question_states,array[v_index::text],v_qstate,true);
     update public.quiz_live_sessions set question_states=v_states,updated_at=pg_catalog.now() where id=p_session_id;
     v_session.question_states := v_states;
   end if;
@@ -411,7 +411,7 @@ begin
   end if;
   if nullif(v_state ->> 'timer_deadline','') is not null and (v_state ->> 'timer_deadline')::timestamptz <= pg_catalog.now() then
     v_state := pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_state,'{locked}','true'::jsonb,true),'{timer_deadline}','null'::jsonb,true);
-    v_new_states := pg_catalog.jsonb_set(v_session.question_states,pg_catalog.array[p_question_index::text],v_state,true);
+    v_new_states := pg_catalog.jsonb_set(v_session.question_states,array[p_question_index::text],v_state,true);
     update public.quiz_live_sessions set question_states=v_new_states,updated_at=pg_catalog.now() where id=v_session.id;
     return jsonb_build_object('ok',false,'error','QUESTION_LOCKED');
   end if;
@@ -551,7 +551,7 @@ begin
   end if;
   v_deadline := pg_catalog.now() + pg_catalog.make_interval(secs=>p_seconds);
   v_state := pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_state,'{timer_seconds}',pg_catalog.to_jsonb(p_seconds),true),'{timer_deadline}',pg_catalog.to_jsonb(v_deadline),true);
-  v_states := pg_catalog.jsonb_set(v_session.question_states,pg_catalog.array[v_session.current_index::text],v_state,true);
+  v_states := pg_catalog.jsonb_set(v_session.question_states,array[v_session.current_index::text],v_state,true);
   update public.quiz_live_sessions set question_states=v_states,updated_at=pg_catalog.now() where id=p_session_id;
   return jsonb_build_object('ok',true,'timer_deadline',v_deadline,'timer_seconds',p_seconds);
 end;
@@ -573,7 +573,7 @@ begin
   end if;
   v_state := coalesce(v_session.question_states -> p_question_index,'{}'::jsonb);
   v_state := pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_state,'{locked}','true'::jsonb,true),'{timer_deadline}','null'::jsonb,true);
-  v_states := pg_catalog.jsonb_set(v_session.question_states,pg_catalog.array[p_question_index::text],v_state,true);
+  v_states := pg_catalog.jsonb_set(v_session.question_states,array[p_question_index::text],v_state,true);
   update public.quiz_live_sessions set question_states=v_states,updated_at=pg_catalog.now() where id=p_session_id;
   return jsonb_build_object('ok',true);
 end;
@@ -605,7 +605,7 @@ begin
   if coalesce((v_state ->> 'revealed')::boolean,false) then return jsonb_build_object('ok',true,'already_revealed',true); end if;
 
   v_state := pg_catalog.jsonb_set(pg_catalog.jsonb_set(pg_catalog.jsonb_set(v_state,'{locked}','true'::jsonb,true),'{revealed}','true'::jsonb,true),'{timer_deadline}','null'::jsonb,true);
-  v_states := pg_catalog.jsonb_set(v_session.question_states,pg_catalog.array[p_question_index::text],v_state,true);
+  v_states := pg_catalog.jsonb_set(v_session.question_states,array[p_question_index::text],v_state,true);
   update public.quiz_live_sessions set question_states=v_states,updated_at=pg_catalog.now() where id=p_session_id;
 
   v_question := v_session.quiz_snapshot -> 'questions' -> p_question_index;
