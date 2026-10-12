@@ -112,7 +112,7 @@ function render(){
   if(s.revealed){
     if(own)result='<div class="result '+(own.is_correct?'':'wrong')+'">'+(own.is_correct?'Richtig!':'Diesmal nicht richtig.')+' · '+(Number(own.awarded_points)||0)+' Punkte'+(q.type==='single'||q.type==='multiple'?'<div style="margin-top:5px">Die richtigen Antwort(en) sind grün markiert.</div>':'')+'</div>';
     else result='<div class="result wrong">Du hast keine Antwort abgegeben. Für diese Frage gibt es 0 Punkte.</div>';
-  }else if(own)result='<div class="result">Antwort abgegeben. Du kannst sie bis zur Sperre noch ändern.</div>';
+  }else if(own)result='<div class="result">'+(s.locked?'Antwortphase gesperrt. Deine gespeicherte Antwort bleibt erhalten.':'Antwort abgegeben. Du kannst sie bis zur Sperre noch ändern.')+'</div>';
   const timer=st.timer_deadline&&!s.locked&&!s.revealed?'<span class="timer" data-deadline="'+esc(st.timer_deadline)+'"></span>':'';
   main='<div class="panel"><div class="question-bar"><span>Frage '+(idx+1)+' von '+s.question_count+'</span><span>'+esc(q.points||0)+' Punkte</span>'+timer+'</div><h1>'+ (q.type==='ranking'?'Bringe die Elemente in die richtige Reihenfolge.':q.type==='truefalse'?'Wahr oder falsch?':q.type==='shortanswer'?'Trage deine Antwort ein.':'Wähle deine Antwort'+(q.type==='multiple'?'(n)':'')+'.')+'</h1>'+inputChoices(q,idx,locked,!!s.revealed,answer)+result+'<div class="row" style="margin-top:15px"><button id="submitAnswer" '+(locked||saveBusy?'disabled':'')+'>Antwort abgeben</button><span class="muted" style="font-size:.82rem">'+(s.revealed?'Antwortphase abgeschlossen.':s.locked?'Antwortphase gesperrt.':own?'Du kannst deine Antwort noch ändern.':'Deine Antwort bleibt bis zur Abgabe auf diesem Gerät.')+'</span></div></div>';
  }
