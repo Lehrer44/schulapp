@@ -184,7 +184,7 @@ begin
     for pos in 1..5 loop
       v_code := v_code || pg_catalog.substr(v_chars, 1 + pg_catalog.floor(pg_catalog.random()*pg_catalog.length(v_chars))::int, 1);
     end loop;
-    if not exists(select 1 from public.quiz_live_sessions s where s.join_code=v_code and s.status <> 'ended') then
+    if not exists(select 1 from public.quiz_live_sessions s where s.join_code=v_code) then
       exit;
     end if;
     v_code := null;
@@ -197,7 +197,6 @@ begin
   return jsonb_build_object('ok',true,'session_id',v_session_id,'join_code',v_code,'title',v_title);
 end;
 $function$;
-
 
 CREATE OR REPLACE FUNCTION public.quiz_live_join(p_join_code text, p_name text, p_participant_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
