@@ -146,7 +146,7 @@ begin
   end if;
   return false;
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_create(p_quiz jsonb)
@@ -196,7 +196,7 @@ begin
   returning id into v_session_id;
   return jsonb_build_object('ok',true,'session_id',v_session_id,'join_code',v_code,'title',v_title);
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_join(p_join_code text, p_name text, p_participant_id uuid DEFAULT NULL::uuid)
@@ -270,7 +270,7 @@ begin
 exception when unique_violation then
   return jsonb_build_object('ok',false,'error','NAME_TAKEN');
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_student_state(p_session_id uuid, p_participant_id uuid)
@@ -378,7 +378,7 @@ begin
     'locked',coalesce((v_qstate ->> 'locked')::boolean,false),'revealed',v_revealed
   );
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_submit_response(p_session_id uuid, p_participant_id uuid, p_question_index integer, p_answer jsonb)
@@ -461,7 +461,7 @@ begin
   update public.quiz_live_participants set last_seen_at=pg_catalog.now() where id=p_participant_id;
   return jsonb_build_object('ok',true,'submitted_at',pg_catalog.now());
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_start(p_session_id uuid)
@@ -478,7 +478,7 @@ begin
   update public.quiz_live_sessions set status='running',current_index=0,updated_at=pg_catalog.now() where id=p_session_id;
   return jsonb_build_object('ok',true,'current_index',0);
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_navigate(p_session_id uuid, p_target_index integer)
@@ -528,7 +528,7 @@ begin
   end if;
   return jsonb_build_object('ok',true,'current_index',p_target_index);
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_start_timer(p_session_id uuid, p_seconds integer)
@@ -555,7 +555,7 @@ begin
   update public.quiz_live_sessions set question_states=v_states,updated_at=pg_catalog.now() where id=p_session_id;
   return jsonb_build_object('ok',true,'timer_deadline',v_deadline,'timer_seconds',p_seconds);
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_lock_question(p_session_id uuid, p_question_index integer)
@@ -577,7 +577,7 @@ begin
   update public.quiz_live_sessions set question_states=v_states,updated_at=pg_catalog.now() where id=p_session_id;
   return jsonb_build_object('ok',true);
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.quiz_live_reveal_question(p_session_id uuid, p_question_index integer)
@@ -620,7 +620,7 @@ begin
   end loop;
   return jsonb_build_object('ok',true,'already_revealed',false);
 end;
-$function$
+$function$;
 
 
 -- Restrict RPC execution to the intended classroom roles.
