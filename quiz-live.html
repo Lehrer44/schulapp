@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz Live · Quiz Studio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<style>
+:root{color-scheme:light;--bg:#f3f1e9;--surface:#fffefa;--soft:#faf8f1;--muted-bg:#eeeadd;--line:#d9d2c2;--line-strong:#b9ad93;--text:#34352e;--muted:#777668;--accent:#88784f;--dark:#665a3d;--accent-soft:#eee7d5;--danger:#b9504e;--danger-soft:#f8e8e5;--ok:#36795d;--ok-soft:#e5f1e8;--shadow:0 14px 36px rgba(69,59,37,.07)}
+*{box-sizing:border-box}body{margin:0;font:16px/1.45 Inter,"Avenir Next",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(ellipse at 8% 0%,rgba(255,255,255,.88),transparent 38rem),linear-gradient(145deg,#f5f3ed 0%,var(--bg) 58%,#ebe7dc 100%);min-height:100vh}
+button,input,select{font:inherit}button{border:1px solid transparent;border-radius:10px;padding:10px 14px;background:var(--dark);color:#fffdf7;font-weight:750;cursor:pointer;transition:.15s}button:hover:not(:disabled){filter:brightness(.95);transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}.secondary{background:var(--surface);color:var(--text);border-color:var(--line)}.gold{background:var(--accent)}.danger{background:var(--danger)}.wrap{max-width:1800px;margin:auto;padding:clamp(12px,2.3vw,32px)}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 22px;margin-bottom:16px;background:rgba(255,254,250,.88);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}.brand{display:flex;align-items:center;gap:12px;font-weight:900;font-size:1.2rem;letter-spacing:-.03em}.brand-symbol{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;color:white;background:var(--dark);font-size:1.35rem}.top-actions{display:flex;gap:8px;flex-wrap:wrap}.panel{background:rgba(255,254,250,.93);border:1px solid var(--line);border-radius:18px;padding:clamp(14px,1.8vw,24px);box-shadow:var(--shadow);min-width:0}.muted{color:var(--muted)}.eyebrow{text-transform:uppercase;font-size:.72rem;font-weight:900;letter-spacing:.13em;color:var(--accent);margin-bottom:5px}.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,330px);gap:16px;align-items:start}.main-col,.side-col{display:flex;flex-direction:column;gap:16px}.side-col{position:sticky;top:12px}.join-layout{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:18px;align-items:center}.join-code{font-size:clamp(2.4rem,5vw,4rem);font-weight:950;letter-spacing:.13em;color:var(--dark);line-height:1.1;margin:8px 0}.join-link{overflow-wrap:anywhere;font-size:.85rem}.qr{width:176px;height:176px;max-width:100%;background:white;border-radius:10px;padding:8px;border:1px solid var(--line)}h1{font-size:clamp(1.35rem,2.3vw,2rem);line-height:1.2;margin:4px 0 12px;letter-spacing:-.03em}h2{font-size:1.15rem;margin:0 0 12px;letter-spacing:-.02em}.lead{color:var(--muted);margin:0 0 12px}.question-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.9rem;font-weight:700;margin-bottom:12px}.question-text{font-size:clamp(1.5rem,2.7vw,2.7rem);font-weight:850;line-height:1.24;letter-spacing:-.035em;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 20px}.media{display:block;max-width:100%;max-height:38vh;object-fit:contain;margin:0 auto 16px;border-radius:12px}.media-audio{width:min(100%,560px);height:44px}.answers-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.answer-board{padding:15px 16px;min-height:68px;border:1px solid var(--line);border-radius:13px;background:var(--soft);font-size:1rem;overflow-wrap:anywhere;white-space:pre-wrap}.answer-board.correct{border-color:var(--ok);background:var(--ok-soft);color:#245c41;font-weight:800}.correct-note{padding:12px 14px;margin:14px 0 0;background:var(--ok-soft);border:1px solid #b9d7c2;border-radius:12px;color:#245c41}.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.timer-box{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.timer-box select{padding:9px 10px;background:white;border:1px solid var(--line);border-radius:9px}.timer{font-variant-numeric:tabular-nums;font-size:1.1rem;font-weight:900;color:var(--dark)}.timer.expired{color:var(--danger)}.board-status{padding:13px 15px;background:var(--soft);border:1px dashed var(--line-strong);border-radius:12px;color:var(--muted)}.ranking-list{display:flex;flex-direction:column;gap:7px}.rank-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.rank-item.answered{border-color:#b4d8bf;background:var(--ok-soft)}.rank-num{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--muted-bg);font-size:.8rem;font-weight:900}.rank-name{font-weight:750;overflow-wrap:anywhere}.rank-score{font-weight:900;color:var(--dark);font-variant-numeric:tabular-nums;white-space:nowrap}.answer-count{font-size:.86rem;color:var(--muted);margin-top:10px}.responses{display:flex;flex-direction:column;gap:8px;margin-top:12px}.response-row{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(0,2fr) auto;gap:10px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:11px 12px}.response-row.correct{border-color:#b4d8bf;background:var(--ok-soft)}.response-row.wrong{border-color:#e3c2bc;background:var(--danger-soft)}.response-name{font-weight:800;overflow-wrap:anywhere}.response-answer{white-space:pre-wrap;overflow-wrap:anywhere}.response-points{font-weight:900;white-space:nowrap}.status-pill{display:inline-flex;padding:4px 9px;border-radius:999px;background:var(--muted-bg);font-weight:800;font-size:.78rem}.status-pill.green{background:var(--ok-soft);color:#245c41}.status-pill.red{background:var(--danger-soft);color:#8c3b38}.foot{color:var(--muted);text-align:center;padding:24px 0 8px;font-size:.82rem}.notice{padding:12px 14px;border-radius:12px;background:#f7efcf;color:#786126;border:1px solid #e7d7a6}.hidden{display:none!important}
+@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.side-col{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}.join-layout{grid-template-columns:minmax(0,1fr) 150px}.qr{width:145px;height:145px}}
+@media(max-width:560px){.wrap{padding:9px}.top{padding:14px;border-radius:15px}.top-actions{width:100%}.top-actions button{flex:1}.join-layout{grid-template-columns:minmax(0,1fr)}.qr{width:140px;height:140px}.answers-board{grid-template-columns:minmax(0,1fr)}.response-row{grid-template-columns:minmax(0,1fr) auto}.response-answer{grid-column:1 / -1;grid-row:2}.response-points{grid-column:2;grid-row:1}.question-text{font-size:1.45rem}.side-col{display:flex}}
+</style>
+</head>
+<body>
+<div class="wrap"><div id="app"><div class="panel">Live-Quiz wird geladen …</div></div><div class="foot" id="saveStatus">Verbindung wird hergestellt</div></div>
+<script>
+'use strict';
+const SUPABASE_URL='https://mqtcwiiawmuxrpkjfrfc.supabase.co';
+const SUPABASE_KEY='sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const BUCKET='quiz-studio';
+const app=document.getElementById('app');
+const params=new URLSearchParams(location.search);
+let user=null,session=null,participants=[],responses=[],lastSignature='',refreshBusy=false,autoLockKey='',timerInterval=null;
+const esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+const errText=function(e){return e&&e.message?e.message:String(e||'Unbekannter Fehler');};
+function toast(message){const el=document.getElementById('saveStatus');if(el)el.textContent=message;}
+async function rpc(name,args){const r=await db.rpc(name,args);if(r.error)throw r.error;const value=r.data;if(value&&value.ok===false)throw new Error(value.error||'Aktion fehlgeschlagen');return value;}
+function qstate(){if(!session||!Array.isArray(session.question_states))return {};const i=session.current_index;return i>=0&&i<session.question_states.length?session.question_states[i]||{}:{};}
+function activeQuestion(){const qs=session&&session.quiz_snapshot&&session.quiz_snapshot.questions;const i=session?session.current_index:-1;return Array.isArray(qs)&&i>=0&&i<qs.length?qs[i]:null;}
+function displayMedia(media){if(!media||!media.data)return '';const src=esc(media.data);if(media.type==='image'&&/^data:image\//i.test(media.data))return '<img class="media" src="'+src+'" alt="Bild zur Frage">';if(media.type==='audio'&&/^data:audio\//i.test(media.data))return '<audio class="media media-audio" controls preload="metadata" src="'+src+'"></audio>';if(media.type==='video'&&/^data:video\//i.test(media.data))return '<video class="media" controls preload="metadata" src="'+src+'"></video>';return '';}
+function choices(q){if(!q)return [];if(q.type==='single'||q.type==='multiple')return q.options||[];if(q.type==='truefalse')return [{id:'true',text:'Wahr',correct:q.correct===true},{id:'false',text:'Falsch',correct:q.correct===false}];if(q.type==='ranking')return q.items||[];return [];}
+function responseText(q,a){if(a===null||a===undefined)return 'Keine Antwort';if(q.type==='single'){const o=(q.options||[]).find(x=>x.id===a);return o?o.text:'Antwort';}if(q.type==='multiple'){return Array.isArray(a)?a.map(id=>{const o=(q.options||[]).find(x=>x.id===id);return o?o.text:id;}).join(' · '):String(a);}if(q.type==='truefalse')return a===true?'Wahr':a===false?'Falsch':'Keine Antwort';if(q.type==='ranking')return Array.isArray(a)?a.map((id,i)=>{const o=(q.items||[]).find(x=>x.id===id);return (i+1)+'. '+(o?o.text:id);}).join(' → '):String(a);return String(a);}
+function leaderboardRows(){
+ const tally={};participants.forEach(p=>tally[p.id]={participant:p,score:0,answered:false});
+ responses.forEach(r=>{if(tally[r.participant_id]){tally[r.participant_id].score+=Number(r.awarded_points)||0;if(r.question_index===session.current_index)tally[r.participant_id].answered=true;}});
+ return Object.values(tally).sort((a,b)=>b.score-a.score||a.participant.name.localeCompare(b.participant.name,'de'));
+}
+function leaderboardMarkup(){
+ const rows=leaderboardRows();
+ if(!rows.length)return '<div class="board-status">Noch keine Schülerinnen oder Schüler beigetreten.</div>';
+ return '<div class="ranking-list">'+rows.map((r,i)=>'<div class="rank-item '+(r.answered?'answered':'')+'"><span class="rank-num">'+(i+1)+'</span><span class="rank-name">'+esc(r.participant.name)+' '+(r.answered?'<span class="status-pill green">Antwort da</span>':'')+'</span><span class="rank-score">'+(Math.round(r.score*100)/100).toLocaleString('de-DE')+' P</span></div>').join('')+'</div>';
+}
+function joinUrl(){const u=new URL('quiz-student.html',location.href);u.search='';u.searchParams.set('code',session.join_code);return u.href;}
+function drawQR(){
+ const canvas=document.getElementById('qrCanvas');if(!canvas||!session)return;
+ const url=joinUrl();const link=document.getElementById('joinLink');if(link){link.href=url;link.textContent=url;}
+ if(window.QRCode&&window.QRCode.toCanvas)window.QRCode.toCanvas(canvas,url,{width:176,margin:1,color:{dark:'#34352e',light:'#ffffff'}},function(error){if(error)canvas.replaceWith(document.createTextNode('QR-Code konnte nicht erstellt werden.'));});
+ else{const holder=document.getElementById('qrHolder');if(holder)holder.innerHTML='<a href="'+esc(url)+'">Teilnahmelink öffnen</a><div class="muted small">QR-Code-Bibliothek nicht geladen.</div>';}
+}
+function renderQuestion(){
+ const q=activeQuestion();const idx=session.current_index;const st=qstate();const revealed=!!st.revealed;const count=session.quiz_snapshot.questions.length;
+ if(session.status==='lobby')return '<div class="panel"><div class="eyebrow">Wartelobby</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Die erste Frage ist noch verborgen. Warte, bis alle bereit sind, und starte dann das Quiz.</p><div class="board-status">Teilnehmende: '+participants.length+' · Alle Antworten und Punkte werden erst nach „Lösung einblenden“ ausgewertet.</div><div class="controls"><button data-action="start">▶ Quiz starten</button><button class="secondary" data-action="refresh">Aktualisieren</button></div></div>';
+ if(session.status==='ended'||idx>=count)return '<div class="panel"><div class="eyebrow">Quiz beendet</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Das Quiz ist abgeschlossen. Die Rangliste enthält die endgültigen Punktstände.</p>'+leaderboardMarkup()+'<div class="controls"><button class="secondary" data-action="back-dashboard">← Zum Dashboard</button></div></div>';
+ if(!q)return '<div class="panel"><div class="board-status">Frage wird geladen …</div></div>';
+ const options=choices(q);
+ let body='';
+ if(options.length){
+  body='<div class="answers-board">'+options.map(o=>'<div class="answer-board '+(revealed&&o.correct?'correct':'')+'">'+esc(o.text||o.label||'')+(revealed&&o.correct?' ✓':'')+'</div>').join('')+'</div>';
+  if(revealed&&q.type==='ranking')body='<div class="answers-board">'+(q.items||[]).map((o,i)=>'<div class="answer-board">'+(i+1)+'. '+esc(o.text)+'</div>').join('')+'</div>';
+  if(revealed&&q.type==='truefalse')body='<div class="correct-note">Lösung: '+(q.correct?'Wahr':'Falsch')+'</div>';
+ }else if(q.type==='shortanswer'&&revealed){body='<div class="correct-note">Akzeptierte Antworten: '+esc((q.answers||[]).join(' · '))+'</div>';}
+ const media=displayMedia(q.media);
+ const answerRows=revealed?responses.filter(r=>r.question_index===idx).map(r=>{
+   const person=participants.find(p=>p.id===r.participant_id);const ok=!!r.is_correct;
+   return '<div class="response-row '+(ok?'correct':'wrong')+'"><span class="response-name">'+esc(person?person.name:'Teilnehmende Person')+'</span><span class="response-answer">'+esc(responseText(q,r.answer))+'</span><span class="response-points">'+(ok?'+'+(Number(r.awarded_points)||0):'0')+' P</span></div>';
+ }).join(''):'';
+ return '<div class="panel"><div class="question-meta"><span>Frage '+(idx+1)+' von '+count+'</span><span>'+esc(q.points||0)+' Punkte</span><span class="status-pill '+(revealed?'green':st.locked?'red':'')+'">'+(revealed?'Lösung eingeblendet':st.locked?'Antworten gesperrt':'Antwortphase')+'</span></div><div class="question-text">'+esc(q.text||'')+'</div>'+media+body+'<div class="answer-count">'+responses.filter(r=>r.question_index===idx).length+' von '+participants.length+' haben geantwortet</div>'+(revealed?'<h2 style="margin-top:22px">Antworten der Schülerinnen und Schüler</h2><div class="responses">'+(answerRows||'<div class="board-status">Noch keine Antworten eingegangen.</div>')+'</div>':'<div class="board-status" style="margin-top:14px">Die Schüler sehen nur die Antwortmöglichkeiten bzw. das Antwortfeld. Antworten und Punkte werden erst bei der Auflösung angezeigt.</div>')+'<div class="controls"><button class="secondary" data-action="back" '+(idx===0?'disabled':'')+'>← Zurück</button><div class="timer-box"><select id="timerSeconds" aria-label="Timerdauer"><option value="15">15 Sekunden</option><option value="30" selected>30 Sekunden</option><option value="45">45 Sekunden</option><option value="60">60 Sekunden</option><option value="90">90 Sekunden</option><option value="120">2 Minuten</option><option value="180">3 Minuten</option></select><button class="secondary" data-action="timer" '+(revealed||st.locked?'disabled':'')+'>⏱ Timer starten</button><span class="timer" id="timerDisplay"></span></div><button class="secondary" data-action="lock" '+(revealed||st.locked?'disabled':'')+'>Antworten sperren</button><button data-action="reveal" '+(revealed?'disabled':'')+'>✓ Lösung einblenden</button><button class="gold" data-action="next" '+(!revealed?'disabled':'')+'>'+(idx===count-1?'Quiz beenden':'Weiter →')+'</button></div></div>';
+}
+function render(){
+ if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
+ const st=qstate();const q=activeQuestion();
+ const phase=session.status==='lobby'?'Wartelobby':session.status==='ended'?'Beendet':'Live';
+ app.innerHTML='<div class="top"><div class="brand"><span class="brand-symbol">Q</span><span>Quiz <span style="color:var(--accent)">Studio</span><div class="muted" style="font-size:.82rem;font-weight:600;letter-spacing:0">Live-Quiz · '+esc(phase)+'</div></span></div><div class="top-actions"><span class="status-pill">'+participants.length+' Teilnehmende</span><button class="secondary" data-action="refresh">↻ Aktualisieren</button><button class="secondary" data-action="back-dashboard">Zum Dashboard</button></div></div><div class="layout"><div class="main-col">'+
+ '<div class="panel"><div class="eyebrow">Teilnahme</div><div class="join-layout"><div><div class="muted">Teilnahmecode für die Schüler</div><div class="join-code">'+esc(session.join_code)+'</div><div class="muted">QR-Code scannen oder diesen Link öffnen:</div><a id="joinLink" class="join-link" href="'+esc(joinUrl())+'">'+esc(joinUrl())+'</a><div style="margin-top:10px"><button class="secondary" data-action="copy-link">Teilnahmelink kopieren</button></div></div><div id="qrHolder"><canvas class="qr" id="qrCanvas" aria-label="QR-Code zur Quizteilnahme"></canvas></div></div></div>'+
+ renderQuestion()+'</div><aside class="side-col"><div class="panel"><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2><div id="leaderboard">'+leaderboardMarkup()+'</div><div class="answer-count">Grün markiert bedeutet: Antwort abgegeben.</div></div><div class="panel"><div class="eyebrow">Sitzung</div><h2>'+esc(session.quiz_title)+'</h2><div class="muted">Status: '+esc(phase)+'</div><div class="muted" style="margin-top:8px">Hinweis: Punkte werden nur einmal bei der Auflösung vergeben. Zurückblättern löscht keine Antworten.</div></div></aside></div>';
+ drawQR();updateTimer();
+}
+async function loadSession(){
+ const r=await db.from('quiz_live_sessions').select('*').eq('id',params.get('session')).single();
+ if(r.error)throw r.error;
+ if(r.data.owner_id!==user.id)throw new Error('Diese Sitzung gehört nicht deinem Lehrerkonto.');
+ session=r.data;
+}
+async function createFromQuiz(quizId){
+ const {data:file,error}=await db.storage.from(BUCKET).download(user.id+'/Quiz-Studio.json');
+ if(error)throw new Error('Quizbibliothek konnte nicht geladen werden: '+error.message);
+ const library=JSON.parse(await file.text());
+ const quiz=(library.quizzes||[]).find(q=>q.id===quizId);
+ if(!quiz)throw new Error('Quiz nicht gefunden. Prüfe, ob es bereits in der Cloud gespeichert wurde.');
+ if(!quiz.questions||!quiz.questions.length)throw new Error('Dieses Quiz enthält noch keine Fragen.');
+ const created=await rpc('quiz_live_create',{p_quiz:quiz});
+ session={id:created.session_id,owner_id:user.id,quiz_title:created.title,quiz_snapshot:quiz,status:'lobby',join_code:created.join_code,current_index:-1,question_states:quiz.questions.map(()=>({locked:false,revealed:false,timer_seconds:null,timer_deadline:null})),updated_at:new Date().toISOString()};
+ history.replaceState(null,'',location.pathname+'?session='+encodeURIComponent(session.id));
+}
+async function refresh(force){
+ if(refreshBusy||!session)return;refreshBusy=true;
+ try{
+  const s=await db.from('quiz_live_sessions').select('*').eq('id',session.id).single();if(s.error)throw s.error;
+  if(s.data.owner_id!==user.id)throw new Error('Keine Berechtigung für diese Sitzung.');session=s.data;
+  const [p,r]=await Promise.all([
+   db.from('quiz_live_participants').select('*').eq('session_id',session.id).order('joined_at',{ascending:true}),
+   db.from('quiz_live_responses').select('*').eq('session_id',session.id)
+  ]);
+  if(p.error)throw p.error;if(r.error)throw r.error;
+  participants=p.data||[];responses=r.data||[];
+  const sig=[session.updated_at,session.status,session.current_index,JSON.stringify(session.question_states),participants.map(x=>x.id+':'+x.name).join('|'),responses.map(x=>x.id+':'+x.submitted_at+':'+x.awarded_points+':'+x.is_correct).join('|')].join('~');
+  if(force||sig!==lastSignature){lastSignature=sig;render();}
+  toast('Cloud verbunden · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
+ }catch(e){toast('Live-Quiz: '+errText(e));}
+ finally{refreshBusy=false;}
+}
+async function act(name,args){await rpc(name,args);lastSignature='';await refresh(true);}
+async function updateTimer(){
+ const el=document.getElementById('timerDisplay');if(!el||!session)return;
+ const st=qstate();const deadline=st.timer_deadline;
+ if(!deadline||st.revealed||st.locked){el.textContent='';el.classList.remove('expired');return;}
+ const secs=Math.max(0,Math.ceil((new Date(deadline).getTime()-Date.now())/1000));
+ el.textContent=secs>0?'Noch '+secs+' s':'Zeit abgelaufen';el.classList.toggle('expired',secs===0);
+ const key=session.id+':'+session.current_index+':'+deadline;
+ if(secs===0&&autoLockKey!==key){autoLockKey=key;try{await rpc('quiz_live_lock_question',{p_session_id:session.id,p_question_index:session.current_index});lastSignature='';await refresh(true);}catch(e){toast(errText(e));}}
+}
+document.body.addEventListener('click',async function(e){
+ const el=e.target.closest('[data-action]');if(!el)return;
+ const action=el.dataset.action;el.disabled=true;
+ try{
+  if(action==='start'){await act('quiz_live_start',{p_session_id:session.id});}
+  else if(action==='back'){if(session.current_index>0)await act('quiz_live_navigate',{p_session_id:session.id,p_target_index:session.current_index-1});}
+  else if(action==='next'){const count=session.quiz_snapshot.questions.length;await act('quiz_live_navigate',{p_session_id:session.id,p_target_index:session.current_index+1});}
+  else if(action==='timer'){const seconds=Number(document.getElementById('timerSeconds').value);await act('quiz_live_start_timer',{p_session_id:session.id,p_seconds:seconds});}
+  else if(action==='lock'){await act('quiz_live_lock_question',{p_session_id:session.id,p_question_index:session.current_index});}
+  else if(action==='reveal'){await act('quiz_live_reveal_question',{p_session_id:session.id,p_question_index:session.current_index});}
+  else if(action==='refresh'){await refresh(true);}
+  else if(action==='copy-link'){await navigator.clipboard.writeText(joinUrl());toast('Teilnahmelink kopiert');}
+  else if(action==='back-dashboard'){location.href='dashboard.html';}
+ }catch(err){toast('Aktion fehlgeschlagen: '+errText(err));}
+ finally{if(document.body.contains(el))el.disabled=false;}
+});
+(async function init(){
+ try{
+  const auth=await db.auth.getUser();if(auth.error||!auth.data.user){location.href='teacher.html';return;}user=auth.data.user;
+  if(params.get('session')){await loadSession();}
+  else if(params.get('quiz')){await createFromQuiz(params.get('quiz'));}
+  else throw new Error('Es wurde kein Quiz ausgewählt.');
+  await refresh(true);timerInterval=setInterval(function(){updateTimer();refresh(false);},1500);
+ }catch(e){app.innerHTML='<div class="panel"><h1>Live-Quiz konnte nicht gestartet werden</h1><p class="notice">'+esc(errText(e))+'</p><button onclick="location.href=\'dashboard.html\'">Zum Dashboard</button></div>';toast(errText(e));}
+})();
+</script>
+</body>
+</html>
