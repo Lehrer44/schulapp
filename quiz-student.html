@@ -45,6 +45,8 @@ async function join(code,name,existingId){
  await refreshState(true);
  if(pollTimer)clearInterval(pollTimer);
  pollTimer=setInterval(()=>refreshState(false),1600);
+ if(timerTimer)clearInterval(timerTimer);
+ timerTimer=setInterval(updateTimerDisplay,500);
 }
 function displayAnswer(q,a){
  if(a===null||a===undefined)return 'Keine Antwort';
@@ -55,8 +57,12 @@ function displayAnswer(q,a){
  return String(a);
 }
 function getAnswerDraft(q,idx){
+ const current=studentState;
+ const own=current&&current.own_response;
+ const locked=!!(current&&(current.locked||current.revealed));
+ if(locked) return own&&own.answer!==undefined?own.answer:(q.type==='multiple'?[]:q.type==='ranking'?(q.items||[]).map(x=>x.id):null);
  if(Object.prototype.hasOwnProperty.call(draftByQuestion,idx))return draftByQuestion[idx];
- return studentState&&studentState.own_response?studentState.own_response.answer:
+ return own&&own.answer!==undefined?own.answer:
    (q.type==='multiple'?[]:q.type==='ranking'?(q.items||[]).map(x=>x.id):null);
 }
 function renderRanking(q,answer,idx,disabled){
