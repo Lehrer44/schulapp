@@ -635,7 +635,8 @@ function quizCard(q, index){
         <button class="order-button" data-action="quiz-up" data-id="${q.id}" aria-label="Quiz nach oben verschieben" title="Nach oben" ${index === 0 ? 'disabled' : ''}>↑</button>
         <button class="order-button" data-action="quiz-down" data-id="${q.id}" aria-label="Quiz nach unten verschieben" title="Nach unten" ${index === db.quizzes.length - 1 ? 'disabled' : ''}>↓</button>
       </div>
-      <button class="btn primary small" data-action="play-quiz" data-id="${q.id}">▶ Starten</button>
+      <button class="btn primary small" data-action="play-quiz" data-id="${q.id}">▶ Vorschau</button>
+      <button class="btn gold small" data-action="live-quiz" data-id="${q.id}">● Live mit Schülern</button>
       <button class="btn secondary small" data-action="open-quiz" data-id="${q.id}">✎ Bearbeiten</button>
       <button class="icon-btn" data-action="dup-quiz" data-id="${q.id}" title="Duplizieren">⧉</button>
       <button class="icon-btn danger" data-action="del-quiz" data-id="${q.id}" title="Löschen">✕</button>
@@ -1164,6 +1165,10 @@ document.addEventListener('click', (e)=>{
         render();
         toast('Medien aus der Frage entfernt');
       }
+      break;
+    }
+    case 'live-quiz': {
+      window.location.href = 'quiz-live.html?quiz=' + encodeURIComponent(id);
       break;
     }
     case 'play-quiz': {
