@@ -24,13 +24,15 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const app=document.getElementById('app');
 const params=new URLSearchParams(location.search);
 const PRESET_CODE=(params.get('code')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);
-const STORAGE_KEY='quizstudio.live.student.v1';
+const STORAGE_KEY='quizstudio.live.student.v2';
+let participantToken='';
+function newParticipantToken(){return [...crypto.getRandomValues(new Uint8Array(32))].map(x=>x.toString(16).padStart(2,'0')).join('')}
 let sessionId='',participantId='',participantName='',joinCode='',studentState=null,leaderboard=[],draftByQuestion={},rankDraftByQuestion={},pollBusy=false,saveBusy=false,pollTimer=null,timerTimer=null,lastRenderedKey='';
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function messageFor(code){const map={SESSION_NOT_FOUND:'Dieser Teilnahmecode ist nicht gültig oder das Quiz ist bereits beendet.',INVALID_INPUT:'Bitte gib einen gültigen Code und deinen Namen ein.',NAME_TAKEN:'Dieser Name wird in diesem Quiz bereits verwendet. Bitte wähle einen anderen Namen.',NAME_MISMATCH:'Bitte verwende den Namen, mit dem du dem Quiz ursprünglich beigetreten bist.',NOT_AUTHENTICATED:'Bitte melde dich erneut an.',QUESTION_NOT_ACTIVE:'Diese Frage ist nicht mehr aktiv. Die Ansicht wurde aktualisiert.',QUESTION_LOCKED:'Die Antwortphase ist beendet. Deine Antwort kann nicht mehr geändert werden.',INVALID_ANSWER:'Bitte überprüfe deine Antwort und versuche es erneut.'};return map[code]||code||'Unbekannter Fehler';}
+function messageFor(code){const map={JOIN_RATE_LIMITED:'Zu viele Beitrittsversuche. Bitte warte eine Minute.',INVALID_JOIN_INPUT:'Bitte prüfe Code und Namen.',INVALID_PARTICIPANT_TOKEN:'Deine Teilnahme ist nicht mehr gültig. Bitte tritt erneut bei.',PARTICIPANT_NAME_MISMATCH:'Bitte verwende deinen bisherigen Namen.',SESSION_NOT_FOUND:'Dieser Teilnahmecode ist nicht gültig oder das Quiz ist bereits beendet.',INVALID_INPUT:'Bitte gib einen gültigen Code und deinen Namen ein.',NAME_TAKEN:'Dieser Name wird in diesem Quiz bereits verwendet. Bitte wähle einen anderen Namen.',NAME_MISMATCH:'Bitte verwende den Namen, mit dem du dem Quiz ursprünglich beigetreten bist.',NOT_AUTHENTICATED:'Bitte melde dich erneut an.',QUESTION_NOT_ACTIVE:'Diese Frage ist nicht mehr aktiv. Die Ansicht wurde aktualisiert.',QUESTION_LOCKED:'Die Antwortphase ist beendet. Deine Antwort kann nicht mehr geändert werden.',INVALID_ANSWER:'Bitte überprüfe deine Antwort und versuche es erneut.'};return map[code]||code||'Unbekannter Fehler';}
 function showNotice(text){const el=document.getElementById('notice');if(el){el.textContent=text;el.classList.remove('hidden');}else{const place=document.getElementById('formNotice');if(place){place.textContent=text;place.classList.remove('hidden');}}}
 function loadStoredJoin(){try{return JSON.parse(sessionStorage.getItem(STORAGE_KEY)||'null');}catch(e){return null;}}
-function saveStoredJoin(){try{sessionStorage.setItem(STORAGE_KEY,JSON.stringify({sessionId,participantId,participantName,joinCode}));}catch(e){}}
+function saveStoredJoin(){try{sessionStorage.setItem(STORAGE_KEY,JSON.stringify({sessionId,participantId,participantName,joinCode,participantToken}));}catch(e){}}
 function joinView(){
  app.innerHTML='<div class="panel"><div class="eyebrow">Mitspielen</div><h1>Quiz beitreten</h1><p class="muted">Gib den Teilnahmecode von der Tafel und deinen Namen ein. Die erste Frage erscheint erst, wenn die Lehrkraft startet.</p><form id="joinForm"><div class="field"><label for="joinCode">Teilnahmecode</label><input id="joinCode" class="code-input" maxlength="5" minlength="5" autocomplete="off" autocapitalize="characters" required value="'+esc(PRESET_CODE)+'" placeholder="A B C D E"></div><div class="field"><label for="studentName">Dein Name</label><input id="studentName" maxlength="40" minlength="1" autocomplete="name" required placeholder="Vorname oder vereinbarter Anzeigename"></div><div id="formNotice" class="notice hidden" role="alert"></div><button class="full" type="submit">Quiz beitreten →</button></form></div>';
  const code=document.getElementById('joinCode');code.addEventListener('input',()=>{code.value=code.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);});
@@ -40,7 +42,8 @@ function joinView(){
 async function rpc(name,args){const r=await db.rpc(name,args);if(r.error)throw new Error(r.error.message||'Verbindungsfehler');if(r.data&&r.data.ok===false)throw new Error(r.data.error||'Aktion fehlgeschlagen');return r.data;}
 async function join(code,name,existingId){
  joinCode=code;participantName=name;
- const r=await rpc('quiz_live_join',{p_join_code:code,p_name:name,p_participant_id:existingId||null});
+ if(!participantToken)participantToken=newParticipantToken();saveStoredJoin();
+ const r=await rpc('classroom_join',{p_kind:'quiz',p_join_code:code,p_name:name,p_token:participantToken,p_participant_id:existingId||null});
  sessionId=r.session_id;participantId=r.participant_id;saveStoredJoin();
  await refreshState(true);
  if(pollTimer)clearInterval(pollTimer);
@@ -142,7 +145,7 @@ async function submitAnswer(){
  const complete=q.type==='ranking'||q.type==='truefalse'?answer!==null&&answer!==undefined:q.type==='multiple'?Array.isArray(answer)&&answer.length>0:q.type==='shortanswer'?String(answer||'').trim().length>0:!!answer;
  if(!complete){alert('Bitte gib zuerst eine Antwort ein.');return;}
  saveBusy=true;const button=document.getElementById('submitAnswer');if(button)button.disabled=true;
- try{await rpc('quiz_live_submit_response',{p_session_id:sessionId,p_participant_id:participantId,p_question_index:idx,p_answer:answer});draftByQuestion[idx]=answer;await refreshState(true);}
+ try{await rpc('quiz_live_submit_response_secure',{p_session_id:sessionId,p_participant_id:participantId,p_question_index:idx,p_answer:answer,p_token:participantToken});draftByQuestion[idx]=answer;await refreshState(true);}
  catch(err){alert(messageFor(err.message));await refreshState(true);}
  finally{saveBusy=false;const b=document.getElementById('submitAnswer');if(b&&!studentState.locked&&!studentState.revealed)b.disabled=false;}
 }
@@ -150,7 +153,7 @@ function updateTimerDisplay(){const el=app.querySelector('[data-deadline]');if(!
 async function refreshState(force){
  if(pollBusy||!sessionId||!participantId)return;pollBusy=true;
  try{
-  const state=await rpc('quiz_live_student_state',{p_session_id:sessionId,p_participant_id:participantId});
+  const state=await rpc('quiz_live_student_state_secure',{p_session_id:sessionId,p_participant_id:participantId,p_token:participantToken});
   leaderboard=state.leaderboard||[];
   const sig=stateSignature(state);
   if(force||sig!==lastRenderedKey){studentState=state;lastRenderedKey=sig;render();}
@@ -166,7 +169,8 @@ app.addEventListener('click',async e=>{
 });
 (async function init(){
  const stored=loadStoredJoin();
- if(stored&&stored.sessionId&&stored.participantId&&stored.participantName&&stored.joinCode&&(!PRESET_CODE||stored.joinCode===PRESET_CODE)){
+ if(stored&&/^[a-f0-9]{64}$/.test(stored.participantToken||'')&&stored.participantName&&stored.joinCode&&(!PRESET_CODE||stored.joinCode===PRESET_CODE)){
+  participantToken=stored.participantToken;
   try{await join(stored.joinCode,stored.participantName,stored.participantId);return;}catch(e){console.warn('Vorherige Teilnahme konnte nicht fortgesetzt werden.');}
  }
  joinView();

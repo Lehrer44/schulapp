@@ -43,47 +43,47 @@ const SUPABASE_URL='https://mqtcwiiawmuxrpkjfrfc.supabase.co';
 const SUPABASE_KEY='sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-let session=null,participant=null,channel=null,pollTimer=null,currentSlide=-1,answerValue=null,submittedSlide=-1,refreshFailures=0,refreshing=false,responseRestoreToken=0,responseStateLoadedKey=null,responseRestorePendingKey=null;
+let participantToken=null,submitting=false;
+let session=null,participant=null,pollTimer=null,currentSlide=-1,answerValue=null,submittedSlide=-1,refreshFailures=0,refreshing=false,responseRestoreToken=0,responseStateLoadedKey=null,responseRestorePendingKey=null;
 function show(id){['joinView','waitingView','questionView','finishedView'].forEach(x=>$(x).classList.toggle('hidden',x!==id));}
 function normalizeCode(v){return v.trim().replace(/\s+/g,'').toUpperCase()}
 function setError(id,msg){$(id).textContent=msg||''}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function participantStorageKey(code){return 'schulumfrage:participant:'+code}
-function legacyParticipantStorageKey(code,name){return 'schulumfrage:participant:'+code+':'+name.trim().toLocaleLowerCase('de-DE')}
-function getSavedParticipantId(key){try{const id=localStorage.getItem(key);return id&&/^[0-9a-f-]{36}$/i.test(id)?id:null}catch{return null}}
-function findSavedParticipantId(code,name){
- const current=getSavedParticipantId(participantStorageKey(code));
- if(current)return current;
- const legacyExact=getSavedParticipantId(legacyParticipantStorageKey(code,name));
- if(legacyExact)return legacyExact;
- try{
-  const prefix=participantStorageKey(code)+':';
-  for(let i=0;i<localStorage.length;i++){
-   const key=localStorage.key(i);
-   if(key&&key.startsWith(prefix)){
-    const id=getSavedParticipantId(key);
-    if(id)return id;
-   }
-  }
- }catch{}
- return null;
-}
-function saveParticipantId(key,id){try{if(id)localStorage.setItem(key,id)}catch{}}
+function participantStorageKey(code){return 'schulumfrage:credentials:v2:'+code}
+function newParticipantToken(){const bytes=crypto.getRandomValues(new Uint8Array(32));return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function loadCredentials(code){try{const value=JSON.parse(sessionStorage.getItem(participantStorageKey(code))||'null');return value&&/^[a-f0-9]{64}$/.test(value.token)?value:null}catch{return null}}
+function saveCredentials(code,value){try{sessionStorage.setItem(participantStorageKey(code),JSON.stringify(value))}catch{}}
+async function studentState(){const {data,error}=await db.rpc('survey_student_state',{p_session_id:session.id,p_participant_id:participant.id,p_token:participantToken});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'SESSION_NOT_FOUND');return data}
 function joinErrorMessage(error){
  const message=String(error?.message||'');
  if(message.includes('PARTICIPANT_NAME_MISMATCH'))return 'Diese Sitzung wurde auf diesem Gerät bereits mit einem anderen Namen betreten. Bitte verwende denselben Namen wie beim ersten Beitritt.';
- if(message.includes('PARTICIPANT_NAME_TAKEN'))return 'Dieser Name wird in dieser Sitzung bereits verwendet. Bitte wähle einen anderen Namen.';
+ if(message.includes('NAME_TAKEN'))return 'Dieser Name wird in dieser Sitzung bereits verwendet. Bitte wähle einen anderen Namen.';
  if(message.includes('SESSION_NOT_FOUND'))return 'Keine offene Umfrage mit diesem Teilnahmecode gefunden. Bitte Code prüfen.';
  if(message.includes('JOIN_RATE_LIMITED'))return 'Zu viele Beitrittsversuche. Bitte warte einige Minuten und versuche es erneut.';
  if(message.includes('INVALID_JOIN_INPUT'))return 'Bitte gib einen gültigen Teilnahmecode und Namen ein.';
+ if(message.includes('INVALID_PARTICIPANT_TOKEN'))return 'Bitte lade die Seite neu und tritt erneut bei.';
  return message||'Beitritt nicht möglich. Bitte erneut versuchen.';
 }
-async function findSession(code,name,participantId=null){return await db.rpc('join_session_by_code',{p_join_code:code,p_name:name,p_participant_id:participantId})}
-async function join(){setError('joinError','');const code=normalizeCode($('code').value),name=$('name').value.trim();if(!code||!name){setError('joinError','Bitte Code und Namen eingeben.');return}$('joinBtn').disabled=true;$('joinBtn').textContent='Beitreten …';try{const storageKey=participantStorageKey(code);const savedParticipantId=findSavedParticipantId(code,name);const {data,error}=await findSession(code,name,savedParticipantId);if(error)throw error;const joined=Array.isArray(data)?data[0]:null;if(!joined)throw new Error('SESSION_NOT_FOUND');session=joined;participant={id:joined.participant_id,session_id:joined.id,name};saveParticipantId(storageKey,joined.participant_id);$('participantName').textContent=name;$('waitingCode').textContent=joined.join_code;subscribe();renderSession()}catch(e){setError('joinError',joinErrorMessage(e))}finally{$('joinBtn').disabled=false;$('joinBtn').textContent='Beitreten'}}
+async function join(){
+ setError('joinError','');const code=normalizeCode($('code').value),name=$('name').value.trim();
+ if(!code||!name){setError('joinError','Bitte Code und Namen eingeben.');return}
+ $('joinBtn').disabled=true;$('joinBtn').textContent='Beitreten …';
+ try{
+ const saved=loadCredentials(code),credentials=saved||{token:newParticipantToken(),id:null};
+ // Persist before the request so a lost response can safely be retried.
+ saveCredentials(code,credentials);participantToken=credentials.token;
+ const {data,error}=await db.rpc('classroom_join',{p_kind:'survey',p_join_code:code,p_name:name,p_token:participantToken,p_participant_id:credentials.id});
+ if(error)throw error;if(!data?.ok)throw new Error(data?.error||'SESSION_NOT_FOUND');
+ session={id:data.session_id};participant={id:data.participant_id,session_id:data.session_id,name};
+ saveCredentials(code,{token:participantToken,id:participant.id});
+ const state=await studentState();session=state.session;
+ $('participantName').textContent=name;$('waitingCode').textContent=data.join_code;subscribe();renderSession();
+ }catch(e){setError('joinError',joinErrorMessage(e))}finally{$('joinBtn').disabled=false;$('joinBtn').textContent='Beitreten'}
+}
 function showConnectionIssue(message){const el=$('connectionNotice');el.textContent=message;el.classList.add('visible')}
 function clearConnectionIssue(){const el=$('connectionNotice');el.textContent='';el.classList.remove('visible')}
-function subscribe(){if(channel)db.removeChannel(channel);channel=db.channel('student-session-'+session.id).on('broadcast',{event:'teacher_control'},payload=>handleTeacherControl(payload?.payload||{})).subscribe();if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(refreshSession,2000);refreshSession()}
-async function refreshSession(){if(!session||!participant||refreshing)return;refreshing=true;try{const {data,error}=await db.rpc('get_participant_session',{p_session_id:session.id,p_participant_id:participant.id});if(error)throw error;const next=Array.isArray(data)?data[0]:null;if(!next)throw new Error('Session nicht erreichbar.');const previousUpdatedAt=session.updated_at;const sameSlide=Number(next.current_slide)===Number(session.current_slide);const restarted=Boolean(previousUpdatedAt&&next.updated_at&&previousUpdatedAt!==next.updated_at&&sameSlide&&next.status==='running');session=next;refreshFailures=0;clearConnectionIssue();if(restarted){submittedSlide=-1;answerValue=null;responseRestoreToken++;responseStateLoadedKey=null;responseRestorePendingKey=null;const idx=Number(session.current_slide)||0;renderQuestion((session.survey_snapshot||[])[idx],idx);restoreSavedResponse(idx)}else renderSession();if(next.status==='ended'&&pollTimer){clearInterval(pollTimer);pollTimer=null}}catch(e){refreshFailures++;if(refreshFailures>=2)showConnectionIssue('Verbindung unterbrochen. Die Seite versucht automatisch erneut, den Umfragestatus abzurufen.');}finally{refreshing=false}}
+function subscribe(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(refreshSession,2000);refreshSession()}
+async function refreshSession(){if(!session||!participant||refreshing)return;refreshing=true;try{const state=await studentState();const next=state.session;if(!next)throw new Error('Session nicht erreichbar.');const previousUpdatedAt=session.updated_at;const sameSlide=Number(next.current_slide)===Number(session.current_slide);const restarted=Boolean(previousUpdatedAt&&next.updated_at&&previousUpdatedAt!==next.updated_at&&sameSlide&&next.status==='running');session=next;refreshFailures=0;clearConnectionIssue();if(restarted){submittedSlide=-1;answerValue=null;responseRestoreToken++;responseStateLoadedKey=null;responseRestorePendingKey=null;const idx=Number(session.current_slide)||0;renderQuestion((session.survey_snapshot||[])[idx],idx);restoreSavedResponse(idx)}else{renderSession();await syncSavedResponse(state.response);}if(next.status==='ended'&&pollTimer){clearInterval(pollTimer);pollTimer=null}}catch(e){refreshFailures++;if(refreshFailures>=2)showConnectionIssue('Verbindung unterbrochen. Die Seite versucht automatisch erneut, den Umfragestatus abzurufen.');}finally{refreshing=false}}
 function responseStateKey(slideIndex){return session&&participant?session.id+':'+participant.id+':'+slideIndex:null}
 function setSavedFormReadOnly(readOnly){
   $('answerArea').querySelectorAll('button,input,textarea,select').forEach(control=>{
@@ -163,8 +163,9 @@ async function restoreSavedResponse(slideIndex){
   $('submitBtn').textContent='Antwort wird geprüft …';
   setError('submitError','');
   try{
-    const {data,error}=await db.rpc('get_participant_response',{p_session_id:sessionId,p_participant_id:participantId,p_slide_index:slideIndex});
-    if(error)throw error;
+    const state=await studentState();
+    if(Number(state.session.current_slide)!==Number(slideIndex)){if(token===responseRestoreToken)responseRestorePendingKey=null;return;}
+    const data=state.response?[state.response]:[];
     if(token!==responseRestoreToken||responseStateKey(slideIndex)!==key||Number(currentSlide)!==Number(slideIndex))return;
     responseRestorePendingKey=null;
     responseStateLoadedKey=key;
@@ -196,7 +197,13 @@ async function restoreSavedResponse(slideIndex){
 }
 function renderSession(){if(!session)return;if(session.status==='ended'){show('finishedView');return}const slides=session.survey_snapshot||[],idx=Number(session.current_slide)||0;if(session.status!=='running'){show('waitingView');return}const f=slides[idx];if(!f){show('waitingView');return}if(idx!==currentSlide){currentSlide=idx;submittedSlide=-1;answerValue=null;responseStateLoadedKey=null;renderQuestion(f,idx);restoreSavedResponse(idx)}else{if(submittedSlide===idx)show('questionView');if(responseStateLoadedKey!==responseStateKey(idx))restoreSavedResponse(idx)}}
 function resetSubmittedUi(){if($('submittedTitle'))$('submittedTitle').textContent='✓ Antwort gespeichert';if($('submittedText'))$('submittedText').textContent='Warte auf die nächste Folie …'}
-function handleTeacherControl(control){if(!participant||control.session_id!==session?.id||control.participant_id!==participant.id||Number(control.slide_index)!==Number(currentSlide))return;const f=(session.survey_snapshot||[])[currentSlide];if(!f)return;if(control.action==='reset'){responseRestoreToken++;responseRestorePendingKey=null;responseStateLoadedKey=responseStateKey(currentSlide);submittedSlide=-1;answerValue=null;renderQuestion(f,currentSlide);return}if(control.action==='mark_answered'){submittedSlide=currentSlide;answerValue=null;$('submitBtn').classList.add('hidden');$('submittedTitle').textContent='✓ Als beantwortet markiert';$('submittedText').textContent='Die Lehrkraft hat diese Frage für dich als beantwortet markiert.';$('submitted').classList.remove('hidden')}}
+async function syncSavedResponse(saved){
+ if(!session||session.status!=='running'||Number(currentSlide)!==Number(session.current_slide))return;
+ if(responseRestorePendingKey||submitting)return;
+ const f=(session.survey_snapshot||[])[currentSlide];if(!f)return;
+ if(!saved&&submittedSlide===currentSlide){submittedSlide=-1;renderQuestion(f,currentSlide);responseStateLoadedKey=responseStateKey(currentSlide);return;}
+ if(saved){submittedSlide=currentSlide;applySavedAnswerToForm(currentSlide,saved);$('submitBtn').classList.add('hidden');$('submittedTitle').textContent=saved.answer?.teacherMarked?'✓ Als beantwortet markiert':'✓ Antwort gespeichert';$('submittedText').textContent='Dein Antwortstatus wurde bestätigt.';$('submitted').classList.remove('hidden');}
+}
 function renderQuestion(f,idx){const type=f.type||'Offene Frage';$('slideNumber').textContent='Folie '+(idx+1);$('slideType').textContent=f.type||'';$('question').textContent=f.question||'';$('progressBar').style.width=((idx+1)/Math.max(1,(session.survey_snapshot||[]).length)*100)+'%';renderQuestionMedia(type==='Pin setzen'?null:f.media);setError('submitError','');$('submitted').classList.add('hidden');$('submitBtn').classList.remove('hidden');$('submitBtn').disabled=false;resetSubmittedUi();answerValue=null;const area=$('answerArea');area.innerHTML='';
  if(type==='Multiple-Choice'){const opts=f.options||[];area.innerHTML='<div class="joinGrid">'+opts.map(o=>'<button type="button" class="choice" data-value="'+escapeHtml(o)+'">'+escapeHtml(o)+'</button>').join('')+'</div>';area.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{area.querySelectorAll('.choice').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');answerValue=b.dataset.value});}
  else if(type==='Skala'){const items=Array.isArray(f.scaleItems)&&f.scaleItems.length?f.scaleItems:[{statement:f.question||'Aussage',min:0,max:10}];answerValue={values:items.map(item=>{const min=Number(item.min),max=Number(item.max),value=min<=0&&max>=0?0:min;return {value,min,max}})};area.innerHTML='<div class="scale">'+items.map((item,i)=>{const min=Number(item.min),max=Number(item.max),initial=min<=0&&max>=0?0:min;return '<div class="scaleItem"><div class="scaleStatement">'+escapeHtml(item.statement||'Aussage')+'</div><div class="scaleLine"><span>'+min+'</span><input type="range" class="scaleRange" data-index="'+i+'" min="'+min+'" max="'+max+'" step="1" value="'+initial+'"><span>'+max+'</span></div><div class="scaleValue" id="scaleValue'+i+'">'+initial+'</div></div>'}).join('')+'</div>';area.querySelectorAll('.scaleRange').forEach(input=>input.oninput=()=>{const i=Number(input.dataset.index);answerValue.values[i].value=Number(input.value);area.querySelector('#scaleValue'+i).textContent=input.value});}
@@ -207,7 +214,8 @@ function renderQuestion(f,idx){const type=f.type||'Offene Frage';$('slideNumber'
  show('questionView')}
 function renderQuestionMedia(media){const root=$('questionMedia');if(!root)return;root.innerHTML='';if(!media||!media.url)return;const mime=media.mime||'';if(mime.startsWith('image/')){const img=document.createElement('img');img.src=media.url;img.alt=media.name||'';root.appendChild(img)}else if(mime.startsWith('video/')){const v=document.createElement('video');v.src=media.url;v.controls=true;v.playsInline=true;root.appendChild(v)}else if(mime.startsWith('audio/')){const a=document.createElement('audio');a.src=media.url;a.controls=true;root.appendChild(a)}}
 function moveRank(box,index,dir){const rows=[...box.querySelectorAll('.rankItem')],to=index+dir;if(to<0||to>=rows.length)return;const a=rows[index],b=rows[to];if(dir<0)box.insertBefore(a,b);else box.insertBefore(b,a);const vals=[...box.querySelectorAll('.rankItem')].map(x=>x.querySelector('span:nth-child(2)').textContent);[...box.querySelectorAll('.rankItem')].forEach((r,i)=>r.querySelector('.rankNum').textContent=i+1);answerValue=vals}
-async function submit(){setError('submitError','');const f=(session.survey_snapshot||[])[currentSlide];if(!f)return;const type=f.type;if(type==='Wortwolke'||type==='Offene Frage'||type==='Q&A'){answerValue=$('textAnswer')?.value.trim()||''}if(type==='Pin setzen'){const board=$('pinBoard');if(!board?.dataset.x){setError('submitError','Bitte zuerst einen Punkt auf der Fläche setzen.');return}answerValue={x:Number(board.dataset.x),y:Number(board.dataset.y)}}
- if(answerValue===null||answerValue===''||(Array.isArray(answerValue)&&!answerValue.length)){setError('submitError','Bitte zuerst eine Antwort auswählen oder eingeben.');return}$('submitBtn').disabled=true;try{const {error}=await db.from('responses').insert({session_id:session.id,participant_id:participant.id,slide_index:currentSlide,answer:{value:answerValue}});if(error)throw error;responseRestoreToken++;responseRestorePendingKey=null;responseStateLoadedKey=responseStateKey(currentSlide);submittedSlide=currentSlide;$('submitBtn').classList.add('hidden');$('submittedTitle').textContent='✓ Antwort gespeichert';$('submittedText').textContent='Warte auf die nächste Folie …';$('submitted').classList.remove('hidden')}catch(e){if(e.code==='23505'){responseStateLoadedKey=null;responseRestorePendingKey=null;await restoreSavedResponse(currentSlide)}else{setError('submitError',e.message||'Antwort konnte nicht gespeichert werden.');$('submitBtn').disabled=false}}}
+async function submit(){if(submitting)return;setError('submitError','');const f=(session.survey_snapshot||[])[currentSlide];if(!f)return;const type=f.type;if(type==='Wortwolke'||type==='Offene Frage'||type==='Q&A'){answerValue=$('textAnswer')?.value.trim()||''}if(type==='Pin setzen'){const board=$('pinBoard');if(!board?.dataset.x){setError('submitError','Bitte zuerst einen Punkt auf der Fläche setzen.');return}answerValue={x:Number(board.dataset.x),y:Number(board.dataset.y)}}
+ if(answerValue===null||answerValue===''||(Array.isArray(answerValue)&&!answerValue.length)){setError('submitError','Bitte zuerst eine Antwort auswählen oder eingeben.');return}const submittedIndex=currentSlide;$('submitBtn').disabled=true;submitting=true;try{const {data,error}=await db.rpc('survey_submit_response',{p_session_id:session.id,p_participant_id:participant.id,p_token:participantToken,p_slide_index:submittedIndex,p_value:answerValue});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'Antwort konnte nicht gespeichert werden.');if(currentSlide!==submittedIndex)return;responseRestoreToken++;responseRestorePendingKey=null;responseStateLoadedKey=responseStateKey(currentSlide);submittedSlide=currentSlide;$('submitBtn').classList.add('hidden');$('submittedTitle').textContent='✓ Antwort gespeichert';$('submittedText').textContent='Warte auf die nächste Folie …';$('submitted').classList.remove('hidden')}catch(e){if(e.code==='23505'){responseStateLoadedKey=null;responseRestorePendingKey=null;await restoreSavedResponse(currentSlide)}else{setError('submitError',e.message||'Antwort konnte nicht gespeichert werden.');$('submitBtn').disabled=false}}finally{submitting=false}}
 $('joinBtn').onclick=join;$('code').addEventListener('keydown',e=>{if(e.key==='Enter')$('name').focus()});$('name').addEventListener('keydown',e=>{if(e.key==='Enter')join()});$('submitBtn').onclick=submit;$('code').addEventListener('input',e=>e.target.value=e.target.value.toUpperCase());
 </script></body></html>
+
