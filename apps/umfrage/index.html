@@ -37,13 +37,14 @@ body{min-height:100vh}.wrap{max-width:1200px;margin:0 auto;padding:28px 22px 40p
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css">
+<link rel="stylesheet" href="../../shared/workspace.css">
 </head>
 <body data-studio="survey" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage Studio</a></nav>
 <div class="wrap">
 <header class="studio-header">
 <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 25V16h4v9M14 25V7h4v18M22 25V12h4v13M4 25h24"/></svg></span><h1 class="studio-title">Umfrage <span>Studio</span></h1></div>
-<div class="studio-actions"><button id="settingsBtn" type="button">Einstellungen</button><button id="logoutBtn" type="button">Abmelden</button><button class="studio-primary" id="newSurveyBtn" type="button">＋ Neue Umfrage</button></div>
+<div class="studio-actions"><button id="settingsBtn" type="button">Einstellungen</button><button class="studio-primary" id="newSurveyBtn" type="button">＋ Neue Umfrage</button></div>
 </header>
 <main class="columns">
 <section class="panel" id="sessionsPanel">
@@ -352,10 +353,10 @@ $('deleteAllSessionsBtn').onclick=deleteAllSessions;
 $('refreshSessionsBtn').onclick=()=>Promise.all([loadActiveSessions(),loadEndedSessions()]);
 $('refreshEndedBtn').onclick=loadEndedSessions;
 $('newSurveyBtn').onclick=()=>window.location.href='editor.html?new=1';
-$('logoutBtn').onclick=async()=>{await db.auth.signOut();window.location.href='../../index.html'};
 (async()=>{const user=await requireUser();if(user){await Promise.all([loadSurveys(),loadActiveSessions(),loadEndedSessions()]);setInterval(()=>{if(!document.hidden){loadActiveSessions();loadEndedSessions()}},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){loadActiveSessions();loadEndedSessions()}})}})();
 </script>
 </body>
 </html>
+
 
 

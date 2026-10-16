@@ -39,6 +39,9 @@ jobs:
             test-results/hub-desktop.png
             test-results/hub-mobile.png
             test-results/studio-*.png
+            test-results/editor-*.png
+            test-results/live-*.png
           if-no-files-found: ignore
+
 
 

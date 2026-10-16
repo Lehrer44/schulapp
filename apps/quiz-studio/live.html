@@ -19,8 +19,10 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
+<link rel="stylesheet" href="../../shared/dashboard.css">
+<link rel="stylesheet" href="../../shared/workspace.css">
 </head>
-<body>
+<body data-studio="quiz" data-dashboard-view="live">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
 <div class="wrap"><div id="app"><div class="panel">Live-Quiz wird geladen …</div></div><div class="foot" id="saveStatus">Verbindung wird hergestellt</div></div>
 <script>
@@ -77,7 +79,7 @@ function render(){
  if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
  const st=qstate();const q=activeQuestion();
  const phase=session.status==='lobby'?'Wartelobby':session.status==='ended'?'Beendet':'Live';
- app.innerHTML='<div class="top"><div class="brand"><span class="brand-symbol">Q</span><span>Quiz <span style="color:var(--accent)">Studio</span><div class="muted" style="font-size:.82rem;font-weight:600;letter-spacing:0">Live-Quiz · '+esc(phase)+'</div></span></div><div class="top-actions"><span class="status-pill">'+participants.length+' Teilnehmende</span><button class="secondary" data-action="refresh">↻ Aktualisieren</button><button class="secondary" data-action="back-dashboard">Zum Quiz Studio</button></div></div><div class="layout"><div class="main-col">'+
+ app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div></div></div><div class="studio-actions"><span class="status-pill">'+participants.length+' Teilnehmende</span><button class="secondary" data-action="refresh">Aktualisieren</button><button class="secondary" data-action="back-dashboard">Zum Quiz Studio</button></div></header><div class="layout"><div class="main-col">'+
  '<div class="panel"><div class="eyebrow">Teilnahme</div><div class="join-layout"><div><div class="muted">Teilnahmecode für die Schüler</div><div class="join-code">'+esc(session.join_code)+'</div><div class="muted">QR-Code scannen oder diesen Link öffnen:</div><a id="joinLink" class="join-link" href="'+esc(joinUrl())+'">'+esc(joinUrl())+'</a><div style="margin-top:10px"><button class="secondary" data-action="copy-link">Teilnahmelink kopieren</button></div></div><div id="qrHolder"><canvas class="qr" id="qrCanvas" aria-label="QR-Code zur Quizteilnahme"></canvas></div></div></div>'+
  renderQuestion()+'</div><aside class="side-col"><div class="panel"><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2><div id="leaderboard">'+leaderboardMarkup()+'</div><div class="answer-count">Grün markiert bedeutet: Antwort abgegeben.</div></div><div class="panel"><div class="eyebrow">Sitzung</div><h2>'+esc(session.quiz_title)+'</h2><div class="muted">Status: '+esc(phase)+'</div><div class="muted" style="margin-top:8px">Hinweis: Punkte werden nur einmal bei der Auflösung vergeben. Zurückblättern löscht keine Antworten.</div></div></aside></div>';
  drawQR();updateTimer();
@@ -149,4 +151,5 @@ document.body.addEventListener('click',async function(e){
 </script>
 </body>
 </html>
+
 
