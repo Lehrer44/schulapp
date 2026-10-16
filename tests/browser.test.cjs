@@ -31,10 +31,27 @@ async function fixtures(){
  await context.addInitScript(fixtures);
  await context.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:route.request().url().includes('supabase')?'window.supabase={createClient:()=>window.__testClient}':'window.QRCode={toCanvas:(c,u,o,cb)=>cb(null)}'}));
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ let studioStyle;
+ async function checkStudio(name){
+  const title=page.locator('.studio-title');await title.waitFor();
+  assert.equal((await title.innerText()).replace(/\s+/g,' ').trim(),name+' Studio');
+  assert.equal(await page.locator('.studio-header .studio-primary').count(),1);
+  const style=await page.evaluate(()=>{
+   const title=getComputedStyle(document.querySelector('.studio-title')),panel=getComputedStyle(document.querySelector('.panel')),button=getComputedStyle(document.querySelector('.studio-header .studio-primary'));
+   return {headerY:document.querySelector('.studio-header').getBoundingClientRect().y,font:title.fontFamily,size:title.fontSize,weight:title.fontWeight,panelRadius:panel.borderRadius,panelBorder:panel.borderTopWidth,panelBackground:panel.backgroundColor,buttonRadius:button.borderRadius,buttonHeight:button.minHeight};
+  });
+  if(studioStyle)assert.deepEqual(style,studioStyle);else studioStyle=style;
+  const file=name.toLowerCase();await page.screenshot({path:path.join(outputRoot,'studio-'+file+'-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),name+' mobile overflow');
+  await page.screenshot({path:path.join(outputRoot,'studio-'+file+'-mobile.png'),fullPage:true});
+  await page.setViewportSize({width:1280,height:900});
+ }
+
  await page.goto(base+'/index.html');await page.locator('#logoutBtn').waitFor({state:'visible'});assert.equal(await page.locator('.app-card').count(),3);await page.screenshot({path:path.join(outputRoot,'hub-desktop.png'),fullPage:true});
- await page.locator('.app-card[href="apps/umfrage/index.html"]').click();await page.waitForURL('**/apps/umfrage/index.html');await page.locator('#surveyList .empty').waitFor();assert.equal(await page.locator('#gamePanel').count(),0);await page.locator('.app-nav a').first().click();await page.waitForURL('**/SchulApp/index.html');
- await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await page.locator('.app-nav a').first().click();
- await page.locator('.app-card[href="apps/jeopardy/index.html"]').click();await page.waitForURL('**/apps/jeopardy/index.html');await page.locator('#btnNew').waitFor();await page.locator('.app-nav a').first().click();
+ await page.locator('.app-card[href="apps/umfrage/index.html"]').click();await page.waitForURL('**/apps/umfrage/index.html');await page.locator('#surveyList .empty').waitFor();assert.equal(await page.locator('#gamePanel').count(),0);await checkStudio('Umfrage');await page.locator('.app-nav a').first().click();await page.waitForURL('**/SchulApp/index.html');
+ await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');await page.locator('.app-nav a').first().click();
+ await page.locator('.app-card[href="apps/jeopardy/index.html"]').click();await page.waitForURL('**/apps/jeopardy/index.html');await page.locator('#btnNew').waitFor();await checkStudio('Jeopardy');await page.locator('.app-nav a').first().click();
  await page.locator('#logoutBtn').click();await page.locator('#loginLink').waitFor({state:'visible'});assert.equal(await page.locator('#logoutBtn').isVisible(),false);
  await page.goto(base+'/login.html?next=apps%2Fquiz-studio%2Findex.html');await page.waitForURL('**/apps/quiz-studio/index.html');
  await page.goto(base+'/login.html?next=https%3A%2F%2Fevil.example');await page.waitForURL('**/SchulApp/index.html');
@@ -45,6 +62,7 @@ async function fixtures(){
  await page.goto(base+'/join.html?code=BBBBB&kind=quiz');await page.waitForURL('**/apps/quiz-studio/student.html?code=BBBBB');await page.locator('#studentName').fill('Testperson');await page.locator('#joinForm button').click();await page.locator('#shortAnswer').fill('4');await context.setOffline(true);await page.waitForFunction(()=>!navigator.onLine);assert.equal(await page.locator('#shortAnswer').inputValue(),'4');assert((await page.locator('#connectionStatus').textContent()).includes('Offline'));await context.setOffline(false);await page.waitForTimeout(200);assert.equal(await page.locator('#shortAnswer').inputValue(),'4');await page.locator('#submitAnswer').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_submit_response_secure'));assert.equal(await page.evaluate(()=>window.__calls.find(x=>x.name==='quiz_live_submit_response_secure').args.p_answer),'4');
  await page.goto(base+'/apps/quiz-studio/live.html?session=quiz-session');await page.locator('[data-action="timer"]').waitFor();await page.locator('[data-action="timer"]').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_start_timer_at'));await page.locator('[data-action="reveal"]').click();await page.waitForFunction(()=>!document.querySelector('[data-action="next"]').disabled);await page.locator('[data-action="next"]').evaluate(button=>{button.click();button.click()});await page.waitForFunction(()=>document.body.textContent.includes('Die Erde ist rund.'));assert.equal(await page.evaluate(()=>window.__calls.filter(x=>x.name==='quiz_live_navigate_from').length),1);
  await page.setViewportSize({width:390,height:844});await page.goto(base+'/index.html');await page.screenshot({path:path.join(outputRoot,'hub-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.goto(base+'/join.html');await page.screenshot({path:path.join(outputRoot,'join-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));assert.equal(errors.length,0,errors.join('\n'));
- await browser.close();server.close();console.log('PASS: hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
+ await browser.close();server.close();console.log('PASS: shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
 })().catch(e=>{console.error(e);server.close();process.exit(1)});
+
 

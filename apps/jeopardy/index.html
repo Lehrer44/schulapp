@@ -322,9 +322,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
+<link rel="stylesheet" href="../../shared/dashboard.css">
 </head>
-<body>
-<nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Jeopardy</a></nav>
+<body data-studio="jeopardy" data-dashboard-view="library">
+<nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Jeopardy Studio</a></nav>
 <div id="app"></div>
 <div id="modalRoot"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -856,6 +857,7 @@ async function useLastFile(){
 
 /* ============ Home ============ */
 function renderHome(){
+  document.body.dataset.dashboardView='library';
   document.body.classList.remove('play-screen', 'edit-screen');
   editMode = false;
   current = null;
@@ -865,16 +867,16 @@ function renderHome(){
   lastFocusedBeforeModal = null;
 
   document.getElementById('app').innerHTML =
-    '<div class="top">' +
-      '<div class="brand-lockup"><div class="brand-symbol" aria-hidden="true">J</div><div><div class="brand">Jeopardy <span>Studio</span></div></div></div>' +
-      '<div class="row">' +
-        '<button class="secondary" id="btnOpen">📂 Spiele-Datei öffnen</button>' +
-        (lastFileAvailable ? '<button class="secondary" id="btnReload">↻ Letzte Datei laden</button>' : '') +
-        '<button class="gold" id="btnSaveAs">↓ JSON exportieren</button>' +
-        '<button class="gold" id="btnNew">＋ Spiel erstellen</button>' +
+    '<header class="studio-header">' +
+      '<div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="4" y="5" width="24" height="22" rx="3"/><path d="M4 12h24M12 5v22m8-22v22M4 20h24"/></svg></span><h1 class="studio-title">Jeopardy <span>Studio</span></h1></div>' +
+      '<div class="studio-actions">' +
+        '<button type="button" id="btnOpen">Importieren</button>' +
+        (lastFileAvailable ? '<button type="button" id="btnReload">Erneut laden</button>' : '') +
+        '<button type="button" id="btnSaveAs">Exportieren</button>' +
+        '<button class="studio-primary" type="button" id="btnNew">＋ Neues Spiel</button>' +
       '</div>' +
-    '</div>' +
-    '<div class="panel library-panel"><div class="library-heading"><div><div class="eyebrow">SPIELBIBLIOTHEK</div></div><div class="library-count">' + games.length + (games.length === 1 ? ' Spiel' : ' Spiele') + '</div></div>' +
+    '</header>' +
+    '<div class="panel library-panel"><div class="library-heading"><h2>Deine Spiele</h2><div class="library-count">' + games.length + (games.length === 1 ? ' Spiel' : ' Spiele') + '</div></div>' +
       (!cloudUser && gamesFileName
         ? '<div class="muted" style="margin-bottom:12px">Aktive Datei: <b>' + esc(gamesFileName) + '</b>' + (lastFileAvailable ? ' · Lokale Datei kann automatisch geladen werden.' : '') + '</div>'
         : '') +
@@ -1023,6 +1025,7 @@ function buildEditor(id){
 
 /* ============ Board ============ */
 function renderBoard(){
+  document.body.dataset.dashboardView='workspace';
   currentView = 'board';
   document.body.classList.toggle('play-screen', !editMode);
   document.body.classList.toggle('edit-screen', editMode);
@@ -1812,4 +1815,5 @@ initializeJeopardy();
 </script>
 </body>
 </html>
+
 

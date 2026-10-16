@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Umfrage · SchulApp</title>
+<title>Umfrage Studio · SchulApp</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#f1efe6;--line:#93856a;--text:#5c5547;--muted:#90836b;--accent:#918469;--accent-dark:#6e624e;--danger:#ef726b;--ok:#22a867}
@@ -36,13 +36,14 @@ body{min-height:100vh}.wrap{max-width:1200px;margin:0 auto;padding:28px 22px 40p
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
+<link rel="stylesheet" href="../../shared/dashboard.css">
 </head>
-<body>
-<nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage</a></nav>
+<body data-studio="survey" data-dashboard-view="library">
+<nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage Studio</a></nav>
 <div class="wrap">
-<header class="top">
-<div><div class="title">Umfrage · Dashboard</div><div class="status"><span class="dot"></span><span id="connection">Verbunden</span></div></div>
-<div class="topActions"><button class="btn" id="settingsBtn" aria-label="Einstellungen öffnen" title="Einstellungen">⚙ Einstellungen</button><button class="btn" id="logoutBtn">Abmelden</button></div>
+<header class="studio-header">
+<div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 25V16h4v9M14 25V7h4v18M22 25V12h4v13M4 25h24"/></svg></span><h1 class="studio-title">Umfrage <span>Studio</span></h1></div>
+<div class="studio-actions"><button id="settingsBtn" type="button">Einstellungen</button><button id="logoutBtn" type="button">Abmelden</button><button class="studio-primary" id="newSurveyBtn" type="button">＋ Neue Umfrage</button></div>
 </header>
 <main class="columns">
 <section class="panel" id="sessionsPanel">
@@ -54,7 +55,7 @@ body{min-height:100vh}.wrap{max-width:1200px;margin:0 auto;padding:28px 22px 40p
 <div class="list" id="endedSessionList"><div class="empty">Abgeschlossene Umfragen werden geladen …</div></div>
 </section>
 <section class="panel" id="surveyPanel">
-<div class="panelHeader"><h2>Umfragen</h2><button class="plus" id="newSurveyBtn" title="Neue Umfrage">＋</button></div>
+<div class="panelHeader"><h2>Deine Umfragen</h2></div>
 <div class="list" id="surveyList"></div>
 </section>
 
@@ -356,4 +357,5 @@ $('logoutBtn').onclick=async()=>{await db.auth.signOut();window.location.href='.
 </script>
 </body>
 </html>
+
 
