@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>SchulApp – Schülerbereich · SchulApp</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>:root{--bg:#f1efe6;--surface:#f5f3ea;--line:#93856a;--text:#5c5547;--muted:#90836b;--accent:#918469;--accent-dark:#6e624e;--danger:#ef726b;--ok:#22a867}
+.connectionNotice{display:none;margin:12px 0;padding:10px 12px;border:1px solid var(--danger);border-radius:8px;color:var(--danger);font-size:14px}.connectionNotice.visible{display:block}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:"Avenir Next",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{min-height:100vh}.wrap{min-height:100vh;display:grid;place-items:center;padding:28px}.card{width:min(760px,100%);background:transparent;border:2px solid var(--line);border-radius:26px;padding:34px;box-shadow:none}.brand{font-size:28px;font-weight:700;color:var(--muted)}.muted{color:var(--muted)}.hidden{display:none!important}.field{display:grid;gap:7px;margin:15px 0}.field input{width:100%;border:2px solid var(--line);background:rgba(246,244,236,.56);color:var(--text);border-radius:8px;padding:13px;font:inherit}.btn{width:100%;border:2px solid var(--line);border-radius:8px;background:rgba(246,244,236,.56);color:var(--muted);font:inherit;font-weight:600;padding:13px 16px;cursor:pointer}.btn:hover{background:#e9e5d8;color:var(--accent-dark)}.code{font-size:34px;font-weight:750;letter-spacing:5px;text-align:center;color:var(--accent-dark)}.joinGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.choice{width:100%;padding:17px;border:2px solid var(--line);border-radius:9px;background:rgba(246,244,236,.45);color:var(--text);text-align:left;font:inherit;cursor:pointer}.choice:hover{background:#ebe7d9}.choice.selected{outline:2px solid var(--accent);outline-offset:1px;background:#eae6d8}.rankList{display:grid;gap:9px}.rankItem{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px}.rankNum{font-size:20px;font-weight:800}.rankBtns{display:flex;gap:5px}.mini{border:2px solid var(--line);background:transparent;color:var(--muted);border-radius:7px;padding:5px 9px;cursor:pointer}.mini:hover{background:#e9e5d8}.pinBoard{position:relative;width:100%;height:auto;aspect-ratio:16/9;border:2px solid var(--line);border-radius:12px;background:#ece8dd;overflow:hidden;cursor:crosshair;margin-bottom:12px}.pinMapImage{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}.pinHint{position:absolute;left:12px;bottom:10px;padding:7px 10px;border-radius:8px;background:rgba(246,244,236,.92);color:var(--muted);font-size:12px;z-index:2}.pinBoard:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#93856a2a 1px,transparent 1px),linear-gradient(90deg,#93856a2a 1px,transparent 1px);background-size:10% 20%}.myPin{position:absolute;width:2.8%;height:auto;aspect-ratio:1;border-radius:50%;background:var(--accent);border:clamp(1px,.45vw,3px) solid #fff;transform:translate(-50%,-50%);box-shadow:0 2px 7px rgba(70,60,40,.35);z-index:3;pointer-events:none}.question{font-size:31px;font-weight:500;line-height:1.2;margin:25px 0;color:var(--muted)}.questionMedia{margin:0 0 18px}.questionMedia img,.questionMedia video{display:block;max-width:100%;max-height:300px;margin:0 auto;border-radius:10px}.questionMedia audio{width:100%}.progress{height:6px;background:#ded8ca;border-radius:99px;overflow:hidden;margin:18px 0}.progress>div{height:100%;background:var(--accent);transition:.25s}.status{text-align:center;padding:18px;border:2px solid var(--line);border-radius:12px;background:rgba(246,244,236,.48)}.ok{color:var(--ok);font-weight:800}.error{color:var(--danger);min-height:24px}.scale{display:grid;gap:14px}.scaleItem{border:2px solid var(--line-soft);border-radius:11px;padding:12px;background:rgba(246,244,236,.4)}.scaleStatement{font-weight:650;color:var(--text);margin-bottom:10px}.scaleLine{display:grid;grid-template-columns:46px 1fr 46px;gap:9px;align-items:center}.scaleLine input[type=range]{width:100%;accent-color:var(--accent)}.scaleValue{text-align:center;font-size:20px;font-weight:750;color:var(--accent-dark);margin-top:8px}.word,.text{width:100%;min-height:130px;border:2px solid var(--line);background:rgba(246,244,236,.56);color:var(--text);border-radius:9px;padding:13px;font:inherit}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.badge{padding:5px 9px;border-radius:99px;background:#ddd6c4;font-size:12px;font-weight:700;color:var(--muted)}.small{font-size:13px}.footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}@media(max-width:600px){.wrap{padding:8px 18px 18px}.card{padding:22px}.joinGrid{grid-template-columns:1fr}.question{font-size:25px}.scale{flex-wrap:wrap}.scale button{min-width:44px}}
+</style>
+<link rel="stylesheet" href="../../shared/app-status.css">
+<script src="../../shared/connection-status.js"></script>
+<link rel="stylesheet" href="../../shared/accessibility.css">
+<script src="../../shared/accessibility.js"></script>
+<script src="../../shared/pin-input.js"></script>
+</head>
+<body>
+<div class="wrap"><main class="card">
+<div class="top"><div></div><span class="badge" id="badge">BEITRETEN</span></div>
+<div id="connectionNotice" class="connectionNotice" role="status" aria-live="polite"></div>
+<section id="joinView">
+<p class="muted">Gib den Teilnahmecode und deinen Namen ein.</p>
+<div class="field"><label for="code">Teilnahmecode</label><input autocapitalize="characters" autocomplete="off" id="code" maxlength="5" placeholder="z. B. A7K3P"/></div>
+<div class="field"><label for="name">Dein Name</label><input autocomplete="name" id="name" maxlength="40" placeholder="Vorname oder Name"/></div>
+<button class="btn" id="joinBtn">Beitreten</button><div class="error" id="joinError"></div>
+</section>
+<section class="hidden" id="waitingView">
+<h1 id="waitingTitle">Du bist dabei!</h1><p class="muted">Hallo <b id="participantName"></b>.</p>
+<div class="status"><div class="code" id="waitingCode"></div><p class="muted">Warte, bis die Lehrkraft die erste Folie startet.</p><div class="ok">● Verbunden</div></div>
+</section>
+<section class="hidden" id="questionView">
+<div class="row"><span class="badge" id="slideNumber">Folie 1</span><span class="muted small" id="slideType"></span></div>
+<div class="progress"><div id="progressBar" style="width:0%"></div></div>
+<div class="question" id="question"></div>
+<div id="questionMedia" class="questionMedia"></div>
+<div id="answerArea"></div>
+<button class="btn" id="submitBtn" style="margin-top:18px">Antwort absenden</button>
+<div class="error" id="submitError"></div>
+<div class="status hidden" id="submitted"><div class="ok" id="submittedTitle">✓ Antwort gespeichert</div><div class="muted" id="submittedText">Warte auf die nächste Folie …</div></div>
+</section>
+<section class="hidden" id="finishedView">
+<h1>Umfrage beendet</h1><div class="status"><div class="ok">Danke für deine Teilnahme!</div><p class="muted">Die Lehrkraft hat die Umfrage beendet.</p></div>
+</section>
+<div class="footer">Deine Antwort wird dieser Sitzung zugeordnet.</div>
+</main></div>
+<script>
+const SUPABASE_URL='https://mqtcwiiawmuxrpkjfrfc.supabase.co';
+const SUPABASE_KEY='sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let participantToken=null,submitting=false;
+let session=null,participant=null,pollTimer=null,currentSlide=-1,answerValue=null,submittedSlide=-1,refreshFailures=0,refreshing=false,responseRestoreToken=0,responseStateLoadedKey=null,responseRestorePendingKey=null;
+function show(id){['joinView','waitingView','questionView','finishedView'].forEach(x=>$(x).classList.toggle('hidden',x!==id));}
+function normalizeCode(v){return v.trim().replace(/\s+/g,'').toUpperCase()}
+function setError(id,msg){$(id).textContent=msg||''}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function participantStorageKey(code){return 'schulumfrage:credentials:v2:'+code}
+function newParticipantToken(){const bytes=crypto.getRandomValues(new Uint8Array(32));return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function loadCredentials(code){try{const value=JSON.parse(sessionStorage.getItem(participantStorageKey(code))||'null');return value&&/^[a-f0-9]{64}$/.test(value.token)?value:null}catch{return null}}
+function saveCredentials(code,value){try{sessionStorage.setItem(participantStorageKey(code),JSON.stringify(value))}catch{}}
+async function studentState(){const {data,error}=await db.rpc('survey_student_state_compact',{p_session_id:session.id,p_participant_id:participant.id,p_token:participantToken,p_include_snapshot:!session.survey_snapshot});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'SESSION_NOT_FOUND');return data}
+function joinErrorMessage(error){
+ const message=String(error?.message||'');
+ if(message.includes('PARTICIPANT_NAME_MISMATCH'))return 'Diese Sitzung wurde auf diesem Gerät bereits mit einem anderen Namen betreten. Bitte verwende denselben Namen wie beim ersten Beitritt.';
+ if(message.includes('NAME_TAKEN'))return 'Dieser Name wird in dieser Sitzung bereits verwendet. Bitte wähle einen anderen Namen.';
+ if(message.includes('SESSION_NOT_FOUND'))return 'Keine offene Umfrage mit diesem Teilnahmecode gefunden. Bitte Code prüfen.';
+ if(message.includes('JOIN_RATE_LIMITED'))return 'Zu viele Beitrittsversuche. Bitte warte einige Minuten und versuche es erneut.';
+ if(message.includes('INVALID_JOIN_INPUT'))return 'Bitte gib einen gültigen Teilnahmecode und Namen ein.';
+ if(message.includes('INVALID_PARTICIPANT_TOKEN'))return 'Bitte lade die Seite neu und tritt erneut bei.';
+ return message||'Beitritt nicht möglich. Bitte erneut versuchen.';
+}
+async function join(){
+ setError('joinError','');const code=normalizeCode($('code').value),name=$('name').value.trim();
+ if(!code||!name){setError('joinError','Bitte Code und Namen eingeben.');return}
+ $('joinBtn').disabled=true;$('joinBtn').textContent='Beitreten …';
+ try{
+ const saved=loadCredentials(code),credentials=saved||{token:newParticipantToken(),id:null};
+ // Persist before the request so a lost response can safely be retried.
+ saveCredentials(code,credentials);participantToken=credentials.token;
+ const {data,error}=await db.rpc('classroom_join',{p_kind:'survey',p_join_code:code,p_name:name,p_token:participantToken,p_participant_id:credentials.id});
+ if(error)throw error;if(!data?.ok)throw new Error(data?.error||'SESSION_NOT_FOUND');
+ session={id:data.session_id};participant={id:data.participant_id,session_id:data.session_id,name};
+ saveCredentials(code,{token:participantToken,id:participant.id});
+ const state=await studentState();session=state.session;
+ $('participantName').textContent=name;$('waitingCode').textContent=data.join_code;subscribe();renderSession();
+ }catch(e){setError('joinError',joinErrorMessage(e))}finally{$('joinBtn').disabled=false;$('joinBtn').textContent='Beitreten'}
+}
+function showConnectionIssue(message){setConnectionStatus('error',message);const el=$('connectionNotice');el.textContent=message;el.classList.add('visible')}
+function clearConnectionIssue(){setConnectionStatus('ready',submittedSlide===currentSlide&&currentSlide>=0?'Verbunden · Antwort gespeichert.':'Verbunden · Neue Eingaben bitte mit „Antwort absenden“ speichern.');const el=$('connectionNotice');el.textContent='';el.classList.remove('visible')}
+function subscribe(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(refreshSession,2000);refreshSession()}
+async function refreshSession(){if(!session||!participant||refreshing)return;refreshing=true;try{const state=await studentState();const next={...session,...state.session};if(!next)throw new Error('Session nicht erreichbar.');const previousUpdatedAt=session.updated_at;const sameSlide=Number(next.current_slide)===Number(session.current_slide);const restarted=Boolean(previousUpdatedAt&&next.updated_at&&previousUpdatedAt!==next.updated_at&&sameSlide&&next.status==='running');session=next;refreshFailures=0;clearConnectionIssue();if(restarted){submittedSlide=-1;answerValue=null;responseRestoreToken++;responseStateLoadedKey=null;responseRestorePendingKey=null;const idx=Number(session.current_slide)||0;renderQuestion((session.survey_snapshot||[])[idx],idx);restoreSavedResponse(idx)}else{renderSession();await syncSavedResponse(state.response);}if(next.status==='ended'&&pollTimer){clearInterval(pollTimer);pollTimer=null}}catch(e){refreshFailures++;if(refreshFailures>=2)showConnectionIssue('Verbindung unterbrochen. Die Seite versucht automatisch erneut, den Umfragestatus abzurufen.');}finally{refreshing=false}}
+function responseStateKey(slideIndex){return session&&participant?session.id+':'+participant.id+':'+slideIndex:null}
+function setSavedFormReadOnly(readOnly){
+  $('answerArea').querySelectorAll('button,input,textarea,select').forEach(control=>{
+    control.disabled=readOnly;
+    if(control.tagName==='TEXTAREA')control.readOnly=readOnly;
+  });
+  const board=$('pinBoard');
+  if(board){board.style.pointerEvents=readOnly?'none':'';board.tabIndex=readOnly?-1:0;board.setAttribute('aria-disabled',String(readOnly));}
+}
+function applySavedAnswerToForm(slideIndex,saved){
+  const f=(session?.survey_snapshot||[])[Number(slideIndex)]||{};
+  const type=f.type||'Offene Frage';
+  const value=saved?.answer?.value;
+  answerValue=value??null;
+
+  if(saved?.answer?.teacherMarked){
+    setSavedFormReadOnly(true);
+    return;
+  }
+
+  if(type==='Multiple-Choice'){
+    $('answerArea').querySelectorAll('.choice[data-value]').forEach(button=>{
+      button.classList.toggle('selected',button.dataset.value===String(value??''));
+    });
+  }else if(type==='Skala'){
+    const values=Array.isArray(value?.values)?value.values:[];
+    $('answerArea').querySelectorAll('.scaleRange').forEach(input=>{
+      const i=Number(input.dataset.index),entry=values[i];
+      if(!entry||!Number.isFinite(Number(entry.value)))return;
+      input.value=String(entry.value);
+      const label=$('scaleValue'+i);
+      if(label)label.textContent=String(entry.value);
+    });
+  }else if(type==='Ranking'&&Array.isArray(value)){
+    const box=$('answerArea').querySelector('.rankList');
+    if(box){
+      const rows=[...box.querySelectorAll('.rankItem')];
+      const ordered=[];
+      value.forEach(item=>{
+        const row=rows.find(candidate=>!ordered.includes(candidate)&&candidate.querySelector('span:nth-child(2)')?.textContent===String(item));
+        if(row)ordered.push(row);
+      });
+      rows.forEach(row=>{if(!ordered.includes(row))ordered.push(row)});
+      ordered.forEach((row,index)=>{
+        box.appendChild(row);
+        const number=row.querySelector('.rankNum');
+        if(number)number.textContent=String(index+1);
+      });
+    }
+  }else if(type==='Pin setzen'&&value&&Number.isFinite(Number(value.x))&&Number.isFinite(Number(value.y))){
+    const board=$('pinBoard');
+    if(board){
+      board.querySelectorAll('.myPin').forEach(pin=>pin.remove());
+      const pin=document.createElement('div');
+      pin.className='myPin';
+      pin.style.left=Math.max(0,Math.min(100,Number(value.x)))+'%';
+      pin.style.top=Math.max(0,Math.min(100,Number(value.y)))+'%';
+      board.appendChild(pin);
+      board.dataset.x=String(value.x);
+      board.dataset.y=String(value.y);if($('pinX'))$('pinX').value=value.x;if($('pinY'))$('pinY').value=value.y;
+    }
+  }else{
+    const textarea=$('textAnswer');
+    if(textarea&&value!==null&&value!==undefined)textarea.value=String(value);
+  }
+
+  // The answer has already been stored. Display the original input read-only.
+  setSavedFormReadOnly(true);
+}
+async function restoreSavedResponse(slideIndex){
+  if(!session||!participant||session.status!=='running')return;
+  const key=responseStateKey(slideIndex);
+  if(!key||responseStateLoadedKey===key||responseRestorePendingKey===key)return;
+  const token=++responseRestoreToken,sessionId=session.id,participantId=participant.id;
+  responseRestorePendingKey=key;
+  $('submitBtn').disabled=true;
+  $('submitBtn').textContent='Antwort wird geprüft …';
+  setError('submitError','');
+  try{
+    const state=await studentState();
+    if(Number(state.session.current_slide)!==Number(slideIndex)){if(token===responseRestoreToken)responseRestorePendingKey=null;return;}
+    const data=state.response?[state.response]:[];
+    if(token!==responseRestoreToken||responseStateKey(slideIndex)!==key||Number(currentSlide)!==Number(slideIndex))return;
+    responseRestorePendingKey=null;
+    responseStateLoadedKey=key;
+    const saved=Array.isArray(data)?data[0]:null;
+    if(saved){
+      submittedSlide=slideIndex;
+      applySavedAnswerToForm(slideIndex,saved);
+      $('submitBtn').classList.add('hidden');
+      $('submittedTitle').textContent=saved.answer?.teacherMarked?'✓ Als beantwortet markiert':'✓ Antwort gespeichert';
+      $('submittedText').textContent=saved.answer?.teacherMarked?'Die Lehrkraft hat diese Frage für dich als beantwortet markiert.':'Deine bereits gespeicherte Antwort ist weiterhin vorhanden. Du musst sie nicht erneut absenden.';
+      $('submitted').classList.remove('hidden');
+      show('questionView');
+    }else{
+      submittedSlide=-1;
+      // Keep the answer initialized by renderQuestion (e.g. Skala sliders
+      // and Ranking) and any input the student made while the lookup ran.
+      $('submitBtn').classList.remove('hidden');
+      $('submitBtn').disabled=false;
+      $('submitBtn').textContent='Antwort absenden';
+      $('submitted').classList.add('hidden');
+    }
+  }catch(e){
+    if(token!==responseRestoreToken||responseStateKey(slideIndex)!==key)return;
+    responseRestorePendingKey=null;
+    $('submitBtn').disabled=true;
+    $('submitBtn').textContent='Antwortstatus nicht geladen';
+    setError('submitError','Der gespeicherte Antwortstatus konnte nicht geprüft werden. Wir versuchen es automatisch erneut. Bitte warte kurz, bevor du erneut antwortest.');
+  }
+}
+function renderSession(){if(!session)return;if(session.status==='ended'){show('finishedView');return}const slides=session.survey_snapshot||[],idx=Number(session.current_slide)||0;if(session.status!=='running'){show('waitingView');return}const f=slides[idx];if(!f){show('waitingView');return}if(idx!==currentSlide){currentSlide=idx;submittedSlide=-1;answerValue=null;responseStateLoadedKey=null;renderQuestion(f,idx);restoreSavedResponse(idx)}else{if(submittedSlide===idx)show('questionView');if(responseStateLoadedKey!==responseStateKey(idx))restoreSavedResponse(idx)}}
+function resetSubmittedUi(){if($('submittedTitle'))$('submittedTitle').textContent='✓ Antwort gespeichert';if($('submittedText'))$('submittedText').textContent='Warte auf die nächste Folie …'}
+async function syncSavedResponse(saved){
+ if(!session||session.status!=='running'||Number(currentSlide)!==Number(session.current_slide))return;
+ if(responseRestorePendingKey||submitting)return;
+ const f=(session.survey_snapshot||[])[currentSlide];if(!f)return;
+ if(!saved&&submittedSlide===currentSlide){submittedSlide=-1;renderQuestion(f,currentSlide);responseStateLoadedKey=responseStateKey(currentSlide);return;}
+ if(saved){submittedSlide=currentSlide;applySavedAnswerToForm(currentSlide,saved);$('submitBtn').classList.add('hidden');$('submittedTitle').textContent=saved.answer?.teacherMarked?'✓ Als beantwortet markiert':'✓ Antwort gespeichert';$('submittedText').textContent='Dein Antwortstatus wurde bestätigt.';$('submitted').classList.remove('hidden');}
+}
+function renderQuestion(f,idx){const type=f.type||'Offene Frage';$('slideNumber').textContent='Folie '+(idx+1);$('slideType').textContent=f.type||'';$('question').textContent=f.question||'';$('progressBar').style.width=((idx+1)/Math.max(1,(session.survey_snapshot||[]).length)*100)+'%';renderQuestionMedia(type==='Pin setzen'?null:f.media);setError('submitError','');$('submitted').classList.add('hidden');$('submitBtn').classList.remove('hidden');$('submitBtn').disabled=false;resetSubmittedUi();answerValue=null;const area=$('answerArea');area.innerHTML='';
+ if(type==='Multiple-Choice'){const opts=f.options||[];area.innerHTML='<div class="joinGrid">'+opts.map(o=>'<button type="button" class="choice" data-value="'+escapeHtml(o)+'">'+escapeHtml(o)+'</button>').join('')+'</div>';area.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{area.querySelectorAll('.choice').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');answerValue=b.dataset.value});}
+ else if(type==='Skala'){const items=Array.isArray(f.scaleItems)&&f.scaleItems.length?f.scaleItems:[{statement:f.question||'Aussage',min:0,max:10}];answerValue={values:items.map(item=>{const min=Number(item.min),max=Number(item.max),value=min<=0&&max>=0?0:min;return {value,min,max}})};area.innerHTML='<div class="scale">'+items.map((item,i)=>{const min=Number(item.min),max=Number(item.max),initial=min<=0&&max>=0?0:min;return '<div class="scaleItem"><div class="scaleStatement">'+escapeHtml(item.statement||'Aussage')+'</div><div class="scaleLine"><span>'+min+'</span><input type="range" class="scaleRange" data-index="'+i+'" min="'+min+'" max="'+max+'" step="1" value="'+initial+'"><span>'+max+'</span></div><div class="scaleValue" id="scaleValue'+i+'">'+initial+'</div></div>'}).join('')+'</div>';area.querySelectorAll('.scaleRange').forEach(input=>input.oninput=()=>{const i=Number(input.dataset.index);answerValue.values[i].value=Number(input.value);area.querySelector('#scaleValue'+i).textContent=input.value});}
+ else if(type==='Ranking'){const items=(f.options||[]).slice();answerValue=items.slice();const box=document.createElement('div');box.className='rankList';items.forEach((item,i)=>{const row=document.createElement('div');row.className='choice rankItem';row.dataset.i=i;row.innerHTML='<span class="rankNum">'+(i+1)+'</span><span>'+escapeHtml(item)+'</span><span class="rankBtns"><button type="button" class="mini" data-dir="up" aria-label="Element nach oben verschieben">↑</button><button type="button" class="mini" data-dir="down" aria-label="Element nach unten verschieben">↓</button></span>';row.querySelector('[data-dir="up"]').onclick=()=>moveRank(box,[...box.querySelectorAll('.rankItem')].indexOf(row),-1);row.querySelector('[data-dir="down"]').onclick=()=>moveRank(box,[...box.querySelectorAll('.rankItem')].indexOf(row),1);box.appendChild(row)});area.appendChild(box);}
+ else if(type==='Pin setzen'){
+ const image=f.pinImage?.url?'<img class="pinMapImage" src="'+escapeHtml(f.pinImage.url)+'" alt="">':'';
+ area.innerHTML='<div class="pinBoard" id="pinBoard" role="group" tabindex="0" aria-label="Punkt auf der Karte setzen" aria-describedby="pinInstruction">'+image+'</div><p id="pinInstruction">Tippe auf die Karte, nutze die Pfeiltasten (mit Umschalt: größere Schritte) oder gib Koordinaten ein. Pos1 setzt den Punkt in die Mitte.</p><div class="pinCoordinates"><div><label for="pinX">X-Koordinate (%)</label><input id="pinX" type="number" min="0" max="100" step="1" value="50"></div><div><label for="pinY">Y-Koordinate (%)</label><input id="pinY" type="number" min="0" max="100" step="1" value="50"></div></div><output id="pinReadout" role="status" aria-live="polite"></output>';
+ const board=$('pinBoard'),img=board.querySelector('.pinMapImage');
+ const sync=()=>{if(img?.naturalWidth&&img?.naturalHeight)board.style.aspectRatio=img.naturalWidth+' / '+img.naturalHeight};if(img){if(img.complete)sync();else img.addEventListener('load',sync,{once:true})}
+ installPinInput(board,$('pinX'),$('pinY'),value=>{answerValue=value;board.querySelectorAll('.myPin').forEach(p=>p.remove());const pin=document.createElement('div');pin.className='myPin';pin.style.left=value.x+'%';pin.style.top=value.y+'%';board.appendChild(pin);$('pinReadout').textContent='Punkt bei X '+value.x+' %, Y '+value.y+' %.';});
+ }else if(type==='Wortwolke'){area.innerHTML='<textarea aria-labelledby="question" id="textAnswer" class="text" maxlength="100" placeholder="Ein Wort oder kurzer Begriff …"></textarea>';}
+ else if(type==='Offene Frage'||type==='Q&A'){area.innerHTML='<textarea aria-labelledby="question" id="textAnswer" class="text" maxlength="500" placeholder="Deine Antwort …"></textarea>';}
+ else{area.innerHTML='<textarea aria-labelledby="question" id="textAnswer" class="text" maxlength="500" placeholder="Deine Antwort …"></textarea>'}
+ show('questionView')}
+function renderQuestionMedia(media){const root=$('questionMedia');if(!root)return;root.innerHTML='';if(!media||!media.url)return;const mime=media.mime||'';if(mime.startsWith('image/')){const img=document.createElement('img');img.src=media.url;img.alt=media.name||'';root.appendChild(img)}else if(mime.startsWith('video/')){const v=document.createElement('video');v.src=media.url;v.controls=true;v.playsInline=true;root.appendChild(v)}else if(mime.startsWith('audio/')){const a=document.createElement('audio');a.src=media.url;a.controls=true;root.appendChild(a)}}
+function moveRank(box,index,dir){const rows=[...box.querySelectorAll('.rankItem')],to=index+dir;if(to<0||to>=rows.length)return;const a=rows[index],b=rows[to];if(dir<0)box.insertBefore(a,b);else box.insertBefore(b,a);const vals=[...box.querySelectorAll('.rankItem')].map(x=>x.querySelector('span:nth-child(2)').textContent);[...box.querySelectorAll('.rankItem')].forEach((r,i)=>r.querySelector('.rankNum').textContent=i+1);answerValue=vals}
+async function submit(){if(submitting)return;if(!navigator.onLine){showConnectionIssue('Offline. Deine Eingabe bleibt hier erhalten und ist noch nicht gespeichert.');return;}setError('submitError','');const f=(session.survey_snapshot||[])[currentSlide];if(!f)return;const type=f.type;if(type==='Wortwolke'||type==='Offene Frage'||type==='Q&A'){answerValue=$('textAnswer')?.value.trim()||''}if(type==='Pin setzen'){const board=$('pinBoard');if(!board?.dataset.x){setError('submitError','Bitte zuerst einen Punkt auf der Fläche setzen.');return}answerValue={x:Number(board.dataset.x),y:Number(board.dataset.y)}}
+ if(answerValue===null||answerValue===''||(Array.isArray(answerValue)&&!answerValue.length)){setError('submitError','Bitte zuerst eine Antwort auswählen oder eingeben.');return}const submittedIndex=currentSlide;setConnectionStatus('waiting','Antwort wird gespeichert …');$('submitBtn').disabled=true;submitting=true;try{const {data,error}=await db.rpc('survey_submit_response',{p_session_id:session.id,p_participant_id:participant.id,p_token:participantToken,p_slide_index:submittedIndex,p_value:answerValue});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'Antwort konnte nicht gespeichert werden.');if(currentSlide!==submittedIndex)return;responseRestoreToken++;responseRestorePendingKey=null;responseStateLoadedKey=responseStateKey(currentSlide);submittedSlide=currentSlide;setConnectionStatus('ready','Antwort gespeichert.');$('submitBtn').classList.add('hidden');$('submittedTitle').textContent='✓ Antwort gespeichert';$('submittedText').textContent='Warte auf die nächste Folie …';$('submitted').classList.remove('hidden')}catch(e){if(e.code==='23505'){responseStateLoadedKey=null;responseRestorePendingKey=null;await restoreSavedResponse(currentSlide)}else{setConnectionStatus('error','Antwort nicht gespeichert. Deine Eingabe bleibt erhalten. Bitte erneut absenden.');setError('submitError',e.message||'Antwort konnte nicht gespeichert werden.');$('submitBtn').disabled=false}}finally{submitting=false}}
+const presetCode=new URLSearchParams(location.search).get('code');if(presetCode)$('code').value=normalizeCode(presetCode).replace(/[^A-Z0-9]/g,'').slice(0,5);
+window.addEventListener('online',()=>refreshSession());
+$('joinBtn').onclick=join;$('code').addEventListener('keydown',e=>{if(e.key==='Enter')$('name').focus()});$('name').addEventListener('keydown',e=>{if(e.key==='Enter')join()});$('submitBtn').onclick=submit;$('code').addEventListener('input',e=>e.target.value=e.target.value.toUpperCase());
+</script></body></html>
+
+

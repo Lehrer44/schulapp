@@ -1,4 +1,4 @@
-const assert=require('node:assert/strict');const {createLibraryStore}=require('../cloud-library.js');
+const assert=require('node:assert/strict');const {createLibraryStore}=require('../shared/cloud-library.js');
 function backend(){
  const state={row:null,offline:false,loseResponse:false,writes:0};
  const client={from(){return {select(){return this},eq(){return this},async maybeSingle(){return state.offline?{error:Error('offline')}:{data:state.row?structuredClone(state.row):null}}}},storage:{from(){return {async download(){return {error:{statusCode:'404',message:'Object not found'}}}}}},async rpc(name,a){
@@ -21,3 +21,4 @@ function backend(){
  const bad=createLibraryStore(client,'jeopardy');state.offline=true;await assert.rejects(bad.load({id:'teacher'}),/offline/);await assert.rejects(bad.save({games:[]}),/LIBRARY_NOT_LOADED/);
  console.log('PASS: stale tabs, serialization, lost response, load failure, preserved cloud contents');
 })().catch(e=>{console.error(e);process.exitCode=1});
+

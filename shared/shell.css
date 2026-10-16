@@ -1,0 +1,5 @@
+.app-nav{box-sizing:border-box;display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:1800px;margin:0 auto;padding:14px clamp(12px,2.3vw,32px);font:600 14px/1.4 system-ui,sans-serif;color:#635846}
+.app-nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border:1px solid #c9c0ad;border-radius:10px;background:#fffdf7;color:#514a3c;text-decoration:none}
+.app-nav a:hover{background:#e9e5d8}
+.app-nav a:focus-visible{outline:3px solid #145baa;outline-offset:3px}
+body.play-screen>.app-nav,body.edit-screen>.app-nav{display:none}
