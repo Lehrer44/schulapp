@@ -319,8 +319,9 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
+<link rel="stylesheet" href="../../shared/dashboard.css">
 </head>
-<body>
+<body data-studio="quiz" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
 <div class="wrap">
   <div id="app"></div>
@@ -586,6 +587,7 @@ function createQuestion(type){
    RENDER
    ========================================================= */
 function render(){
+  document.body.dataset.dashboardView=state.view==='list'?'library':'workspace';
   if(state.view === 'list')        $app.innerHTML = viewList();
   else if(state.view === 'editor') $app.innerHTML = viewEditor();
   else if(state.view === 'play')   $app.innerHTML = viewPlay();
@@ -597,23 +599,18 @@ function render(){
 function viewList(){
   const quizzes = db.quizzes;
   return `
-  <div class="top">
-    <div class="brand-lockup">
-      <div class="brand-symbol" aria-hidden="true">Q</div>
-      <div>
-        <div class="brand">Quiz <span>Studio</span></div>
-      </div>
+  <header class="studio-header">
+    <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><h1 class="studio-title">Quiz <span>Studio</span></h1></div>
+    <div class="studio-actions">
+      <button type="button" data-action="import">Importieren</button>
+      <button type="button" data-action="export-all">Exportieren</button>
+      <button class="studio-primary" type="button" data-action="new-quiz">＋ Neues Quiz</button>
     </div>
-    <div class="hero-actions">
-      <button class="btn secondary" data-action="export-all">⭳ Alle exportieren</button>
-      <button class="btn secondary" data-action="import">⭱ Importieren</button>
-      <button class="btn gold" data-action="new-quiz">＋ Neues Quiz</button>
-    </div>
-  </div>
+  </header>
 
   <div class="panel">
     <div class="library-heading">
-      <div></div>
+      <h2>Deine Quizze</h2>
       <div class="library-count">${quizzes.length} ${quizzes.length === 1 ? 'Quiz' : 'Quizze'}</div>
     </div>
     ${ quizzes.length === 0
@@ -1650,4 +1647,5 @@ function importData(){
 </script>
 </body>
 </html>
+
 
