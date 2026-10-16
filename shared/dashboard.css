@@ -3,21 +3,21 @@ body[data-dashboard-view="library"]{
   --studio-bg:#f3f1e9;--studio-surface:#fffefa;--studio-soft:#f8f6ef;
   --studio-line:#ddd7ca;--studio-text:#34382f;--studio-muted:#686456;
   --studio-accent:#80682f;--studio-tint:#eee7d5;
-  margin:0;background:var(--studio-bg);color:var(--studio-text);
+  display:flex;flex-direction:column;margin:0;background:var(--studio-bg);color:var(--studio-text);
   font:16px/1.5 Inter,"Avenir Next",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;
 }
 body[data-dashboard-view="library"][data-studio="survey"]{--studio-accent:#386449;--studio-tint:#e5eee7}
 body[data-dashboard-view="library"][data-studio="jeopardy"]{--studio-accent:#4e6289;--studio-tint:#e5e9f1}
 body[data-dashboard-view="library"]>.app-nav{
-  width:min(1280px,100%);max-width:none;padding:20px 28px 0;gap:10px;
+  order:0;width:min(1280px,100%);max-width:none;padding:20px 28px 0;gap:10px;
   font:600 13px/1.4 Inter,"Avenir Next",system-ui,sans-serif;color:var(--studio-muted);
 }
 body[data-dashboard-view="library"]>.app-nav a{border:0;background:transparent;padding:0 4px;color:var(--studio-muted);border-radius:5px}
 body[data-dashboard-view="library"]>.app-nav a:first-child{color:var(--studio-text)}
 body[data-dashboard-view="library"]>.app-nav a:hover{color:var(--studio-accent);text-decoration:underline}
 body[data-dashboard-view="library"]>.wrap,body[data-dashboard-view="library"]>#app{
-  box-sizing:border-box;width:min(1280px,100%);max-width:none;margin:0 auto;padding:18px 28px 44px;min-height:0;
+  order:1;box-sizing:border-box;width:min(1280px,100%);max-width:none;margin:0 auto;padding:18px 28px 44px;min-height:0;
 }
 .studio-header{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding:0 0 28px;margin:0 0 28px;border-bottom:1px solid var(--studio-line)}
 .studio-identity{display:flex;align-items:center;gap:16px;min-width:0}
@@ -54,7 +54,7 @@ body[data-dashboard-view="library"] #sessionsPanel{grid-area:sessions}
 body[data-dashboard-view="library"] #endedPanel{grid-area:ended}
 body[data-dashboard-view="library"] :is(.storage-note,.footer-note){border:0;background:transparent;box-shadow:none;color:var(--studio-muted);font-size:12px;line-height:1.65;padding:14px 4px;margin:0}
 body[data-dashboard-view="library"] #retryCloudSave{font-size:12px;min-height:36px;padding:7px 11px}
-body[data-dashboard-view="library"]>.connection-status{box-sizing:border-box;width:calc(100% - 56px);max-width:1224px;margin:12px auto 0;font:500 12px/1.5 Inter,"Avenir Next",system-ui,sans-serif;border-radius:10px}
+body[data-dashboard-view="library"]>.connection-status{order:2;box-sizing:border-box;width:calc(100% - 56px);max-width:1224px;margin:0 auto 24px;font:500 12px/1.5 Inter,"Avenir Next",system-ui,sans-serif;border-radius:10px}
 @media(max-width:800px){
   body[data-dashboard-view="library"]>.app-nav{padding:12px 18px 0}
   body[data-dashboard-view="library"]>.wrap,body[data-dashboard-view="library"]>#app{padding:16px 18px 32px}

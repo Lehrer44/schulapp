@@ -38,7 +38,7 @@ async function fixtures(){
   assert.equal(await page.locator('.studio-header .studio-primary').count(),1);
   const style=await page.evaluate(()=>{
    const title=getComputedStyle(document.querySelector('.studio-title')),panel=getComputedStyle(document.querySelector('.panel')),button=getComputedStyle(document.querySelector('.studio-header .studio-primary'));
-   return {font:title.fontFamily,size:title.fontSize,weight:title.fontWeight,panelRadius:panel.borderRadius,panelBorder:panel.borderTopWidth,panelBackground:panel.backgroundColor,buttonRadius:button.borderRadius,buttonHeight:button.minHeight};
+   return {headerY:document.querySelector('.studio-header').getBoundingClientRect().y,font:title.fontFamily,size:title.fontSize,weight:title.fontWeight,panelRadius:panel.borderRadius,panelBorder:panel.borderTopWidth,panelBackground:panel.backgroundColor,buttonRadius:button.borderRadius,buttonHeight:button.minHeight};
   });
   if(studioStyle)assert.deepEqual(style,studioStyle);else studioStyle=style;
   const file=name.toLowerCase();await page.screenshot({path:path.join(outputRoot,'studio-'+file+'-desktop.png'),fullPage:true});
