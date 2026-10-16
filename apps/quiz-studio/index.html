@@ -320,12 +320,13 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css">
+<link rel="stylesheet" href="../../shared/workspace.css">
 </head>
 <body data-studio="quiz" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
 <div class="wrap">
   <div id="app"></div>
-  <button type="button" id="retryCloudSave">Erneut speichern</button><div class="footer-note" role="status" aria-live="polite" id="cloudStatus">Quiz Studio · Quizze und Medien werden in deinem Supabase-Konto gespeichert.</div>
+  <div class="footer-note" role="status" aria-live="polite" id="cloudStatus">Quiz Studio · Quizze und Medien werden in deinem Supabase-Konto gespeichert.</div>
 </div>
 <div id="toast"></div>
 
@@ -547,7 +548,6 @@ function scheduleSave(){
   saveTimer = setTimeout(()=>{saveTimer=null;save();},800);
 }
 
-document.getElementById('retryCloudSave').onclick=()=>save();
 window.addEventListener('beforeunload',e=>{if(cloudDirty||saveTimer||libraryStore.unsaved){e.preventDefault();e.returnValue='';}});
 
 /* ---------- Quiz / Fragen erzeugen ---------- */
@@ -587,7 +587,7 @@ function createQuestion(type){
    RENDER
    ========================================================= */
 function render(){
-  document.body.dataset.dashboardView=state.view==='list'?'library':'workspace';
+  document.body.dataset.dashboardView=state.view==='list'?'library':state.view==='editor'?'editor':'preview';
   if(state.view === 'list')        $app.innerHTML = viewList();
   else if(state.view === 'editor') $app.innerHTML = viewEditor();
   else if(state.view === 'play')   $app.innerHTML = viewPlay();
@@ -651,20 +651,15 @@ function viewEditor(){
   if(!q) return '';
   const totalPoints = q.questions.reduce((s,x)=>s + (Number(x.points)||0), 0);
   return `
-  <div class="top">
-    <div class="brand-lockup">
-      <div class="brand-symbol" aria-hidden="true">Q</div>
-      <div>
-        <div class="brand">${esc(q.title) || 'Quiz bearbeiten'}</div>
-        <div class="brand-sub">Quizvorlage bearbeiten</div>
-      </div>
-    </div>
-    <div class="hero-actions">
+  <header class="studio-header">
+    <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">${esc(q.title) || 'Quiz bearbeiten'}</div></div></div>
+    <div class="studio-actions">
       <button class="btn secondary" data-action="back-to-list">← Meine Quizze</button>
       <button class="btn secondary" data-action="export-quiz" data-id="${q.id}">⭳ Export</button>
-      <button class="btn gold" data-action="play-quiz" data-id="${q.id}">▶ Spielen</button>
+      <button class="studio-primary" data-action="retry-cloud-save" id="retryCloudSave">Erneut speichern</button>
+      <button class="btn" data-action="play-quiz" data-id="${q.id}">▶ Spielen</button>
     </div>
-  </div>
+  </header>
 
   <div class="panel">
     <input class="title-input" data-bind="title" value="${esc(q.title)}" placeholder="Titel des Quiz">
@@ -867,19 +862,13 @@ function viewPlay(){
   else btnLabel = s.immediate ? 'Antwort prüfen' : 'Weiter →';
 
   return `
-  <div class="top">
-    <div class="brand-lockup">
-      <div class="brand-symbol" aria-hidden="true">Q</div>
-      <div>
-        <div class="brand">${esc(s.title) || 'Quiz'}</div>
-        <div class="brand-sub">Frage ${s.index+1} von ${total}</div>
-      </div>
-    </div>
-    <div class="hero-actions">
+  <header class="studio-header">
+    <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Frage ${s.index+1} von ${total}</div></div></div>
+    <div class="studio-actions">
       <div class="play-score">${fmt(score)} Punkte</div>
       <button class="btn secondary" data-action="quit-play">✕ Beenden</button>
     </div>
-  </div>
+  </header>
   <div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>
 
   <div class="panel play-panel">
@@ -1073,19 +1062,13 @@ function viewResult(){
             : 'Weiter üben 💪';
 
   return `
-  <div class="top">
-    <div class="brand-lockup">
-      <div class="brand-symbol" aria-hidden="true">Q</div>
-      <div>
-        <div class="brand">${esc(s.title) || 'Quiz'}</div>
-        <div class="brand-sub">Ergebnis</div>
-      </div>
-    </div>
-    <div class="hero-actions">
+  <header class="studio-header">
+    <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Ergebnis</div></div></div>
+    <div class="studio-actions">
       <button class="btn secondary" data-action="back-to-list">← Zur Übersicht</button>
       <button class="btn gold" data-action="restart-quiz">↻ Nochmal spielen</button>
     </div>
-  </div>
+  </header>
 
   <div class="panel result-hero">
     <div class="result-pct">${pct}%</div>
@@ -1133,6 +1116,7 @@ document.addEventListener('click', async (e)=>{
   const findQ = () => draft ? draft.questions.find(x=>x.id === qid) : null;
 
   switch(action){
+    case 'retry-cloud-save': { await save(); break; }
 
     case 'new-quiz': {
       const q = newQuiz();
@@ -1647,5 +1631,6 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 

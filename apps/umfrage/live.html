@@ -19,14 +19,13 @@ body{min-height:100vh}.wrap{max-width:1320px;margin:0 auto;padding:24px 18px 34p
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
+<link rel="stylesheet" href="../../shared/dashboard.css">
+<link rel="stylesheet" href="../../shared/workspace.css">
 </head>
-<body>
-<nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage</a></nav>
+<body data-studio="survey" data-dashboard-view="live">
+<nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage Studio</a></nav>
 <div class="wrap">
-<header class="top">
-<div><div class="title" id="sessionTitle">Umfrage</div><div class="subtle" id="connection">Realtime verbindet …</div></div>
-<div class="actions"><button class="btn accent" id="accessBtn">Teilnahme</button><button class="btn accent" id="startBtn">▶ Umfrage starten</button><button class="btn" id="restartBtn">Neu starten</button><button class="btn danger" id="stopBtn">Beenden</button></div>
-</header>
+<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 25V16h4v9M14 25V7h4v18M22 25V12h4v13M4 25h24"/></svg></span><div><h1 class="studio-title">Umfrage <span>Studio</span></h1><div class="studio-subtitle"><span id="sessionTitle">Umfrage</span> · <span id="connection">Realtime verbindet …</span></div></div></div><div class="studio-actions"><button class="studio-primary" id="accessBtn">Teilnahme</button><button class="btn" id="startBtn">▶ Umfrage starten</button><button class="btn" id="restartBtn">Neu starten</button><button class="btn danger" id="stopBtn">Beenden</button></div></header>
 <div class="metricRow">
 <div class="metric"><strong id="participantMetric">0</strong><span>Teilnehmer</span></div>
 <div class="metric"><strong id="rateMetric">0%</strong><span>Antwortquote</span></div>
@@ -132,4 +131,5 @@ load();
 </script>
 </body>
 </html>
+
 

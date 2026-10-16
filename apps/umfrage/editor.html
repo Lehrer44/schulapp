@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SchulApp – Umfrage bearbeiten · SchulApp</title>
+<title>Umfrage bearbeiten · SchulApp</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#f1efe6;--surface:#f7f4ea;--line:#93856a;--line-soft:#c6bdab;--text:#5c5547;--muted:#90836b;--accent:#918469;--accent-dark:#6e624e;--danger:#ef726b;--ok:#22a867}
@@ -30,21 +30,13 @@ body{min-height:100vh}.wrap{max-width:1380px;margin:0 auto;padding:22px 18px 38p
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
+<link rel="stylesheet" href="../../shared/dashboard.css">
+<link rel="stylesheet" href="../../shared/workspace.css">
 </head>
-<body>
-<nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage</a></nav>
+<body data-studio="survey" data-dashboard-view="editor">
+<nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage Studio</a></nav>
 <div class="wrap">
-<header class="top">
-<div>
-<div class="title">Umfrage <span id="modeText">erstellen</span></div>
-<div class="subtle" id="saveState">Noch nicht gespeichert</div>
-</div>
-<div class="actions">
-<button class="btn" id="backBtn">← Übersicht</button>
-<button class="btn" id="saveBtn">Speichern</button>
-<button class="btn accent" id="startBtn" disabled>▶ Starten</button>
-</div>
-</header>
+<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 25V16h4v9M14 25V7h4v18M22 25V12h4v13M4 25h24"/></svg></span><div><h1 class="studio-title">Umfrage <span>Studio</span></h1><div class="studio-subtitle">Umfrage <span id="modeText">erstellen</span> · <span id="saveState" role="status">Noch nicht gespeichert</span></div></div></div><div class="studio-actions"><button class="btn" id="backBtn">← Übersicht</button><button class="studio-primary" id="saveBtn">Speichern</button><button class="btn" id="startBtn" disabled>▶ Starten</button></div></header>
 
 <div class="layout">
 <aside class="panel slidesPanel">
@@ -60,7 +52,7 @@ body{min-height:100vh}.wrap{max-width:1380px;margin:0 auto;padding:22px 18px 38p
 
 <div class="editorGrid">
 <section>
-<div class="panelHead"><h2 style="margin:0;color:var(--muted);font-size:21px;font-weight:500">Folie bearbeiten</h2></div>
+<div class="panelHead"><h2 >Folie bearbeiten</h2></div>
 <div id="slideEditor"></div>
 </section>
 
@@ -372,4 +364,5 @@ load();
 </script>
 </body>
 </html>
+
 

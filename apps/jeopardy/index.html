@@ -323,6 +323,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css">
+<link rel="stylesheet" href="../../shared/workspace.css">
 </head>
 <body data-studio="jeopardy" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Jeopardy Studio</a></nav>
@@ -898,12 +899,7 @@ function renderHome(){
               '</div>').join('')
           : '<div class="empty">Noch kein Spiel vorhanden. Erstelle ein Spiel, um zu beginnen.</div>') +
       '</div>' +
-    '</div>' +
-    '<div class="storage-note"><span aria-hidden="true">ⓘ</span><div>' +
-      (cloudUser
-        ? '<b>Automatisches Cloud-Speichern:</b> Mit „Speichern“ wird die Spielesammlung sicher in deinem Supabase-Konto abgelegt und beim nächsten Öffnen automatisch geladen. „JSON exportieren“ erstellt zusätzlich eine lokale Sicherung.'
-        : '<b>Lokales Speichern:</b> Du bist nicht über den Lehrerbereich angemeldet. Änderungen können als JSON exportiert werden. Für automatisches Cloud-Speichern öffne Jeopardy über das SchulApp-Dashboard.') +
-      ' Fragen, Antworten und eingebettete Medien bleiben zusammen in der Spielesammlung.</div></div>';
+    '</div>';
 
   document.getElementById('btnOpen').onclick = () => openGamesFile();
   const rel = document.getElementById('btnReload');
@@ -1025,7 +1021,7 @@ function buildEditor(id){
 
 /* ============ Board ============ */
 function renderBoard(){
-  document.body.dataset.dashboardView='workspace';
+  document.body.dataset.dashboardView=editMode?'editor':'workspace';
   currentView = 'board';
   document.body.classList.toggle('play-screen', !editMode);
   document.body.classList.toggle('edit-screen', editMode);
@@ -1039,10 +1035,11 @@ function renderBoard(){
       '<button class="secondary" id="btnHome">Beenden</button>';
 
   document.getElementById('app').innerHTML =
-    '<div class="top">' +
+    (editMode ? '<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="4" y="5" width="24" height="22" rx="3"/><path d="M4 12h24M12 5v22m8-22v22M4 20h24"/></svg></span><div><h1 class="studio-title">Jeopardy <span>Studio</span></h1><div class="studio-subtitle">' + esc(current.name) + ' · Spiel bearbeiten</div></div></div><div class="studio-actions">' + topButtons + '</div></header>' :
+'<div class="top">' +
       '<div class="brand-lockup"><div class="brand-symbol" aria-hidden="true">J</div><div><div class="brand">' + esc(current.name) + '</div><div class="brand-sub">' + (editMode ? 'Spielvorlage bearbeiten' : 'Moderation und Spielstand') + '</div></div></div>' +
       '<div class="row">' + topButtons + '</div>' +
-    '</div>' +
+    '</div>' ) +
     (editMode ? '' : '<div id="scorebar" class="scorebar"></div>') +
     '<div class="panel board-wrap ' + (editMode ? 'editor-board-wrap' : 'play-board-wrap') + '">' +
       '<div class="board ' + (editMode ? 'editor-board' : 'play-board') + '" id="board" style="grid-template-columns:' +
@@ -1815,5 +1812,6 @@ initializeJeopardy();
 </script>
 </body>
 </html>
+
 
 
