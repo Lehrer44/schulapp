@@ -7,7 +7,7 @@ const server=http.createServer((req,res)=>{const pathname=decodeURIComponent(new
 async function fixtures(){
  window.__calls=[];let signedIn=true;
  const owner='00000000-0000-4000-8000-000000000001';
- const quiz={id:'quiz1',title:'Testquiz',questions:[{id:'q1',type:'shortanswer',text:'Wie viel ist zwei plus zwei?',points:1,answers:['4']},{id:'q2',type:'truefalse',text:'Die Erde ist rund.',points:1,correct:true}]};
+ const quiz={id:'quiz1',title:'Testquiz',questions:[{id:'q1',type:'shortanswer',text:'Wie viel ist zwei plus zwei?',textFormat:location.pathname.endsWith('/live.html')?{align:'center',ranges:[{start:0,end:8,bold:true}]}:undefined,points:1,answers:['4']},{id:'q2',type:'truefalse',text:'Die Erde ist rund.',points:1,correct:true}]};
  const survey={owner_id:owner,id:'survey-session',title:'Testumfrage',survey_snapshot:[{type:'Pin setzen',question:'Setze einen Punkt auf die Karte.'}],current_slide:0,status:'running',join_code:'AAAAA',updated_at:'2026-10-12T17:00:00Z'};
  const quizSession={id:'quiz-session',owner_id:owner,quiz_title:'Testquiz',quiz_snapshot:quiz,current_index:0,status:'running',join_code:'BBBBB',question_states:[{locked:false,revealed:false},{locked:false,revealed:false}],updated_at:'initial'};
  let surveyAnswer=null,quizAnswer=null;
@@ -16,7 +16,7 @@ async function fixtures(){
   if(name==='classroom_join')return {data:{ok:true,session_id:args.p_kind==='survey'?'survey-session':'quiz-session',participant_id:'participant',join_code:args.p_join_code}};
   if(name==='survey_student_state_compact'){const state={...survey};if(!args.p_include_snapshot)delete state.survey_snapshot;return {data:{ok:true,session:state,response:surveyAnswer}};}
   if(name==='survey_submit_response'){surveyAnswer={answer:{value:args.p_value}};return {data:{ok:true}}}
-  if(name==='quiz_live_student_state_secure')return {data:{ok:true,status:'running',current_index:0,title:'Testquiz',question_count:2,question:{type:'shortanswer',points:1},question_state:{locked:false,revealed:false},own_response:quizAnswer,leaderboard:[],locked:false,revealed:false}};
+  if(name==='quiz_live_student_state_secure')return {data:{ok:true,status:'running',current_index:0,title:'Testquiz',question_count:2,question:window.__formattedStudentQuestion||{type:'shortanswer',points:1},question_state:{locked:false,revealed:false},own_response:quizAnswer,leaderboard:[],locked:false,revealed:false}};
   if(name==='quiz_live_submit_response_secure'){quizAnswer={answer:args.p_answer};return {data:{ok:true}}}
   if(name==='quiz_live_teacher_state')return {data:{ok:true,session:quizSession,leaderboard:[],responses:[]}};
   if(name==='quiz_live_start_timer_at'){assertIndex(args.p_question_index);quizSession.question_states[0].timer_deadline=new Date(Date.now()+30000).toISOString();return {data:{ok:true}}}
@@ -62,9 +62,44 @@ async function fixtures(){
   await page.screenshot({path:path.join(outputRoot,'editor-'+name.toLowerCase()+'-mobile.png'),fullPage:true});
   await page.setViewportSize({width:1280,height:900});
  }
+ async function checkRichEditor(){
+  const question=page.locator('.qtext').first(),toolbar=question.locator('..').locator('.rich-toolbar');
+  await question.fill('Erste Zeile\nZweite Zeile');
+  await question.evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);getSelection().removeAllRanges();getSelection().addRange(range)});
+  await toolbar.getByRole('button',{name:'Fett',exact:true}).click();
+  await question.evaluate(el=>{const text=el.querySelector('strong,b').firstChild,range=document.createRange();range.setStart(text,0);range.setEnd(text,5);getSelection().removeAllRanges();getSelection().addRange(range)});
+  await toolbar.getByRole('button',{name:'Unterstreichen',exact:true}).click();
+  await toolbar.getByRole('button',{name:'Zentrieren',exact:true}).click();
+  await question.evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);range.collapse(false);getSelection().removeAllRanges();getSelection().addRange(range)});
+  await toolbar.getByRole('button',{name:'Zeilenumbruch',exact:true}).click();await page.keyboard.type('Dritte Zeile');
+  await page.locator('#retryCloudSave').click();
+  await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'&&x.args.p_payload.quizzes[0].questions[0].text==='Erste Zeile\nZweite Zeile\nDritte Zeile'));
+  const saved=await page.evaluate(()=>window.__calls.filter(x=>x.name==='save_teacher_library').at(-1).args.p_payload.quizzes[0].questions[0]);
+  assert.equal(saved.textFormat.align,'center');assert(saved.textFormat.ranges.some(r=>r.bold));assert(saved.textFormat.ranges.some(r=>r.underline));assert(!JSON.stringify(saved.textFormat).includes('Erste'));
+  await question.evaluate(el=>{const bytes=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1fkAAAAASUVORK5CYII='),c=>c.charCodeAt(0)),data=new DataTransfer();data.items.add(new File([bytes],'paste.png',{type:'image/png'}));el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}))});
+  await page.locator('.media-preview-editor').waitFor();await page.locator('[data-action="remove-question-media"]').click();
+  await page.locator('[data-action="back-to-list"]').click();await page.locator('[data-action="open-quiz"]').click();
+  assert((await page.locator('.qtext').first().innerHTML()).includes('<strong>'));
+  assert.equal(await page.locator('.qtext').first().getAttribute('data-align'),'center');
+  await page.locator('[data-action="play-quiz"]').click();
+  assert.equal(await page.locator('.play-question .quiz-rich-line').count(),3);
+  assert.equal(await page.locator('.play-question u').first().innerText(),'Erste');
+  assert.equal(await page.locator('.play-question .quiz-rich').evaluate(el=>getComputedStyle(el).textAlign),'center');
+  await page.screenshot({path:path.join(outputRoot,'editor-quiz-formatted-preview.png'),fullPage:true});
+  page.once('dialog',dialog=>dialog.accept());await page.locator('[data-action="quit-play"]').click();await page.locator('[data-action="open-quiz"]').click();
+  // Plain-text paste must not import active HTML or change the grading text.
+  await page.locator('[data-action="add-question"][data-type="single"]').click();
+  const option=page.locator('[data-field="option-text"]').first();await option.fill('Antwort');
+  await option.evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);getSelection().removeAllRanges();getSelection().addRange(range)});
+  await option.locator('..').getByRole('button',{name:'Fett',exact:true}).click();
+  await option.press('End');await option.evaluate(el=>{const data=new DataTransfer();data.setData('text/html','<img src=x onerror="window.__xss=true">');data.setData('text/plain',' sicher');el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}))});
+  assert.equal(await option.locator('img').count(),0);assert.equal(await page.evaluate(()=>window.__xss),undefined);
+  await page.locator('#retryCloudSave').click();
+  await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'&&x.args.p_payload.quizzes[0].questions.at(-1).options?.[0].text==='Antwort sicher'));
+ }
  await page.goto(base+'/index.html');await page.locator('#logoutBtn').waitFor({state:'visible'});assert.equal(await page.locator('.app-card').count(),3);await page.screenshot({path:path.join(outputRoot,'hub-desktop.png'),fullPage:true});
  await page.locator('.app-card[href="apps/umfrage/index.html"]').click();await page.waitForURL('**/apps/umfrage/index.html');await page.locator('#surveyList .empty').waitFor();assert.equal(await page.locator('#gamePanel').count(),0);await checkStudio('Umfrage');assert.equal(await page.locator('#logoutBtn').count(),0);await page.locator('#newSurveyBtn').click();await page.waitForURL('**/apps/umfrage/editor.html?new=1');await page.locator('#slideQuestion').fill('Wie gefällt dir der Unterricht?');await page.locator('#addSlideBtn').click();assert.equal(await page.locator('.slideCard').count(),2);await captureEditor('Umfrage');await page.locator('.app-nav a').first().click();await page.waitForURL('**/SchulApp/index.html');
- await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('[data-action="open-quiz"]').click();await page.locator('#retryCloudSave').waitFor();await page.locator('#retryCloudSave').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'));await captureEditor('Quiz');await page.locator('[data-action="back-to-list"]').click();assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('.app-nav a').first().click();
+ await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('[data-action="open-quiz"]').click();await page.locator('#retryCloudSave').waitFor();await page.locator('#retryCloudSave').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'));await checkRichEditor();await captureEditor('Quiz');await page.locator('[data-action="back-to-list"]').click();assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('.app-nav a').first().click();
  await page.locator('.app-card[href="apps/jeopardy/index.html"]').click();await page.waitForURL('**/apps/jeopardy/index.html');await page.locator('#btnNew').waitFor();await checkStudio('Jeopardy');assert.equal(await page.locator('.storage-note').count(),0);await page.locator('#btnNew').click();await page.locator('#sname').fill('Design Test');await page.locator('#rows').selectOption('2');await page.locator('#cols').selectOption('2');await page.screenshot({path:path.join(outputRoot,'editor-jeopardy-setup.png'),fullPage:true});await page.locator('#btnContinue').click();await captureEditor('Jeopardy');await page.locator('.app-nav a').first().click();
  await page.locator('#logoutBtn').click();await page.locator('#loginLink').waitFor({state:'visible'});assert.equal(await page.locator('#logoutBtn').isVisible(),false);
  await page.goto(base+'/login.html?next=apps%2Fquiz-studio%2Findex.html');await page.waitForURL('**/apps/quiz-studio/index.html');
@@ -74,9 +109,15 @@ async function fixtures(){
  await page.goto(base+'/join.html?code=AAAAA');await page.waitForURL('**/apps/umfrage/student.html?code=AAAAA');assert.equal(await page.locator('#code').inputValue(),'AAAAA');await page.locator('#name').fill('Testperson');await page.locator('#joinBtn').click();await page.locator('#pinBoard').waitFor();await page.locator('#pinBoard').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#pinX').inputValue(),'51');await page.locator('#submitBtn').click();await page.locator('#submitted').waitFor({state:'visible'});assert.deepEqual(await page.evaluate(()=>window.__calls.find(x=>x.name==='survey_submit_response').args.p_value),{x:51,y:50});
  await page.screenshot({path:path.join(outputRoot,'pin-desktop.png'),fullPage:true});
  await page.goto(base+'/join.html?code=BBBBB&kind=quiz');await page.waitForURL('**/apps/quiz-studio/student.html?code=BBBBB');await page.locator('#studentName').fill('Testperson');await page.locator('#joinForm button').click();await page.locator('#shortAnswer').fill('4');await context.setOffline(true);await page.waitForFunction(()=>!navigator.onLine);assert.equal(await page.locator('#shortAnswer').inputValue(),'4');assert((await page.locator('#connectionStatus').textContent()).includes('Offline'));await context.setOffline(false);await page.waitForTimeout(200);assert.equal(await page.locator('#shortAnswer').inputValue(),'4');await page.locator('#submitAnswer').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_submit_response_secure'));assert.equal(await page.evaluate(()=>window.__calls.find(x=>x.name==='quiz_live_submit_response_secure').args.p_answer),'4');
+ await page.evaluate(()=>{window.__formattedStudentQuestion={type:'single',points:1,options:[{id:'o1',text:'Antwort\nZeile zwei',textFormat:{align:'center',ranges:[{start:0,end:7,bold:true,underline:true}]}},{id:'o2',text:'Andere Antwort'}]}});
+ await page.locator('.answer strong').waitFor();assert.equal(await page.locator('.answer u').first().innerText(),'Antwort');assert.equal(await page.locator('.answer .quiz-rich-line').count(),3);
+ await page.locator('.answer input[value="o1"]').check();await page.locator('#submitAnswer').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_submit_response_secure'&&x.args.p_answer==='o1'));
+ await page.evaluate(()=>{window.__formattedStudentQuestion={type:'ranking',points:1,items:[{id:'i1',text:'Erstes Element',textFormat:{ranges:[{start:0,end:6,underline:true}]}},{id:'i2',text:'Zweites Element'}]}});
+ await page.locator('.rank-choices').waitFor();assert.equal(await page.locator('.rank-choices u').innerText(),'Erstes');
  await page.goto(base+'/apps/umfrage/live.html?id=survey-session');await page.locator('#liveQuestion').waitFor();assert.equal(await page.locator('.studio-title').innerText(),'Umfrage Studio');await page.screenshot({path:path.join(outputRoot,'live-umfrage-studio.png'),fullPage:true});
  await page.goto(base+'/apps/quiz-studio/live.html?session=quiz-session');
  await page.locator('[data-action="timer"]').waitFor();
+ assert.equal(await page.locator('.question-text strong').innerText(),'Wie viel');assert.equal(await page.locator('.question-text .quiz-rich').evaluate(el=>getComputedStyle(el).textAlign),'center');
  assert.equal(await page.locator('#joinDialog').isVisible(),false);
  assert.equal(await page.locator('#app .panel').count(),2);
  assert.equal(await page.locator('.question-toolbar [data-action="back"]').count(),1);
@@ -118,6 +159,7 @@ async function fixtures(){
  await page.setViewportSize({width:390,height:844});await page.goto(base+'/index.html');await page.screenshot({path:path.join(outputRoot,'hub-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.goto(base+'/join.html');await page.screenshot({path:path.join(outputRoot,'join-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));assert.equal(errors.length,0,errors.join('\n'));
  await browser.close();server.close();console.log('PASS: decoded local QR code, access dialog, compact teacher controls, timer selection, ranking lock, top navigation, studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
 })().catch(e=>{console.error(e);server.close();process.exit(1)});
+
 
 
 

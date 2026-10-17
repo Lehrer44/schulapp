@@ -321,6 +321,9 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css">
 <link rel="stylesheet" href="../../shared/workspace.css">
+<link rel="stylesheet" href="rich-text.css">
+<script src="rich-text.js"></script>
+<script src="rich-editor.js" defer></script>
 </head>
 <body data-studio="quiz" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -717,6 +720,19 @@ function questionMediaEditor(q){
       ${hasMedia ? `<div class="media-paste-hint">Aktuelle Datei: ${esc(q.media.name || 'Eingebettete Mediendatei')}</div>` : ''}
     </div>`;
 }
+function richEditor(value,attributes,placeholder,className){
+  const align=value.textFormat?.align==='center'?'center':'left';
+  return `<div class="rich-editor">
+    <div class="rich-toolbar" role="group" aria-label="Text formatieren">
+      <button type="button" data-format="bold" aria-label="Fett" aria-pressed="false" title="Fett (Strg+B)"><strong>B</strong></button>
+      <button type="button" data-format="underline" aria-label="Unterstreichen" aria-pressed="false" title="Unterstreichen (Strg+U)"><u>U</u></button>
+      <button type="button" data-format="left" aria-label="Linksbündig" aria-pressed="${align==='left'}" title="Linksbündig"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M3 8h9M3 12h14M3 16h9"/></svg></button>
+      <button type="button" data-format="center" aria-label="Zentrieren" aria-pressed="${align==='center'}" title="Zentrieren"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M6 8h8M3 12h14M6 16h8"/></svg></button>
+      <button type="button" data-format="break" aria-label="Zeilenumbruch" title="Zeilenumbruch (Enter)">↵</button>
+    </div>
+    <div class="rich-input ${className}" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${esc(placeholder)}" data-placeholder="${esc(placeholder)}" data-align="${align}" ${attributes}>${value.text?QuizRichText.render(value,true):''}</div>
+  </div>`;
+}
 function questionCard(q,i){
   const t = TYPES[q.type] || { label:q.type, icon:'?' };
   return `
@@ -732,7 +748,7 @@ function questionCard(q,i){
       <button class="icon-btn" data-action="move-question" data-qid="${q.id}" data-dir="1" title="Nach unten">↓</button>
       <button class="icon-btn danger" data-action="del-question" data-qid="${q.id}" title="Frage löschen">✕</button>
     </div>
-    <textarea class="qtext" data-qid="${q.id}" data-field="text" placeholder="Fragestellung …">${esc(q.text)}</textarea>
+    ${richEditor(q,`data-qid="${q.id}" data-field="text"`,'Fragestellung …','qtext')}
     ${questionMediaEditor(q)}
     <div class="qbody">${questionBody(q)}</div>
   </div>`;
@@ -747,8 +763,7 @@ function questionBody(q){
         <div class="opt-row">
           <input type="${isSingle?'radio':'checkbox'}" name="q_${q.id}" ${o.correct?'checked':''}
                  data-qid="${q.id}" data-oid="${o.id}" data-field="correct">
-          <input class="opt-text" value="${esc(o.text)}" placeholder="Antwort ${oi+1}"
-                 data-qid="${q.id}" data-oid="${o.id}" data-field="option-text">
+          ${richEditor(o,`data-qid="${q.id}" data-oid="${o.id}" data-field="option-text"`,`Antwort ${oi+1}`,'opt-text')}
           <button class="icon-btn danger" data-action="del-option" data-qid="${q.id}" data-oid="${o.id}">✕</button>
         </div>`).join('')}
       <div><button class="btn secondary small" data-action="add-option" data-qid="${q.id}">＋ Antwort</button></div>`;
@@ -771,8 +786,7 @@ function questionBody(q){
       ${q.items.map((it,ii)=>`
         <div class="rank-row">
           <span class="rank-num">${ii+1}</span>
-          <input class="opt-text" value="${esc(it.text)}" placeholder="Element ${ii+1}"
-                 data-qid="${q.id}" data-iid="${it.id}" data-field="item-text">
+          ${richEditor(it,`data-qid="${q.id}" data-iid="${it.id}" data-field="item-text"`,`Element ${ii+1}`,'opt-text')}
           <button class="icon-btn" data-action="move-item" data-qid="${q.id}" data-iid="${it.id}" data-dir="-1">↑</button>
           <button class="icon-btn" data-action="move-item" data-qid="${q.id}" data-iid="${it.id}" data-dir="1">↓</button>
           <button class="icon-btn danger" data-action="del-item" data-qid="${q.id}" data-iid="${it.id}">✕</button>
@@ -873,7 +887,7 @@ function viewPlay(){
 
   <div class="panel play-panel">
     <div class="play-meta">Frage ${s.index+1} von ${total} · ${fmt(q.points)} ${Number(q.points)===1?'Punkt':'Punkte'}</div>
-    <h2 class="play-question">${esc(q.text) || '<em class="muted">Keine Frage formuliert</em>'}</h2>
+    <h2 class="play-question">${(q.text ? QuizRichText.render(q) : '') || '<em class="muted">Keine Frage formuliert</em>'}</h2>
     ${mediaMarkup(q.media,'question-media-play')}
     ${playBody(q, ans, s.checked)}
     ${(s.checked && s.immediate) ? feedbackBox(q, res) : ''}
@@ -894,7 +908,7 @@ function playBody(q, ans, checked){
       return `<label class="play-opt ${cls}">
         <input type="radio" name="play_${q.id}" value="${o.id}" ${sel?'checked':''} ${dis}
                data-pfield="single" data-oid="${o.id}">
-        <span>${esc(o.text)}</span>
+        <span>${QuizRichText.render(o)}</span>
       </label>`;
     }).join('')}</div>`;
   }
@@ -906,7 +920,7 @@ function playBody(q, ans, checked){
       return `<label class="play-opt ${cls}">
         <input type="checkbox" value="${o.id}" ${sel?'checked':''} ${dis}
                data-pfield="multiple" data-oid="${o.id}">
-        <span>${esc(o.text)}</span>
+        <span>${QuizRichText.render(o)}</span>
       </label>`;
     }).join('')}</div>`;
   }
@@ -928,13 +942,13 @@ function playBody(q, ans, checked){
   if(q.type === 'ranking'){
     const order = ans || [];
     const correctOrder = q.correctOrder || q.items.map(i=>i.id);
-    const byId = Object.fromEntries(q.items.map(i=>[i.id, i.text]));
+    const byId = Object.fromEntries(q.items.map(i=>[i.id, i]));
     return `<div class="rank-play">
       ${order.map((id,i)=>{
         const cls = checked ? (correctOrder[i] === id ? 'is-correct' : 'is-wrong') : '';
         return `<div class="rank-play-row ${cls}">
           <span class="rank-num">${i+1}</span>
-          <span class="rank-text">${esc(byId[id] ?? '')}</span>
+          <span class="rank-text">${QuizRichText.render(byId[id] || {text:''})}</span>
           <button class="icon-btn" data-action="play-rank" data-dir="-1" data-idx="${i}" ${dis}>↑</button>
           <button class="icon-btn" data-action="play-rank" data-dir="1" data-idx="${i}" ${dis}>↓</button>
         </div>`;
@@ -1014,7 +1028,7 @@ function formatCorrect(q){
   if(q.type === 'truefalse') return q.correct ? 'Wahr' : 'Falsch';
   if(q.type === 'ranking'){
     const order = q.correctOrder || q.items.map(i=>i.id);
-    const byId = Object.fromEntries(q.items.map(i=>[i.id, i.text]));
+    const byId = Object.fromEntries(q.items.map(i=>[i.id, i]));
     return order.map(id=>byId[id]).join(' → ');
   }
   if(q.type === 'shortanswer'){
@@ -1038,7 +1052,7 @@ function formatGiven(q, ans){
     return ans === true ? 'Wahr' : (ans === false ? 'Falsch' : '— keine Antwort —');
   }
   if(q.type === 'ranking'){
-    const byId = Object.fromEntries(q.items.map(i=>[i.id, i.text]));
+    const byId = Object.fromEntries(q.items.map(i=>[i.id, i]));
     const t = (ans || []).map(id=>byId[id]).filter(Boolean);
     return t.length ? t.join(' → ') : '—';
   }
@@ -1086,7 +1100,7 @@ function viewResult(){
       return `<div class="review ${cls}">
         <div class="rev-head">
           <span class="rev-num">${i+1}</span>
-          <span class="rev-q">${esc(q.text) || '<em class="muted">Keine Frage formuliert</em>'}</span>
+          <span class="rev-q">${(q.text ? QuizRichText.render(q) : '') || '<em class="muted">Keine Frage formuliert</em>'}</span>
           <span class="rev-pts">${fmt(r.score)} / ${fmt(r.max)}</span>
         </div>
         <div class="rev-row"><span class="rev-label">Deine Antwort:</span>${esc(formatGiven(q, s.answers[i]))}</div>
@@ -1339,7 +1353,7 @@ function advance(){
 
 /* ---------- Eingaben ---------- */
 document.addEventListener('input', (e)=>{
-  const t = e.target;
+  const t = e.target.closest('.rich-input') || e.target;
   if(state.view === 'editor') editorInput(t);
   else if(state.view === 'play') playInput(t);
 });
@@ -1347,7 +1361,7 @@ document.addEventListener('input', (e)=>{
 /* ---------- Medien in Fragen ---------- */
 document.addEventListener('paste', (event)=>{
   const input = event.target;
-  if(state.view !== 'editor' || !input.matches('textarea.qtext')) return;
+  if(state.view !== 'editor' || !input.matches('.rich-input.qtext')) return;
   const clipboard = event.clipboardData;
   if(!clipboard || !clipboard.items) return;
   const imageItem = Array.from(clipboard.items).find(item=>
@@ -1363,8 +1377,8 @@ document.addEventListener('paste', (event)=>{
   if(!question) return;
 
   const plainText = clipboard.getData('text/plain');
-  if(plainText) input.setRangeText(plainText,input.selectionStart,input.selectionEnd,'end');
-  question.text = input.value;
+  if(plainText) document.execCommand('insertText',false,plainText);
+  Object.assign(question,QuizRichText.read(input));
 
   if(imageFile.size > MAX_MEDIA_SIZE){
     save();
@@ -1413,7 +1427,8 @@ document.addEventListener('change', (event)=>{
     return;
   }
 
-  question.text = input.closest('.qcard')?.querySelector('textarea.qtext')?.value ?? question.text;
+  const questionInput=input.closest('.qcard')?.querySelector('.rich-input.qtext');
+  if(questionInput)Object.assign(question,QuizRichText.read(questionInput));
   const scrollY = window.scrollY;
   const reader = new FileReader();
   reader.onload = ()=>{
@@ -1450,7 +1465,7 @@ function editorInput(t){
   const field = t.dataset.field;
 
   if(field === 'text'){
-    q.text = t.value;
+    Object.assign(q,QuizRichText.read(t));
   }
   else if(field === 'points'){
     const v = Number(t.value);
@@ -1458,7 +1473,7 @@ function editorInput(t){
   }
   else if(field === 'option-text'){
     const o = q.options.find(o=>o.id === t.dataset.oid);
-    if(o) o.text = t.value;
+    if(o) Object.assign(o,QuizRichText.read(t));
   }
   else if(field === 'correct'){
     if(q.type === 'single'){
@@ -1473,7 +1488,7 @@ function editorInput(t){
   }
   else if(field === 'item-text'){
     const it = q.items.find(i=>i.id === t.dataset.iid);
-    if(it) it.text = t.value;
+    if(it) Object.assign(it,QuizRichText.read(t));
   }
   else if(field === 'answer-text'){
     q.answers[Number(t.dataset.aid)] = t.value;
@@ -1631,6 +1646,7 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 
 

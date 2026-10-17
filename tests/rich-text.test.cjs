@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict');
+const rich=require('../apps/quiz-studio/rich-text.js');
+const plain=rich.render({text:'Alt\nNeue Zeile\n\nEnde'});
+assert.equal((plain.match(/quiz-rich-line/g)||[]).length,4);
+assert(plain.includes('Neue Zeile'));
+const value={text:'Fett und unterstrichen\nZentriert',textFormat:{align:'center',ranges:[{start:0,end:4,bold:true},{start:0,end:21,underline:true}]}};
+const html=rich.render(JSON.parse(JSON.stringify(value)));
+assert(html.includes('quiz-rich-center'));
+assert(html.includes('<u><strong>Fett</strong></u>'));
+assert(!html.includes('<strong> und'));
+assert(!JSON.stringify(value.textFormat).includes('Fett'));
+const hostile=rich.render({text:'<img src=x onerror=alert(1)>',textFormat:{align:'center" onclick="alert(1)',ranges:[{start:0,end:4,bold:'true'},{start:-1,end:20,bold:true},{start:0,end:999,bold:true},{start:0,end:4,underline:true,html:'<script>alert(1)</script>'}]}});
+assert(!/<img|<script|onclick=|<strong>/.test(hostile));
+assert(hostile.includes('&lt;img'));
+assert(hostile.includes('quiz-rich-left'));
+assert.doesNotThrow(()=>rich.render({text:'x',textFormat:{ranges:[null,{},false,'x']}}));
+console.log('PASS: plain quiz compatibility, line breaks, selective formatting, JSON roundtrip, offset-only metadata and hostile formatting');

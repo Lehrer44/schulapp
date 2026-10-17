@@ -13,6 +13,8 @@
 <script src="../../shared/connection-status.js"></script>
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
+<link rel="stylesheet" href="rich-text.css">
+<script src="rich-text.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -72,22 +74,22 @@ function getAnswerDraft(q,idx){
  return own&&own.answer!==undefined?own.answer:
    (q.type==='multiple'?[]:q.type==='ranking'?(q.items||[]).map(x=>x.id):null);
 }
-function renderRanking(q,answer,idx,disabled){
+function renderRankingChoices(q,answer,idx,disabled){
  const items=(answer&&Array.isArray(answer)?answer:(q.items||[]).map(x=>x.id)).slice();
- const map=Object.fromEntries((q.items||[]).map(x=>[x.id,x.text]));
+ const map=Object.fromEntries((q.items||[]).map(x=>[x.id,x]));
  rankDraftByQuestion[idx]=items;
- return '<div class="rank-choices">'+items.map((id,i)=>'<div class="rank-choice"><span class="rank-name"><span class="rank-num">'+(i+1)+'</span>'+esc(map[id]||'')+'</span><button type="button" data-action="rank-move" data-index="'+idx+'" data-pos="'+i+'" data-dir="-1" aria-label="Element nach oben verschieben" '+(disabled||i===0?'disabled':'')+'>↑</button><button type="button" data-action="rank-move" data-index="'+idx+'" data-pos="'+i+'" data-dir="1" aria-label="Element nach unten verschieben" '+(disabled||i===items.length-1?'disabled':'')+'>↓</button></div>').join('')+'</div>';
+ return '<div class="rank-choices">'+items.map((id,i)=>'<div class="rank-choice"><span class="rank-name"><span class="rank-num">'+(i+1)+'</span>'+QuizRichText.render(map[id]||{text:''})+'</span><button type="button" data-action="rank-move" data-index="'+idx+'" data-pos="'+i+'" data-dir="-1" aria-label="Element nach oben verschieben" '+(disabled||i===0?'disabled':'')+'>↑</button><button type="button" data-action="rank-move" data-index="'+idx+'" data-pos="'+i+'" data-dir="1" aria-label="Element nach unten verschieben" '+(disabled||i===items.length-1?'disabled':'')+'>↓</button></div>').join('')+'</div>';
 }
 function inputChoices(q,idx,locked,revealed,answer){
  const opts=q.type==='single'||q.type==='multiple'?(q.options||[]):q.type==='truefalse'?[{id:'true',text:'Wahr',value:true},{id:'false',text:'Falsch',value:false}]:[];
  const selected=(q.type==='multiple'&&Array.isArray(answer))?answer:[];
  if(q.type==='shortanswer')return '<input class="text-answer" id="shortAnswer" aria-label="Deine Kurzantwort" type="text" maxlength="2000" placeholder="Deine Antwort …" value="'+esc(answer==null?'':answer)+'" '+(locked||revealed?'disabled':'')+' autocomplete="off">';
- if(q.type==='ranking')return renderRanking(q,answer,idx,locked||revealed);
+ if(q.type==='ranking')return renderRankingChoices(q,answer,idx,locked||revealed);
  return '<div class="answers">'+opts.map(o=>{
   const val=q.type==='truefalse'?String(o.value):o.id;
   const checked=q.type==='multiple'?selected.includes(val):q.type==='truefalse'?answer===o.value:answer===o.id;
   const correct=revealed&&(q.type==='truefalse'?o.value===q.correct:!!o.correct);
-  return '<label class="answer '+(correct?'correct':'')+'"><input type="'+(q.type==='multiple'?'checkbox':'radio')+'" name="studentAnswer" value="'+esc(val)+'" '+(checked?'checked':'')+' '+(locked||revealed?'disabled':'')+'><span>'+esc(o.text||o.label||'')+(correct?' ✓':'')+'</span></label>';
+  return '<label class="answer '+(correct?'correct':'')+'"><input type="'+(q.type==='multiple'?'checkbox':'radio')+'" name="studentAnswer" value="'+esc(val)+'" '+(checked?'checked':'')+' '+(locked||revealed?'disabled':'')+'><span>'+QuizRichText.render(o)+(correct?' ✓':'')+'</span></label>';
  }).join('')+'</div>';
 }
 function renderRanking(rows){
@@ -187,4 +189,5 @@ app.addEventListener('click',async e=>{
 </script>
 </body>
 </html>
+
 

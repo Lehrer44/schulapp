@@ -23,6 +23,8 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 <link rel="stylesheet" href="../../shared/dashboard.css">
 <link rel="stylesheet" href="../../shared/workspace.css">
 <link rel="stylesheet" href="live.css">
+<link rel="stylesheet" href="rich-text.css">
+<script src="rich-text.js"></script>
 </head>
 <body data-studio="quiz" data-dashboard-view="live">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -98,8 +100,8 @@ function renderQuestion(){
  const options=choices(q);
  let body='';
  if(options.length){
-  body='<div class="answers-board">'+options.map(o=>'<div class="answer-board '+(revealed&&o.correct?'correct':'')+'">'+esc(o.text||o.label||'')+(revealed&&o.correct?' ✓':'')+'</div>').join('')+'</div>';
-  if(revealed&&q.type==='ranking')body='<div class="answers-board">'+(q.items||[]).map((o,i)=>'<div class="answer-board">'+(i+1)+'. '+esc(o.text)+'</div>').join('')+'</div>';
+  body='<div class="answers-board">'+options.map(o=>'<div class="answer-board '+(revealed&&o.correct?'correct':'')+'">'+QuizRichText.render(o)+(revealed&&o.correct?' ✓':'')+'</div>').join('')+'</div>';
+  if(revealed&&q.type==='ranking')body='<div class="answers-board">'+(q.items||[]).map((o,i)=>'<div class="answer-board">'+(i+1)+'. '+QuizRichText.render(o)+'</div>').join('')+'</div>';
   if(revealed&&q.type==='truefalse')body='<div class="correct-note">Lösung: '+(q.correct?'Wahr':'Falsch')+'</div>';
  }else if(q.type==='shortanswer'&&revealed){body='<div class="correct-note">Akzeptierte Antworten: '+esc((q.answers||[]).join(' · '))+'</div>';}
  const media=displayMedia(q.media);
@@ -107,7 +109,7 @@ function renderQuestion(){
    const person=participants.find(p=>p.id===r.participant_id);const ok=!!r.is_correct;
    return '<div class="response-row '+(ok?'correct':'wrong')+'"><span class="response-name">'+esc(person?person.name:'Teilnehmende Person')+'</span><span class="response-answer">'+esc(responseText(q,r.answer))+'</span><span class="response-points">'+(ok?'+'+(Number(r.awarded_points)||0):'0')+' P</span></div>';
  }).join(''):'';
- return '<div class="panel question-panel">'+questionToolbar(q,idx,count,st)+'<div class="question-text">'+esc(q.text||'')+'</div>'+media+body+'<div class="answer-count">'+responses.filter(r=>r.question_index===idx).length+' von '+participants.length+' haben geantwortet</div>'+(revealed?'<h2 style="margin-top:22px">Antworten der Schülerinnen und Schüler</h2><div class="responses">'+(answerRows||'<div class="board-status">Noch keine Antworten eingegangen.</div>')+'</div>':'')+'</div>';
+ return '<div class="panel question-panel">'+questionToolbar(q,idx,count,st)+'<div class="question-text">'+QuizRichText.render(q)+'</div>'+media+body+'<div class="answer-count">'+responses.filter(r=>r.question_index===idx).length+' von '+participants.length+' haben geantwortet</div>'+(revealed?'<h2 style="margin-top:22px">Antworten der Schülerinnen und Schüler</h2><div class="responses">'+(answerRows||'<div class="board-status">Noch keine Antworten eingegangen.</div>')+'</div>':'')+'</div>';
 }
 function render(){
  if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
@@ -182,6 +184,7 @@ document.body.addEventListener('click',async function(e){
 </script>
 </body>
 </html>
+
 
 
 

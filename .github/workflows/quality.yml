@@ -17,6 +17,7 @@ jobs:
       - name: Komponenten prüfen
         run: |
           node tests/security.test.cjs
+          node tests/rich-text.test.cjs
           node tests/library.test.cjs
           node tests/status.test.cjs
           node tests/live-data.test.cjs
@@ -42,6 +43,7 @@ jobs:
             test-results/editor-*.png
             test-results/live-*.png
           if-no-files-found: ignore
+
 
 
 
