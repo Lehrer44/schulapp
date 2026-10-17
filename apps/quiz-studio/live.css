@@ -10,7 +10,7 @@ body[data-studio="quiz"][data-dashboard-view="live"] .reveal-button{justify-self
 body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar .timer-box{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;justify-content:flex-end;min-width:0}
 body[data-studio="quiz"][data-dashboard-view="live"] #timerSeconds{width:76px;min-width:76px;min-height:44px;padding:9px 7px;font-size:13px}
 .question-toolbar .timer{font-size:13px;line-height:1;white-space:nowrap;min-width:0}
-body[data-studio="quiz"][data-dashboard-view="live"] .next-question{white-space:nowrap;font-size:13px}
+body[data-studio="quiz"][data-dashboard-view="live"] .next-question{justify-self:end;white-space:nowrap;font-size:13px}
 .ranking-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
 body[data-studio="quiz"][data-dashboard-view="live"] .ranking-heading h2{margin:0}
 body[data-studio="quiz"][data-dashboard-view="live"] .lock-button{color:var(--danger);border-color:#e7c8c1;background:#fff5f2}
