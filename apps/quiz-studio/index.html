@@ -589,13 +589,20 @@ function createQuestion(type){
 /* =========================================================
    RENDER
    ========================================================= */
+let renderedEditorId = null;
 function render(){
+  // Keep the working position when rebuilding the same quiz editor.
+  // Entering another quiz or switching views still starts at the top.
+  const editorId = state.view === 'editor' ? state.draft?.id : null;
+  const keepPosition = editorId !== null && editorId === renderedEditorId;
+  const position = {left:window.scrollX,top:window.scrollY};
   document.body.dataset.dashboardView=state.view==='list'?'library':state.view==='editor'?'editor':'preview';
   if(state.view === 'list')        $app.innerHTML = viewList();
   else if(state.view === 'editor') $app.innerHTML = viewEditor();
   else if(state.view === 'play')   $app.innerHTML = viewPlay();
   else if(state.view === 'result') $app.innerHTML = viewResult();
-  window.scrollTo({ top:0 });
+  renderedEditorId = editorId;
+  window.scrollTo({left:keepPosition?position.left:0,top:keepPosition?position.top:0,behavior:'instant'});
 }
 
 /* ---------- Liste ---------- */
@@ -1386,7 +1393,6 @@ document.addEventListener('paste', (event)=>{
     return;
   }
 
-  const scrollY = window.scrollY;
   const reader = new FileReader();
   reader.onload = ()=>{
     const data = String(reader.result || '');
@@ -1398,7 +1404,6 @@ document.addEventListener('paste', (event)=>{
     question.media = {type:'image',data,name:imageFile.name || ('clipboard-image.'+ext)};
     save();
     render();
-    window.scrollTo(0,scrollY);
     toast('Bild eingefügt und der Frage zugeordnet');
   };
   reader.onerror = ()=>toast('Das kopierte Bild konnte nicht gelesen werden. Bitte füge es erneut ein.');
@@ -1429,7 +1434,6 @@ document.addEventListener('change', (event)=>{
 
   const questionInput=input.closest('.qcard')?.querySelector('.rich-input.qtext');
   if(questionInput)Object.assign(question,QuizRichText.read(questionInput));
-  const scrollY = window.scrollY;
   const reader = new FileReader();
   reader.onload = ()=>{
     const data = String(reader.result || '');
@@ -1440,7 +1444,6 @@ document.addEventListener('change', (event)=>{
     question.media = {type,data,name:file.name || type};
     save();
     render();
-    window.scrollTo(0,scrollY);
     toast(type === 'image' ? 'Bild zur Frage hinzugefügt' : type === 'audio' ? 'Audio zur Frage hinzugefügt' : 'Video zur Frage hinzugefügt');
   };
   reader.onerror = ()=>toast('Die Datei konnte nicht gelesen werden.');
@@ -1646,6 +1649,7 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 
 
