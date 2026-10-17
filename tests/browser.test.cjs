@@ -97,9 +97,41 @@ async function fixtures(){
   await page.locator('#retryCloudSave').click();
   await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'&&x.args.p_payload.quizzes[0].questions.at(-1).options?.[0].text==='Antwort sicher'));
  }
+ async function checkEditorScroll(){
+  const settle=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  async function positionAt(locator){await locator.evaluate(el=>el.scrollIntoView({block:'center',behavior:'instant'}));await settle();const y=await page.evaluate(()=>scrollY);assert(y>400,'Test must operate below the first screen');return y;}
+  async function unchanged(before,label){await settle();const position=await page.evaluate(()=>({y:scrollY,max:Math.max(0,document.documentElement.scrollHeight-innerHeight)}));assert(Math.abs(position.y-Math.min(before,position.max))<3,label+': scroll moved from '+before+' to '+position.y);}
+  async function clickStable(locator,label,confirm=false){const before=await positionAt(locator);if(confirm)page.once('dialog',d=>d.accept());await locator.click();await unchanged(before,label);}
+  for(let i=0;i<7;i++)await page.locator('[data-action="add-question"][data-type="truefalse"]').click();
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1fkAAAAASUVORK5CYII=','base64');
+  for(const width of [1280,390]){
+   await page.setViewportSize({width,height:900});
+   await clickStable(page.locator('[data-action="add-question"][data-type="truefalse"]'),'Add question '+width);
+   await clickStable(page.locator('.qcard').last().locator('[data-action="del-question"]'),'Delete question '+width,true);
+   const options=page.locator('.qcard').nth(2);
+   await clickStable(options.locator('[data-action="add-option"]'),'Add option '+width);
+   await clickStable(options.locator('[data-action="del-option"]').last(),'Delete option '+width);
+   const card=page.locator('.qcard').nth(4),upload=card.locator('input[data-media-input]');
+   await positionAt(card.locator('.media-upload-label'));
+   // A slow file read must not undo scrolling done while the file was loading.
+   await page.evaluate(()=>{window.__nativeFileReader=window.FileReader;window.FileReader=class extends window.__nativeFileReader{readAsDataURL(file){window.__releaseMediaRead=()=>super.readAsDataURL(file)}}});
+   await upload.setInputFiles({name:'scroll.png',mimeType:'image/png',buffer:png});
+   const during=await page.evaluate(()=>{scrollTo({top:scrollY+100,behavior:'instant'});return scrollY});
+   await page.evaluate(()=>{window.__releaseMediaRead();window.FileReader=window.__nativeFileReader});
+   await card.locator('.media-preview-editor').waitFor();await unchanged(during,'Media upload '+width);
+   await clickStable(card.locator('[data-action="remove-question-media"]'),'Remove media '+width);
+   const text=card.locator('.qtext'),before=await positionAt(text);
+   await text.evaluate(el=>{el.focus({preventScroll:true});const data=new DataTransfer();data.items.add(new File([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1fkAAAAASUVORK5CYII='),c=>c.charCodeAt(0))],'paste.png',{type:'image/png'}));el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}))});
+   await card.locator('.media-preview-editor').waitFor();await unchanged(before,'Paste media '+width);
+   await clickStable(card.locator('[data-action="remove-question-media"]'),'Remove pasted media '+width);
+  }
+  await page.setViewportSize({width:1280,height:900});
+  await page.locator('[data-action="back-to-list"]').evaluate(el=>el.click());await settle();assert.equal(await page.evaluate(()=>scrollY),0,'Library starts at top');
+  await page.locator('[data-action="open-quiz"]').click();await settle();assert.equal(await page.evaluate(()=>scrollY),0,'Opening quiz starts at top');
+ }
  await page.goto(base+'/index.html');await page.locator('#logoutBtn').waitFor({state:'visible'});assert.equal(await page.locator('.app-card').count(),3);await page.screenshot({path:path.join(outputRoot,'hub-desktop.png'),fullPage:true});
  await page.locator('.app-card[href="apps/umfrage/index.html"]').click();await page.waitForURL('**/apps/umfrage/index.html');await page.locator('#surveyList .empty').waitFor();assert.equal(await page.locator('#gamePanel').count(),0);await checkStudio('Umfrage');assert.equal(await page.locator('#logoutBtn').count(),0);await page.locator('#newSurveyBtn').click();await page.waitForURL('**/apps/umfrage/editor.html?new=1');await page.locator('#slideQuestion').fill('Wie gefällt dir der Unterricht?');await page.locator('#addSlideBtn').click();assert.equal(await page.locator('.slideCard').count(),2);await captureEditor('Umfrage');await page.locator('.app-nav a').first().click();await page.waitForURL('**/SchulApp/index.html');
- await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('[data-action="open-quiz"]').click();await page.locator('#retryCloudSave').waitFor();await page.locator('#retryCloudSave').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'));await checkRichEditor();await captureEditor('Quiz');await page.locator('[data-action="back-to-list"]').click();assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('.app-nav a').first().click();
+ await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('[data-action="open-quiz"]').click();await page.locator('#retryCloudSave').waitFor();await page.locator('#retryCloudSave').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'));await checkRichEditor();await captureEditor('Quiz');await checkEditorScroll();await page.locator('[data-action="back-to-list"]').click();assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('.app-nav a').first().click();
  await page.locator('.app-card[href="apps/jeopardy/index.html"]').click();await page.waitForURL('**/apps/jeopardy/index.html');await page.locator('#btnNew').waitFor();await checkStudio('Jeopardy');assert.equal(await page.locator('.storage-note').count(),0);await page.locator('#btnNew').click();await page.locator('#sname').fill('Design Test');await page.locator('#rows').selectOption('2');await page.locator('#cols').selectOption('2');await page.screenshot({path:path.join(outputRoot,'editor-jeopardy-setup.png'),fullPage:true});await page.locator('#btnContinue').click();await captureEditor('Jeopardy');await page.locator('.app-nav a').first().click();
  await page.locator('#logoutBtn').click();await page.locator('#loginLink').waitFor({state:'visible'});assert.equal(await page.locator('#logoutBtn').isVisible(),false);
  await page.goto(base+'/login.html?next=apps%2Fquiz-studio%2Findex.html');await page.waitForURL('**/apps/quiz-studio/index.html');
@@ -157,8 +189,9 @@ async function fixtures(){
  await page.locator('[data-action="back"]').click();await page.waitForFunction(()=>document.body.textContent.includes('Wie viel ist zwei plus zwei?'));
 
  await page.setViewportSize({width:390,height:844});await page.goto(base+'/index.html');await page.screenshot({path:path.join(outputRoot,'hub-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.goto(base+'/join.html');await page.screenshot({path:path.join(outputRoot,'join-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));assert.equal(errors.length,0,errors.join('\n'));
- await browser.close();server.close();console.log('PASS: decoded local QR code, access dialog, compact teacher controls, timer selection, ranking lock, top navigation, studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
+ await browser.close();server.close();console.log('PASS: stable editor scroll on desktop/mobile for question/option add/delete, delayed media upload/paste/removal, view navigation, decoded local QR code, access dialog, compact teacher controls, timer selection, ranking lock, top navigation, studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
 })().catch(e=>{console.error(e);server.close();process.exit(1)});
+
 
 
 
