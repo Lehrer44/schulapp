@@ -1366,21 +1366,42 @@ document.addEventListener('input', (e)=>{
 });
 
 /* ---------- Medien in Fragen ---------- */
+function clipboardImageFile(clipboard){
+  // Clipboard formats differ between screenshots, browsers and office applications.
+  const files = [...Array.from(clipboard.files || []), ...Array.from(clipboard.items || [])
+    .filter(item=>item.kind === 'file').map(item=>item.getAsFile()).filter(Boolean)];
+  const image = files.find(file=>/^image\//i.test(file.type || ''));
+  if(image) return image;
+
+  // Some applications provide an embedded image only in text/html. Inspect it in
+  // an inert template; never insert clipboard HTML or fetch external image URLs.
+  const html = clipboard.getData('text/html');
+  if(!html) return null;
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  for(const image of template.content.querySelectorAll('img[src]')){
+    const match = image.getAttribute('src').match(/^data:(image\/(?:png|jpeg|gif|webp|avif|bmp));base64,([a-z0-9+/=\s]+)$/i);
+    if(!match) continue;
+    try{
+      const bytes = Uint8Array.from(atob(match[2].replace(/\s/g,'')),char=>char.charCodeAt(0));
+      return new File([bytes],'clipboard-image.'+match[1].split('/')[1],{type:match[1]});
+    }catch(error){ /* Invalid image data falls back to plain-text paste. */ }
+  }
+  return null;
+}
 document.addEventListener('paste', (event)=>{
-  const input = event.target;
-  if(state.view !== 'editor' || !input.matches('.rich-input.qtext')) return;
+  const target = event.target.nodeType === 1 ? event.target : event.target.parentElement;
+  const input = target?.closest('.rich-input.qtext');
+  if(state.view !== 'editor' || !input || event.defaultPrevented) return;
   const clipboard = event.clipboardData;
-  if(!clipboard || !clipboard.items) return;
-  const imageItem = Array.from(clipboard.items).find(item=>
-    item.kind === 'file' && /^image\//i.test(item.type || '')
-  );
-  if(!imageItem) return;
-  const imageFile = imageItem.getAsFile();
+  if(!clipboard) return;
+  const imageFile = clipboardImageFile(clipboard);
   if(!imageFile) return;
   event.preventDefault();
 
   const qid = input.dataset.qid;
-  const question = state.draft && state.draft.questions.find(item=>item.id === qid);
+  const sourceQuiz = state.draft;
+  const question = sourceQuiz && sourceQuiz.questions.find(item=>item.id === qid);
   if(!question) return;
 
   const plainText = clipboard.getData('text/plain');
@@ -1401,14 +1422,15 @@ document.addEventListener('paste', (event)=>{
       return;
     }
     const ext = (imageFile.type.split('/')[1] || 'png').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');
+    if(!sourceQuiz.questions.includes(question)) return;
     question.media = {type:'image',data,name:imageFile.name || ('clipboard-image.'+ext)};
     save();
-    render();
+    if(state.view === 'editor' && state.draft === sourceQuiz) render();
     toast('Bild eingefügt und der Frage zugeordnet');
   };
   reader.onerror = ()=>toast('Das kopierte Bild konnte nicht gelesen werden. Bitte füge es erneut ein.');
   reader.readAsDataURL(imageFile);
-});
+}, {capture:true});
 
 document.addEventListener('change', (event)=>{
   const input = event.target;
@@ -1649,6 +1671,7 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 
 

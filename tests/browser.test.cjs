@@ -97,6 +97,44 @@ async function fixtures(){
   await page.locator('#retryCloudSave').click();
   await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'&&x.args.p_payload.quizzes[0].questions.at(-1).options?.[0].text==='Antwort sicher'));
  }
+ async function checkImagePaste(){
+  const question=page.locator('.qtext').first(),card=page.locator('.qcard').first();
+  const beforeText=await question.innerText();
+  const settle=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  async function focusText(){
+   await question.evaluate(el=>{el.scrollIntoView({block:'center',behavior:'instant'});el.focus({preventScroll:true});const range=document.createRange();range.selectNodeContents(el.querySelector('strong'));range.collapse(false);getSelection().removeAllRanges();getSelection().addRange(range)});
+   await settle();return page.evaluate(()=>scrollY);
+  }
+  async function checkImage(label,before){
+   await card.locator('.media-preview-editor').waitFor();await settle();
+   assert.equal(await question.innerText(),beforeText,label+' changed question text');
+   assert.equal(await question.getAttribute('data-align'),'center');assert(await question.locator('u').count()>0);assert(await question.locator('strong,b').count()>0);
+   assert.equal(await question.locator('img').count(),0,'Image belongs to media, not rich text');
+   assert(Math.abs((await page.evaluate(()=>scrollY))-before)<3,label+' changed scroll');
+   await page.locator('#retryCloudSave').click();
+   await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'&&x.args.p_payload.quizzes[0].questions[0].media?.type==='image'));
+   const saved=await page.evaluate(()=>window.__calls.filter(x=>x.name==='save_teacher_library').at(-1).args.p_payload.quizzes[0].questions[0]);
+   assert(saved.media.data.startsWith('data:image/png;base64,'));assert.equal(saved.textFormat.align,'center');
+   await card.locator('[data-action="remove-question-media"]').click();
+  }
+  await context.grantPermissions(['clipboard-read','clipboard-write']);
+  const imageData=await page.evaluate(async()=>{const canvas=document.createElement('canvas');canvas.width=24;canvas.height=24;const ctx=canvas.getContext('2d');ctx.fillStyle='#28734b';ctx.fillRect(0,0,24,24);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);return canvas.toDataURL('image/png')});
+  let before=await focusText();await page.keyboard.press('Control+V');await checkImage('Native clipboard paste',before);
+  // Browser/office events can target a formatted descendant, not the outer textbox.
+  for(const kind of ['nested-file','files-only','html-image']){
+   before=await focusText();
+   await question.evaluate((el,{kind,imageData})=>{
+    const data=new DataTransfer(),file=new File([Uint8Array.from(atob(imageData.split(',')[1]),c=>c.charCodeAt(0))],'image.png',{type:'image/png'});
+    if(kind==='html-image')data.setData('text/html','<img src="'+imageData+'" onerror="window.__pasteXss=true"><script>window.__pasteXss=true</script>');else data.items.add(file);
+    const event=new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true});
+    if(kind==='files-only')Object.defineProperty(event,'clipboardData',{value:{items:[],files:[file],getData:()=>''}});
+    el.querySelector('strong').dispatchEvent(event);
+   },{kind,imageData});
+   await checkImage(kind,before);
+   assert.equal(await page.evaluate(()=>window.__pasteXss),undefined);
+  }
+  await context.clearPermissions();
+ }
  async function checkEditorScroll(){
   const settle=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   async function positionAt(locator){await locator.evaluate(el=>el.scrollIntoView({block:'center',behavior:'instant'}));await settle();const y=await page.evaluate(()=>scrollY);assert(y>400,'Test must operate below the first screen');return y;}
@@ -131,7 +169,7 @@ async function fixtures(){
  }
  await page.goto(base+'/index.html');await page.locator('#logoutBtn').waitFor({state:'visible'});assert.equal(await page.locator('.app-card').count(),3);await page.screenshot({path:path.join(outputRoot,'hub-desktop.png'),fullPage:true});
  await page.locator('.app-card[href="apps/umfrage/index.html"]').click();await page.waitForURL('**/apps/umfrage/index.html');await page.locator('#surveyList .empty').waitFor();assert.equal(await page.locator('#gamePanel').count(),0);await checkStudio('Umfrage');assert.equal(await page.locator('#logoutBtn').count(),0);await page.locator('#newSurveyBtn').click();await page.waitForURL('**/apps/umfrage/editor.html?new=1');await page.locator('#slideQuestion').fill('Wie gefällt dir der Unterricht?');await page.locator('#addSlideBtn').click();assert.equal(await page.locator('.slideCard').count(),2);await captureEditor('Umfrage');await page.locator('.app-nav a').first().click();await page.waitForURL('**/SchulApp/index.html');
- await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('[data-action="open-quiz"]').click();await page.locator('#retryCloudSave').waitFor();await page.locator('#retryCloudSave').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'));await checkRichEditor();await captureEditor('Quiz');await checkEditorScroll();await page.locator('[data-action="back-to-list"]').click();assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('.app-nav a').first().click();
+ await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('[data-action="open-quiz"]').click();await page.locator('#retryCloudSave').waitFor();await page.locator('#retryCloudSave').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'));await checkRichEditor();await checkImagePaste();await captureEditor('Quiz');await checkEditorScroll();await page.locator('[data-action="back-to-list"]').click();assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('.app-nav a').first().click();
  await page.locator('.app-card[href="apps/jeopardy/index.html"]').click();await page.waitForURL('**/apps/jeopardy/index.html');await page.locator('#btnNew').waitFor();await checkStudio('Jeopardy');assert.equal(await page.locator('.storage-note').count(),0);await page.locator('#btnNew').click();await page.locator('#sname').fill('Design Test');await page.locator('#rows').selectOption('2');await page.locator('#cols').selectOption('2');await page.screenshot({path:path.join(outputRoot,'editor-jeopardy-setup.png'),fullPage:true});await page.locator('#btnContinue').click();await captureEditor('Jeopardy');await page.locator('.app-nav a').first().click();
  await page.locator('#logoutBtn').click();await page.locator('#loginLink').waitFor({state:'visible'});assert.equal(await page.locator('#logoutBtn').isVisible(),false);
  await page.goto(base+'/login.html?next=apps%2Fquiz-studio%2Findex.html');await page.waitForURL('**/apps/quiz-studio/index.html');
@@ -189,8 +227,9 @@ async function fixtures(){
  await page.locator('[data-action="back"]').click();await page.waitForFunction(()=>document.body.textContent.includes('Wie viel ist zwei plus zwei?'));
 
  await page.setViewportSize({width:390,height:844});await page.goto(base+'/index.html');await page.screenshot({path:path.join(outputRoot,'hub-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.goto(base+'/join.html');await page.screenshot({path:path.join(outputRoot,'join-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));assert.equal(errors.length,0,errors.join('\n'));
- await browser.close();server.close();console.log('PASS: stable editor scroll on desktop/mobile for question/option add/delete, delayed media upload/paste/removal, view navigation, decoded local QR code, access dialog, compact teacher controls, timer selection, ranking lock, top navigation, studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
+ await browser.close();server.close();console.log('PASS: native image clipboard, nested formatted paste targets, files-only/embedded HTML images, safe persisted media and unchanged formatting/scroll, stable editor scroll on desktop/mobile for question/option add/delete, delayed media upload/paste/removal, view navigation, decoded local QR code, access dialog, compact teacher controls, timer selection, ranking lock, top navigation, studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
 })().catch(e=>{console.error(e);server.close();process.exit(1)});
+
 
 
 
