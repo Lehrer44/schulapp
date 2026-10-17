@@ -1,6 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const moduleRoot=process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES;
 const {chromium}=require(require.resolve('playwright',{paths:[moduleRoot,__dirname].filter(Boolean)}));
+const jsQR=require(require.resolve('jsqr',{paths:[moduleRoot,__dirname].filter(Boolean)}));
 const root=path.resolve(__dirname,'..'),outputRoot=path.join(root,'test-results');fs.mkdirSync(outputRoot,{recursive:true});
 const server=http.createServer((req,res)=>{const pathname=decodeURIComponent(new URL(req.url,'http://local').pathname);const name=pathname.startsWith('/SchulApp/')?pathname.slice('/SchulApp'.length):pathname;const file=path.resolve(root,'.'+name);if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}try{const body=fs.readFileSync(file);res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(body)}catch{res.writeHead(404);res.end()}});
 async function fixtures(){
@@ -19,6 +20,7 @@ async function fixtures(){
   if(name==='quiz_live_submit_response_secure'){quizAnswer={answer:args.p_answer};return {data:{ok:true}}}
   if(name==='quiz_live_teacher_state')return {data:{ok:true,session:quizSession,leaderboard:[],responses:[]}};
   if(name==='quiz_live_start_timer_at'){assertIndex(args.p_question_index);quizSession.question_states[0].timer_deadline=new Date(Date.now()+30000).toISOString();return {data:{ok:true}}}
+  if(name==='quiz_live_lock_question'){assertIndex(args.p_question_index);quizSession.question_states[0].locked=true;quizSession.updated_at='locked';return {data:{ok:true}}}
   if(name==='quiz_live_reveal_question'){quizSession.question_states[0].revealed=true;quizSession.question_states[0].locked=true;quizSession.updated_at='revealed';return {data:{ok:true}}}
   if(name==='quiz_live_navigate_from'){assertIndex(args.p_expected_index);await new Promise(r=>setTimeout(r,100));quizSession.current_index=args.p_target_index;quizSession.updated_at='navigated';return {data:{ok:true}}}
   return {data:{ok:true,revision:2}};
@@ -73,10 +75,50 @@ async function fixtures(){
  await page.screenshot({path:path.join(outputRoot,'pin-desktop.png'),fullPage:true});
  await page.goto(base+'/join.html?code=BBBBB&kind=quiz');await page.waitForURL('**/apps/quiz-studio/student.html?code=BBBBB');await page.locator('#studentName').fill('Testperson');await page.locator('#joinForm button').click();await page.locator('#shortAnswer').fill('4');await context.setOffline(true);await page.waitForFunction(()=>!navigator.onLine);assert.equal(await page.locator('#shortAnswer').inputValue(),'4');assert((await page.locator('#connectionStatus').textContent()).includes('Offline'));await context.setOffline(false);await page.waitForTimeout(200);assert.equal(await page.locator('#shortAnswer').inputValue(),'4');await page.locator('#submitAnswer').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_submit_response_secure'));assert.equal(await page.evaluate(()=>window.__calls.find(x=>x.name==='quiz_live_submit_response_secure').args.p_answer),'4');
  await page.goto(base+'/apps/umfrage/live.html?id=survey-session');await page.locator('#liveQuestion').waitFor();assert.equal(await page.locator('.studio-title').innerText(),'Umfrage Studio');await page.screenshot({path:path.join(outputRoot,'live-umfrage-studio.png'),fullPage:true});
- await page.goto(base+'/apps/quiz-studio/live.html?session=quiz-session');await page.locator('[data-action="timer"]').waitFor();await page.locator('[data-action="timer"]').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_start_timer_at'));await page.locator('[data-action="reveal"]').click();await page.waitForFunction(()=>!document.querySelector('[data-action="next"]').disabled);await page.locator('[data-action="next"]').evaluate(button=>{button.click();button.click()});await page.waitForFunction(()=>document.body.textContent.includes('Die Erde ist rund.'));assert.equal(await page.evaluate(()=>window.__calls.filter(x=>x.name==='quiz_live_navigate_from').length),1);
+ await page.goto(base+'/apps/quiz-studio/live.html?session=quiz-session');
+ await page.locator('[data-action="timer"]').waitFor();
+ assert.equal(await page.locator('#joinDialog').isVisible(),false);
+ assert.equal(await page.locator('#app .panel').count(),2);
+ assert.equal(await page.locator('.question-toolbar [data-action="back"]').count(),1);
+ assert.equal(await page.locator('.question-toolbar [data-action="next"]').count(),1);
+ assert.equal(await page.locator('.question-toolbar [data-action="reveal"] .question-points').innerText(),'1 P');
+ assert.equal(await page.locator('.ranking-heading [data-action="lock"]').count(),1);
+ assert.equal(await page.locator('.question-panel .controls').count(),0);
+ assert(!(await page.locator('#app').innerText()).includes('Die Schüler sehen nur die Antwortmöglichkeiten'));
+ assert.deepEqual(await page.locator('#timerSeconds option').allTextContents(),['15s','30s','45s','60s','90s','2min','3min']);
+ for(const width of [1024,950,768,390,320]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'Live controls overflow at '+width);}
+ await page.setViewportSize({width:1280,height:900});
+ await page.screenshot({path:path.join(outputRoot,'live-quiz-compact-desktop.png'),fullPage:true});
+ await page.locator('[data-action="access"]').click();await page.locator('#joinDialog').waitFor({state:'visible'});
+ const pixels=await page.locator('#qrCode canvas').evaluate(c=>({data:Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data),width:c.width,height:c.height}));
+ const decoded=jsQR(new Uint8ClampedArray(pixels.data),pixels.width,pixels.height);
+ assert(decoded,'QR code must be machine-readable');assert.equal(decoded.data,base+'/join.html?code=BBBBB&kind=quiz');
+ assert.equal(await page.locator('#joinDialog a').count(),0);
+ await page.screenshot({path:path.join(outputRoot,'live-quiz-qr-desktop.png'),fullPage:true});
+ await page.keyboard.press('Escape');assert.equal(await page.locator('#joinDialog').isVisible(),false);
+ await page.setViewportSize({width:390,height:844});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+ await page.screenshot({path:path.join(outputRoot,'live-quiz-compact-mobile.png'),fullPage:true});
+ await page.locator('[data-action="access"]').click();await page.locator('#joinDialog').waitFor({state:'visible'});
+ assert(await page.evaluate(()=>document.querySelector('#joinDialog').scrollWidth<=document.querySelector('#joinDialog').clientWidth));
+ await page.screenshot({path:path.join(outputRoot,'live-quiz-qr-mobile.png'),fullPage:true});
+ await page.locator('#closeJoin').click();await page.setViewportSize({width:1280,height:900});
+ await page.locator('#timerSeconds').selectOption('45');await page.locator('[data-action="refresh"]').click();
+ await page.waitForFunction(()=>!document.querySelector('[data-action="refresh"]').disabled);
+ assert.equal(await page.locator('#timerSeconds').inputValue(),'45');
+ await page.locator('[data-action="timer"]').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_start_timer_at'));
+ assert.equal(await page.evaluate(()=>window.__calls.find(x=>x.name==='quiz_live_start_timer_at').args.p_seconds),45);
+ await page.setViewportSize({width:320,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.setViewportSize({width:1280,height:900});
+ await page.locator('.ranking-heading [data-action="lock"]').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_lock_question'));
+ await page.locator('[data-action="reveal"]').click();await page.waitForFunction(()=>!document.querySelector('[data-action="next"]').disabled);
+ await page.locator('[data-action="next"]').evaluate(button=>{button.click();button.click()});await page.waitForFunction(()=>document.body.textContent.includes('Die Erde ist rund.'));
+ assert.equal(await page.evaluate(()=>window.__calls.filter(x=>x.name==='quiz_live_navigate_from').length),1);
+ await page.locator('[data-action="back"]').click();await page.waitForFunction(()=>document.body.textContent.includes('Wie viel ist zwei plus zwei?'));
+
  await page.setViewportSize({width:390,height:844});await page.goto(base+'/index.html');await page.screenshot({path:path.join(outputRoot,'hub-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.goto(base+'/join.html');await page.screenshot({path:path.join(outputRoot,'join-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));assert.equal(errors.length,0,errors.join('\n'));
- await browser.close();server.close();console.log('PASS: studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
+ await browser.close();server.close();console.log('PASS: decoded local QR code, access dialog, compact teacher controls, timer selection, ranking lock, top navigation, studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
 })().catch(e=>{console.error(e);server.close();process.exit(1)});
+
 
 
 
