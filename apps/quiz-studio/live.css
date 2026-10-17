@@ -24,7 +24,7 @@ body[data-studio="quiz"][data-dashboard-view="live"] .ranking-panel{margin-botto
 .access-qr :is(canvas,img){max-width:100%;height:auto}
 .access-code-label{font-size:12px;color:var(--studio-muted);margin:20px 0 5px}
 .access-code{font-size:clamp(28px,7vw,42px);font-weight:800;letter-spacing:.15em;color:var(--studio-accent);font-variant-numeric:tabular-nums;margin-left:.15em}
-@media(max-width:650px){
+@media(max-width:650px),(min-width:901px) and (max-width:1100px){
  body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"progress next" "reveal timer";gap:12px 8px;margin-bottom:20px}
  .question-progress{grid-area:progress}.next-question{grid-area:next}
  body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar .reveal-button{grid-area:reveal;justify-self:start}
@@ -38,4 +38,7 @@ body[data-studio="quiz"][data-dashboard-view="live"] .ranking-panel{margin-botto
  body[data-studio="quiz"][data-dashboard-view="live"] #timerSeconds{min-width:65px;width:65px}
  body[data-studio="quiz"][data-dashboard-view="live"] .reveal-button{gap:6px;padding:10px 8px;font-size:12px}
  .question-points{padding-left:6px}
+ body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar .timer-box{width:115px;flex-wrap:wrap}
+ .question-toolbar .timer-box .timer{flex-basis:100%;text-align:right}
+ .question-toolbar .timer-box .timer:empty{display:none}
 }

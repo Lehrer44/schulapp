@@ -86,6 +86,8 @@ async function fixtures(){
  assert.equal(await page.locator('.question-panel .controls').count(),0);
  assert(!(await page.locator('#app').innerText()).includes('Die Schüler sehen nur die Antwortmöglichkeiten'));
  assert.deepEqual(await page.locator('#timerSeconds option').allTextContents(),['15s','30s','45s','60s','90s','2min','3min']);
+ for(const width of [1024,950,768,390,320]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'Live controls overflow at '+width);}
+ await page.setViewportSize({width:1280,height:900});
  await page.screenshot({path:path.join(outputRoot,'live-quiz-compact-desktop.png'),fullPage:true});
  await page.locator('[data-action="access"]').click();await page.locator('#joinDialog').waitFor({state:'visible'});
  const pixels=await page.locator('#qrCode canvas').evaluate(c=>({data:Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data),width:c.width,height:c.height}));
@@ -106,6 +108,7 @@ async function fixtures(){
  assert.equal(await page.locator('#timerSeconds').inputValue(),'45');
  await page.locator('[data-action="timer"]').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_start_timer_at'));
  assert.equal(await page.evaluate(()=>window.__calls.find(x=>x.name==='quiz_live_start_timer_at').args.p_seconds),45);
+ await page.setViewportSize({width:320,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.setViewportSize({width:1280,height:900});
  await page.locator('.ranking-heading [data-action="lock"]').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_lock_question'));
  await page.locator('[data-action="reveal"]').click();await page.waitForFunction(()=>!document.querySelector('[data-action="next"]').disabled);
  await page.locator('[data-action="next"]').evaluate(button=>{button.click();button.click()});await page.waitForFunction(()=>document.body.textContent.includes('Die Erde ist rund.'));
