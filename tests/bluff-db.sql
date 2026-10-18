@@ -11,6 +11,7 @@ create table public.sessions(join_code text,status text);
 create table public.quiz_live_sessions(join_code text,status text);
 \ir ../supabase/bluff.sql
 \ir ../supabase/bluff_library.sql
+\ir ../supabase/bluff_flow.sql
 
 create table private.bluff_test_fixture(sid uuid,a uuid,b uuid,c uuid,owner_id uuid);
 -- Full two-round game, secrets, duplicates, scores, identity and stale controls.
@@ -48,23 +49,31 @@ begin
  -- Editing the source after start never changes a stored round.
  perform public.bluff_question_save(qid,'Geänderte Testfrage','Neue Lösung','','');
  assert (select correct_answer='Testlösung' from private.bluff_rounds where session_id=sid and round_index=0);
- assert public.bluff_host_action(sid,0,'question','open_bluff')->>'ok'='true';
+ assert public.bluff_player_state(sid,a,repeat('a',64))->>'phase'='bluff';
+ assert public.bluff_host_action(sid,0,'bluff','start_vote')->>'error'='INVALID_ACTION';
  assert public.bluff_submit(sid,a,repeat('a',64),0,' Testlösung ')->>'error'='ANSWER_MATCHES_TRUTH';
  assert public.bluff_submit(sid,a,repeat('a',64),0,'Alte Erfindung')->>'ok'='true';
  assert public.bluff_submit(sid,a,repeat('a',64),0,'Erfundene Lösung')->>'ok'='true';
+ assert public.bluff_host_action(sid,0,'bluff','show_answers')->>'error'='WAITING_FOR_ANSWERS';
  assert public.bluff_submit(sid,b,repeat('b',64),0,'erfundene  Lösung!')->>'ok'='true';
  assert public.bluff_submit(sid,c,repeat('c',64),0,'Andere Erfindung')->>'ok'='true';
  st:=public.bluff_player_state(sid,a,repeat('a',64));assert jsonb_array_length(st->'entries')=0;assert st->'own_entry'->>'answer'='Erfundene Lösung';assert st->'correct_answer'='null'::jsonb;
- assert jsonb_array_length(public.bluff_host_state(sid)->'entries')=3;
+ assert jsonb_array_length(public.bluff_host_state(sid)->'entries')=0;assert public.bluff_host_state(sid)->'options'='[]'::jsonb;
  assert public.bluff_host_action(sid,0,'bluff','timer',5)->>'ok'='true';
  update private.bluff_sessions set deadline=clock_timestamp()-interval '1 second' where id=sid;
  assert public.bluff_submit(sid,a,repeat('a',64),0,'Zu spät')->>'error'='TIME_EXPIRED';
  assert public.bluff_host_action(sid,0,'bluff','expire')->>'ok'='true';
+ assert public.bluff_host_state(sid)->>'phase'='bluff';
+ assert public.bluff_host_action(sid,0,'bluff','show_answers')->>'ok'='true';
+ assert public.bluff_host_state(sid)->>'phase'='answers';
  select id into truth from private.bluff_options where session_id=sid and round_index=0 and is_truth;
  select id into fake from private.bluff_options where session_id=sid and round_index=0 and cardinality(author_ids)=2;
  assert (select count(*)=3 from private.bluff_options where session_id=sid and round_index=0);
  assert (select count(*)=1 from private.bluff_options where session_id=sid and round_index=0 and is_truth);
  st:=public.bluff_player_state(sid,c,repeat('c',64));assert not(st->'options'->0?'is_truth');assert not(st->'options'->0?'authors');assert not(st->'options'->0?'voters');
+ assert public.bluff_vote(sid,a,repeat('a',64),0,truth)->>'error'='PHASE_CHANGED';
+ assert public.bluff_submit(sid,a,repeat('a',64),0,'Zu spät geändert')->>'error'='PHASE_CHANGED';
+ assert public.bluff_host_action(sid,0,'answers','start_vote')->>'ok'='true';
  assert public.bluff_vote(sid,a,repeat('a',64),0,fake)->>'error'='OWN_VOTE_FORBIDDEN';
  assert public.bluff_vote(sid,b,repeat('b',64),0,fake)->>'error'='OWN_VOTE_FORBIDDEN';
  assert public.bluff_vote(sid,a,repeat('a',64),0,truth)->>'ok'='true';
@@ -85,10 +94,13 @@ begin
  assert (select sum(score)=6 from private.bluff_players where session_id=sid);
  assert public.bluff_host_action(sid,0,'leaderboard','next')->>'ok'='true';
  assert public.bluff_submit(sid,a,repeat('a',64),0,'Stale')->>'error'='PHASE_CHANGED';
- assert public.bluff_host_action(sid,1,'question','open_bluff')->>'ok'='true';
+ assert public.bluff_host_state(sid)->>'phase'='bluff';
  assert public.bluff_host_action(sid,1,'bluff','open_vote')->>'error'='NO_BLUFFS';
  assert public.bluff_submit(sid,a,repeat('a',64),1,'Erfundene Antwort')->>'ok'='true';
- assert public.bluff_host_action(sid,1,'bluff','open_vote')->>'ok'='true';
+ assert public.bluff_host_action(sid,1,'bluff','show_answers')->>'error'='WAITING_FOR_ANSWERS';
+ perform public.bluff_submit(sid,b,repeat('b',64),1,'Erfundene Antwort');perform public.bluff_submit(sid,c,repeat('c',64),1,'Erfundene Antwort');
+ assert public.bluff_host_action(sid,1,'bluff','show_answers')->>'ok'='true';
+ assert public.bluff_host_action(sid,1,'answers','start_vote')->>'ok'='true';
  assert public.bluff_host_action(sid,1,'vote','timer',5)->>'ok'='true';
  update private.bluff_sessions set deadline=clock_timestamp()-interval '1 second' where id=sid;
  assert public.bluff_vote(sid,b,repeat('b',64),1,truth)->>'error'='TIME_EXPIRED';
