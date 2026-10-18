@@ -38,7 +38,7 @@ const SUPABASE_URL='https://mqtcwiiawmuxrpkjfrfc.supabase.co';
 const SUPABASE_KEY='sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-const allowedNextPages=new Set(['index.html','apps/umfrage/index.html','apps/quiz-studio/index.html','apps/jeopardy/index.html']);
+const allowedNextPages=new Set(['index.html','apps/umfrage/index.html','apps/quiz-studio/index.html','apps/quiz-studio/bluff/index.html','apps/jeopardy/index.html']);
 const requestedNext=new URLSearchParams(location.search).get('next');
 const nextPage=allowedNextPages.has(requestedNext)?requestedNext:'index.html';
 $('loginForm').onsubmit=async e=>{
@@ -54,4 +54,5 @@ $('loginForm').onsubmit=async e=>{
 </script>
 </body>
 </html>
+
 
