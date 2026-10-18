@@ -25,7 +25,7 @@ begin
   v_questions := p_quiz -> 'questions';
   v_title := pg_catalog.left(coalesce(nullif(pg_catalog.btrim(p_quiz ->> 'title'),''),'Quiz'),160);
   select coalesce(pg_catalog.jsonb_agg(
-    pg_catalog.jsonb_build_object('locked',false,'revealed',false,'timer_seconds',null,'timer_deadline',null) || case when p_quiz->>'rules_version'='1' then jsonb_build_object('locked',true,'opened_at',null,'mode',case when v_questions->(n-1)->>'playMode' in ('classic','buzzer','speed') then v_questions->(n-1)->>'playMode' when p_quiz->>'defaultMode' in ('classic','buzzer','speed') then p_quiz->>'defaultMode' else 'classic' end) else '{}'::jsonb end
+    pg_catalog.jsonb_build_object('locked',false,'revealed',false,'timer_seconds',null,'timer_deadline',null) || case when p_quiz->>'rules_version'='1' then jsonb_build_object('locked',false,'opened_at',null,'mode',case when v_questions->(n-1)->>'playMode' in ('classic','buzzer','speed') then v_questions->(n-1)->>'playMode' else 'classic' end) else '{}'::jsonb end
     order by n
   ),'[]'::jsonb) into v_states
   from pg_catalog.generate_series(1,pg_catalog.jsonb_array_length(v_questions)) n;
@@ -64,7 +64,9 @@ declare
   v_ids text[];
   v_expected integer;
   v_mode text;
-  v_received timestamptz := clock_timestamp();
+  v_arrived timestamptz := clock_timestamp();
+  v_received timestamptz;
+  v_entry uuid;
   v_existing public.quiz_live_responses%rowtype;
 begin
   select * into v_session from public.quiz_live_sessions s
@@ -77,13 +79,14 @@ begin
     return jsonb_build_object('ok',false,'error','QUESTION_NOT_ACTIVE');
   end if;
 
+  v_received := clock_timestamp();
   v_state := coalesce(v_session.question_states -> p_question_index,'{}'::jsonb);
   v_mode := coalesce(v_state->>'mode','classic');
   if v_mode in ('buzzer','speed') then
     select * into v_existing from public.quiz_live_responses where session_id=p_session_id and participant_id=p_participant_id and question_index=p_question_index;
     if found then return jsonb_build_object('ok',true,'already_submitted',true,'submitted_at',v_existing.submitted_at); end if;
   end if;
-  if v_session.quiz_snapshot->>'rules_version'='1' and (v_state->>'opened_at' is null or v_received<(v_state->>'opened_at')::timestamptz) then
+  if v_session.quiz_snapshot->>'rules_version'='1' and (v_state->>'opened_at' is null or v_arrived<(v_state->>'opened_at')::timestamptz) then
     return jsonb_build_object('ok',false,'error','ROUND_NOT_OPEN');
   end if;
   if coalesce((v_state ->> 'revealed')::boolean,false) or coalesce((v_state ->> 'locked')::boolean,false) then
@@ -139,7 +142,13 @@ begin
   insert into public.quiz_live_responses(session_id,participant_id,question_index,answer,submitted_at,is_correct,awarded_points,evaluated_at)
   values(v_session.id,p_participant_id,p_question_index,p_answer,v_received,null,0,null)
   on conflict(session_id,participant_id,question_index) do update
-    set answer=excluded.answer,submitted_at=excluded.submitted_at,is_correct=null,awarded_points=0,evaluated_at=null;
+    set answer=excluded.answer,submitted_at=excluded.submitted_at,is_correct=null,awarded_points=0,evaluated_at=null
+  returning id into v_entry;
+  if v_mode in ('buzzer','speed') and v_state->>'active_response_id' is null then
+    select id into v_entry from public.quiz_live_responses where session_id=p_session_id and question_index=p_question_index and evaluated_at is null order by submitted_at,id limit 1;
+    v_state := v_state || jsonb_build_object('active_response_id',v_entry,'shown_ids',coalesce(v_state->'shown_ids','[]'::jsonb)||to_jsonb(v_entry));
+    update public.quiz_live_sessions set question_states=jsonb_set(question_states,array[p_question_index::text],v_state),updated_at=clock_timestamp() where id=p_session_id;
+  end if;
   update public.quiz_live_participants set last_seen_at=pg_catalog.now() where id=p_participant_id;
   return jsonb_build_object('ok',true,'submitted_at',v_received);
 end;
@@ -314,51 +323,6 @@ begin
  from public.quiz_live_responses r where r.session_id=p_session_id and r.question_index=v_index;
  return jsonb_build_object('ok',true,'session',v_session,'leaderboard',v_rank,'responses',v_rows);
 end; $function$;
-create or replace function public.quiz_live_set_round_mode(p_session_id uuid,p_question_index integer,p_mode text)
-returns jsonb language plpgsql security definer set search_path='' as $$
-declare s public.quiz_live_sessions%rowtype; st jsonb;
-begin
- select * into s from public.quiz_live_sessions where id=p_session_id for update;
- if not found or s.owner_id is distinct from auth.uid() then return jsonb_build_object('ok',false,'error','NOT_OWNER'); end if;
- if s.status<>'running' or s.current_index<>p_question_index or s.quiz_snapshot->>'rules_version' is distinct from '1' then return jsonb_build_object('ok',false,'error','QUESTION_NOT_ACTIVE'); end if;
- st:=s.question_states->p_question_index;
- if st->>'opened_at' is not null or coalesce((st->>'revealed')::boolean,false) or exists(select 1 from public.quiz_live_responses where session_id=s.id and question_index=p_question_index) then return jsonb_build_object('ok',false,'error','ROUND_ALREADY_OPEN'); end if;
- if p_mode is null or p_mode not in ('classic','buzzer','speed') then return jsonb_build_object('ok',false,'error','INVALID_MODE'); end if;
- update public.quiz_live_sessions set question_states=jsonb_set(question_states,array[p_question_index::text,'mode'],to_jsonb(p_mode)),updated_at=clock_timestamp() where id=s.id;
- return jsonb_build_object('ok',true);
-end; $$;
-
-create or replace function public.quiz_live_open_round(p_session_id uuid,p_question_index integer)
-returns jsonb language plpgsql security definer set search_path='' as $$
-declare s public.quiz_live_sessions%rowtype; st jsonb;
-begin
- select * into s from public.quiz_live_sessions where id=p_session_id for update;
- if not found or s.owner_id is distinct from auth.uid() then return jsonb_build_object('ok',false,'error','NOT_OWNER'); end if;
- if s.status<>'running' or s.current_index<>p_question_index or s.quiz_snapshot->>'rules_version' is distinct from '1' then return jsonb_build_object('ok',false,'error','QUESTION_NOT_ACTIVE'); end if;
- st:=s.question_states->p_question_index;
- if st->>'opened_at' is not null or coalesce((st->>'revealed')::boolean,false) then return jsonb_build_object('ok',false,'error','ROUND_ALREADY_OPEN'); end if;
- st:=st || jsonb_build_object('opened_at',clock_timestamp(),'locked',false);
- update public.quiz_live_sessions set question_states=jsonb_set(question_states,array[p_question_index::text],st),updated_at=clock_timestamp() where id=s.id;
- return jsonb_build_object('ok',true,'opened_at',st->'opened_at');
-end; $$;
-
-create or replace function public.quiz_live_begin_review(p_session_id uuid,p_question_index integer)
-returns jsonb language plpgsql security definer set search_path='' as $$
-declare s public.quiz_live_sessions%rowtype; st jsonb; entry uuid;
-begin
- select * into s from public.quiz_live_sessions where id=p_session_id for update;
- if not found or s.owner_id is distinct from auth.uid() then return jsonb_build_object('ok',false,'error','NOT_OWNER'); end if;
- if s.status<>'running' or s.current_index<>p_question_index then return jsonb_build_object('ok',false,'error','QUESTION_NOT_ACTIVE'); end if;
- st:=s.question_states->p_question_index;
- if coalesce(st->>'mode','classic') not in ('buzzer','speed') or st->>'opened_at' is null or coalesce((st->>'revealed')::boolean,false) then return jsonb_build_object('ok',false,'error','INVALID_STATUS'); end if;
- if st->>'active_response_id' is not null then return jsonb_build_object('ok',true,'already_reviewing',true); end if;
- select id into entry from public.quiz_live_responses where session_id=s.id and question_index=p_question_index and evaluated_at is null order by submitted_at,id limit 1;
- if entry is null then return jsonb_build_object('ok',false,'error','NO_ENTRIES'); end if;
- st:=st || jsonb_build_object('locked',true,'timer_deadline',null,'active_response_id',entry,'shown_ids',coalesce(st->'shown_ids','[]'::jsonb)||to_jsonb(entry));
- update public.quiz_live_sessions set question_states=jsonb_set(question_states,array[p_question_index::text],st),updated_at=clock_timestamp() where id=s.id;
- return jsonb_build_object('ok',true);
-end; $$;
-
 create or replace function public.quiz_live_judge_entry(p_session_id uuid,p_question_index integer,p_response_id uuid,p_correct boolean)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare s public.quiz_live_sessions%rowtype; st jsonb; entry public.quiz_live_responses%rowtype; next_id uuid; pts numeric;
@@ -378,16 +342,99 @@ begin
    update public.quiz_live_responses set is_correct=false,awarded_points=0,evaluated_at=clock_timestamp() where session_id=s.id and question_index=p_question_index and evaluated_at is null;
  else
    select id into next_id from public.quiz_live_responses where session_id=s.id and question_index=p_question_index and evaluated_at is null order by submitted_at,id limit 1;
-   if next_id is null then st:=st || jsonb_build_object('revealed',true,'locked',true);
+   if next_id is null then
+     if coalesce((st->>'locked')::boolean,false) or (st->>'timer_deadline')::timestamptz<=clock_timestamp() then st:=st || jsonb_build_object('revealed',true,'locked',true); end if;
    else st:=st || jsonb_build_object('active_response_id',next_id,'shown_ids',coalesce(st->'shown_ids','[]'::jsonb)||to_jsonb(next_id)); end if;
  end if;
  update public.quiz_live_sessions set question_states=jsonb_set(question_states,array[p_question_index::text],st),updated_at=clock_timestamp() where id=s.id;
  return jsonb_build_object('ok',true);
 end; $$;
 
-revoke all on function public.quiz_live_set_round_mode(uuid,integer,text),public.quiz_live_open_round(uuid,integer),public.quiz_live_begin_review(uuid,integer),public.quiz_live_judge_entry(uuid,integer,uuid,boolean) from public,anon,authenticated;
-grant execute on function public.quiz_live_set_round_mode(uuid,integer,text),public.quiz_live_open_round(uuid,integer),public.quiz_live_begin_review(uuid,integer),public.quiz_live_judge_entry(uuid,integer,uuid,boolean) to authenticated;
+revoke all on function public.quiz_live_judge_entry(uuid,integer,uuid,boolean) from public,anon,authenticated;
+grant execute on function public.quiz_live_judge_entry(uuid,integer,uuid,boolean) to authenticated;
+drop function if exists public.quiz_live_set_round_mode(uuid,integer,text);
+drop function if exists public.quiz_live_open_round(uuid,integer);
+drop function if exists public.quiz_live_begin_review(uuid,integer);
 
 revoke all on function private.quiz_live_submit_response_impl(uuid,uuid,integer,jsonb),private.quiz_live_student_state_impl(uuid,uuid) from public,anon,authenticated;
 revoke all on function public.quiz_live_teacher_state(uuid) from public,anon,authenticated;
 grant execute on function public.quiz_live_teacher_state(uuid) to authenticated;
+
+
+create or replace function public.quiz_live_start(p_session_id uuid)
+returns jsonb language plpgsql security definer set search_path='' as $$
+declare s public.quiz_live_sessions%rowtype; idx integer; st jsonb; entry uuid;
+begin
+ select * into s from public.quiz_live_sessions where id=p_session_id for update;
+ if not found or s.owner_id is distinct from auth.uid() then return jsonb_build_object('ok',false,'error','NOT_OWNER'); end if;
+ if s.status='lobby' then idx:=0;
+ elsif s.status='running' and s.quiz_snapshot->>'rules_version'='1' then idx:=s.current_index;
+ else return jsonb_build_object('ok',false,'error','INVALID_STATUS'); end if;
+ st:=s.question_states->idx;
+ if s.quiz_snapshot->>'rules_version'='1' and st->>'opened_at' is null and not coalesce((st->>'revealed')::boolean,false) then
+   st:=st || jsonb_build_object('opened_at',clock_timestamp(),'locked',false);
+ end if;
+ if st->>'mode' in ('buzzer','speed') and st->>'active_response_id' is null and not coalesce((st->>'revealed')::boolean,false) then
+   select id into entry from public.quiz_live_responses where session_id=s.id and question_index=idx and evaluated_at is null order by submitted_at,id limit 1;
+   if entry is not null then st:=st || jsonb_build_object('active_response_id',entry,'shown_ids',coalesce(st->'shown_ids','[]'::jsonb)||to_jsonb(entry)); end if;
+ end if;
+ update public.quiz_live_sessions set status='running',current_index=idx,question_states=jsonb_set(question_states,array[idx::text],st),updated_at=clock_timestamp() where id=s.id;
+ return jsonb_build_object('ok',true,'current_index',idx);
+end; $$;
+
+CREATE OR REPLACE FUNCTION public.quiz_live_navigate(p_session_id uuid, p_target_index integer)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_session public.quiz_live_sessions%rowtype;
+  v_count integer;
+  v_state jsonb;
+begin
+  select * into v_session from public.quiz_live_sessions where id=p_session_id for update;
+  if not found or v_session.owner_id is distinct from auth.uid() then
+    return jsonb_build_object('ok',false,'error','NOT_OWNER');
+  end if;
+
+  v_count := pg_catalog.jsonb_array_length(v_session.quiz_snapshot -> 'questions');
+  if p_target_index<0 or p_target_index>v_count then
+    return jsonb_build_object('ok',false,'error','INVALID_INDEX');
+  end if;
+
+  -- Forward navigation is allowed only one step at a time, after the current solution was revealed.
+  -- Moving backward never changes responses or awarded points.
+  if p_target_index > v_session.current_index then
+    if p_target_index <> v_session.current_index + 1 then
+      return jsonb_build_object('ok',false,'error','NEXT_STEP_ONLY');
+    end if;
+    if v_session.current_index < 0 or v_session.current_index >= v_count then
+      return jsonb_build_object('ok',false,'error','INVALID_INDEX');
+    end if;
+    v_state := coalesce(v_session.question_states -> v_session.current_index,'{}'::jsonb);
+    if coalesce((v_state ->> 'revealed')::boolean,false) is not true then
+      return jsonb_build_object('ok',false,'error','REVEAL_BEFORE_NEXT');
+    end if;
+  end if;
+
+  if p_target_index=v_count then
+    update public.quiz_live_sessions
+      set status='ended',current_index=v_count,ended_at=pg_catalog.now(),updated_at=pg_catalog.now()
+      where id=p_session_id;
+  else
+    v_state:=v_session.question_states->p_target_index;
+    if v_session.quiz_snapshot->>'rules_version'='1' and v_state->>'opened_at' is null and not coalesce((v_state->>'revealed')::boolean,false) then
+      v_state:=v_state || jsonb_build_object('opened_at',clock_timestamp(),'locked',false);
+      v_session.question_states:=jsonb_set(v_session.question_states,array[p_target_index::text],v_state);
+    end if;
+    update public.quiz_live_sessions
+      set status='running',current_index=p_target_index,question_states=v_session.question_states,ended_at=null,updated_at=clock_timestamp()
+      where id=p_session_id;
+  end if;
+  return jsonb_build_object('ok',true,'current_index',p_target_index);
+end;
+$function$;
+
+revoke all on function public.quiz_live_start(uuid),public.quiz_live_navigate(uuid,integer) from public,anon,authenticated;
+grant execute on function public.quiz_live_start(uuid),public.quiz_live_navigate(uuid,integer) to authenticated;
