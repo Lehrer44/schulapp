@@ -326,6 +326,8 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 <script src="rich-editor.js" defer></script>
 <script src="play-modes.js"></script>
 <script src="pin.js"></script>
+<link rel="stylesheet" href="bluff/library.css">
+<script src="bluff/library.js"></script>
 <link rel="stylesheet" href="pin.css">
 <link rel="stylesheet" href="play-modes.css">
 </head>
@@ -621,6 +623,7 @@ function render(){
   else if(state.view === 'play')   $app.innerHTML = viewPlay();
   else if(state.view === 'result') $app.innerHTML = viewResult();
   mountPinQuestions();
+  if(state.view==='list') window.BluffLibrary.mount(document.getElementById('bluffLibrary'),cloudClient);
   renderedEditorId = editorId;
   window.scrollTo({left:keepPosition?position.left:0,top:keepPosition?position.top:0,behavior:'instant'});
 }
@@ -631,18 +634,16 @@ function viewList(){
   return `
   <header class="studio-header">
     <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><h1 class="studio-title">Quiz <span>Studio</span></h1></div>
-    <div class="studio-actions">
-      <button type="button" data-action="import">Importieren</button>
-      <button type="button" data-action="export-all">Exportieren</button>
-      <button class="studio-primary" type="button" data-action="new-quiz">＋ Neues Quiz</button>
-    </div>
   </header>
-
-  <a class="bluff-format-card" href="bluff/index.html" style="display:block;text-decoration:none;color:inherit;margin-bottom:24px;padding:24px;border:1px solid #d8c9e3;border-radius:18px;background:linear-gradient(120deg,#f0e7f5,#fffefa)"><span class="badge">NEUES SPIELFORMAT</span><h2 style="margin:12px 0 8px">⧉ Bluff-Quiz</h2><p style="margin:0 0 14px">Erfinde glaubwürdige Antworten, täusche deine Mitspieler und finde die Wahrheit.</p><strong>Fragensammlung & Spielstart →</strong></a>
-  <div class="panel">
+  <section class="panel" id="classicLibrary">
     <div class="library-heading">
       <h2>Deine Quizze</h2>
       <div class="library-count">${quizzes.length} ${quizzes.length === 1 ? 'Quiz' : 'Quizze'}</div>
+      <div class="studio-actions">
+        <button type="button" data-action="import">Importieren</button>
+        <button type="button" data-action="export-all">Exportieren</button>
+        <button class="studio-primary" type="button" data-action="new-quiz">＋ Neues Quiz</button>
+      </div>
     </div>
     ${ quizzes.length === 0
       ? `<div class="empty">
@@ -650,7 +651,18 @@ function viewList(){
            <button class="btn primary" data-action="new-quiz">＋ Quiz erstellen</button>
          </div>`
       : `<div class="grid">${quizzes.map((q, index) => quizCard(q, index)).join('')}</div>` }
-  </div>
+  </section>
+  <section class="panel" id="bluffLibrary">
+    <div class="library-heading">
+      <h2>Bluff-Quiz</h2><div class="library-count" data-bluff-count>0 Quizze</div>
+      <div class="studio-actions">
+        <button data-bluff-action="random">Zufälliges Spiel</button>
+        <a class="btn" href="bluff/index.html">Fragen bearbeiten</a>
+        <button class="studio-primary" data-bluff-action="new">+ Neues Bluff-Quiz</button>
+      </div>
+    </div>
+    <div data-bluff-list></div><p data-bluff-status role="status"></p>
+  </section>
   `;
 }
 
