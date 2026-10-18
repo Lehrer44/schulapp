@@ -12,6 +12,7 @@ async function fixtures(){
  const quizSession={id:'quiz-session',owner_id:owner,quiz_title:'Testquiz',quiz_snapshot:quiz,current_index:0,status:'running',join_code:'BBBBB',question_states:[{locked:false,revealed:false},{locked:false,revealed:false}],updated_at:'initial'};
  let surveyAnswer=null,quizAnswer=null;
  window.__testClient={auth:{async getUser(){return {data:{user:signedIn?{id:owner}:null}}},async getSession(){return {data:{session:signedIn?{user:{id:owner}}:null}}},async signOut(){signedIn=false;return {error:null}}},channel(){const c={on(){return c},subscribe(cb){cb('SUBSCRIBED');return c}};return c},removeChannel(){},storage:{from(){return {async download(){return {error:{statusCode:'404',message:'Object not found'}}}}}},from(table){const conditions={};return {select(){return this},order(){return this},in(){return this},range(){return this},then(resolve,reject){return Promise.resolve({data:[],count:0}).then(resolve,reject)},eq(k,v){conditions[k]=v;return this},async maybeSingle(){if(table==='teacher_libraries')return {data:{revision:1,payload:conditions.kind==='quiz'?{quizzes:[quiz]}:{games:[]}}};return {data:survey}},async single(){return {data:table==='jeopardy_catalog'?{payload:{games:[]}}:table==='sessions'?survey:quizSession}}}},async rpc(name,args){if(!navigator.onLine)return {error:{message:'offline'}};window.__calls.push({name,args});
+  if(name==='quiz_live_create')return {data:{ok:true,session_id:'quiz-session',title:args.p_quiz.title,join_code:'BBBBB'}};
   if(name==='classroom_resolve_code')return {data:{ok:true,kinds:[args.p_join_code==='AAAAA'?'survey':'quiz']}};
   if(name==='classroom_join')return {data:{ok:true,session_id:args.p_kind==='survey'?'survey-session':'quiz-session',participant_id:'participant',join_code:args.p_join_code}};
   if(name==='survey_student_state_compact'){const state={...survey};if(!args.p_include_snapshot)delete state.survey_snapshot;return {data:{ok:true,session:state,response:surveyAnswer}};}
@@ -33,6 +34,20 @@ async function fixtures(){
  await context.addInitScript(fixtures);
  await context.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:route.request().url().includes('supabase')?'window.supabase={createClient:()=>window.__testClient}':'window.QRCode={toCanvas:(c,u,o,cb)=>cb(null)}'}));
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ // Starting an unchanged quiz performs no library write; pending edits must finish first.
+ for(const dirty of [false,true]){
+  const start=await context.newPage();start.on('pageerror',e=>errors.push(e.message));
+  await start.goto(base+'/apps/quiz-studio/index.html');await start.locator('[data-action="live-quiz"]').waitFor();
+  await start.evaluate(()=>{
+   const original=window.__testClient.rpc;window.__savedTitle=null;
+   window.__testClient.rpc=async(name,args)=>{if(name==='save_teacher_library'){await new Promise(r=>setTimeout(r,350));window.__savedTitle=args.p_payload.quizzes[0].title;}return original(name,args);};
+   window.addEventListener('pagehide',()=>sessionStorage.setItem('start-check',JSON.stringify({writes:window.__calls.filter(c=>c.name==='save_teacher_library').length,title:window.__savedTitle})));
+  });
+  if(dirty){await start.locator('[data-action="open-quiz"]').click();await start.locator('[data-bind="title"]').fill('Aktuell gespeichert');await start.locator('[data-action="back-to-list"]').click();}
+  await start.locator('[data-action="live-quiz"]').click();await start.waitForURL('**/live.html?session=quiz-session');
+  const result=await start.evaluate(()=>JSON.parse(sessionStorage.getItem('start-check')));assert.equal(result.writes,dirty?1:0);assert.equal(result.title,dirty?'Aktuell gespeichert':null);
+  await start.close();
+ }
  let studioStyle;
  async function checkStudio(name){
   const title=page.locator('.studio-title');await title.waitFor();
@@ -169,7 +184,7 @@ async function fixtures(){
  }
  await page.goto(base+'/index.html');await page.locator('#logoutBtn').waitFor({state:'visible'});assert.equal(await page.locator('.app-card').count(),3);await page.screenshot({path:path.join(outputRoot,'hub-desktop.png'),fullPage:true});
  await page.locator('.app-card[href="apps/umfrage/index.html"]').click();await page.waitForURL('**/apps/umfrage/index.html');await page.locator('#surveyList .empty').waitFor();assert.equal(await page.locator('#gamePanel').count(),0);await checkStudio('Umfrage');assert.equal(await page.locator('#logoutBtn').count(),0);await page.locator('#newSurveyBtn').click();await page.waitForURL('**/apps/umfrage/editor.html?new=1');await page.locator('#slideQuestion').fill('Wie gefällt dir der Unterricht?');await page.locator('#addSlideBtn').click();assert.equal(await page.locator('.slideCard').count(),2);await captureEditor('Umfrage');await page.locator('.app-nav a').first().click();await page.waitForURL('**/SchulApp/index.html');
- await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('[data-action="open-quiz"]').click();await page.locator('#retryCloudSave').waitFor();await page.locator('#retryCloudSave').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'));await checkRichEditor();await checkImagePaste();await captureEditor('Quiz');await checkEditorScroll();await page.locator('[data-action="back-to-list"]').click();assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('.app-nav a').first().click();
+ await page.locator('.app-card[href="apps/quiz-studio/index.html"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');await page.locator('[data-action="new-quiz"]').waitFor();await checkStudio('Quiz');assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('[data-action="open-quiz"]').click();await page.locator('#retryCloudSave').waitFor();await page.locator('#retryCloudSave').click();assert.equal(await page.evaluate(()=>window.__calls.filter(x=>x.name==='save_teacher_library').length),0);await checkRichEditor();await checkImagePaste();await captureEditor('Quiz');await checkEditorScroll();await page.locator('[data-action="back-to-list"]').click();assert.equal(await page.locator('#retryCloudSave').count(),0);await page.locator('.app-nav a').first().click();
  await page.locator('.app-card[href="apps/jeopardy/index.html"]').click();await page.waitForURL('**/apps/jeopardy/index.html');await page.locator('#btnNew').waitFor();await checkStudio('Jeopardy');assert.equal(await page.locator('.storage-note').count(),0);await page.locator('#btnNew').click();await page.locator('#sname').fill('Design Test');await page.locator('#rows').selectOption('2');await page.locator('#cols').selectOption('2');await page.screenshot({path:path.join(outputRoot,'editor-jeopardy-setup.png'),fullPage:true});await page.locator('#btnContinue').click();await captureEditor('Jeopardy');await page.locator('.app-nav a').first().click();
  await page.locator('#logoutBtn').click();await page.locator('#loginLink').waitFor({state:'visible'});assert.equal(await page.locator('#logoutBtn').isVisible(),false);
  await page.goto(base+'/login.html?next=apps%2Fquiz-studio%2Findex.html');await page.waitForURL('**/apps/quiz-studio/index.html');

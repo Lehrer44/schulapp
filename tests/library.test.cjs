@@ -18,7 +18,16 @@ function backend(){
  await assert.rejects(c.save({quizzes:[{title:'C'}]}),/response lost/);assert(c.unsaved);
  await c.save({quizzes:[{title:'D'}]});assert.equal(state.row.payload.quizzes[0].title,'D');assert.equal(state.writes,3);assert(!c.unsaved);
  await Promise.all([c.save({quizzes:[{title:'E'}]}),c.save({quizzes:[{title:'F'}]})]);assert.equal(state.row.payload.quizzes[0].title,'F');
+ // An already saved image-heavy library must not be uploaded again.
+ const before=state.writes,payload=structuredClone(state.row.payload);
+ const loaded=createLibraryStore(client,'quiz');await loaded.load({id:'teacher'});
+ await loaded.save(payload);await loaded.save(payload);assert.equal(state.writes,before);
+ const same={quizzes:[{title:'Large Pin',media:'data:image/png;base64,'+'A'.repeat(1000000)}]};
+ await Promise.all([loaded.save(same),loaded.save(same),loaded.save(same)]);assert.equal(state.writes,before+1);
+ state.loseResponse=true;const retry={quizzes:[{title:'Lost acknowledgement'}]};await assert.rejects(loaded.save(retry),/response lost/);
+ const lostWrites=state.writes;await loaded.save(retry);assert.equal(state.writes,lostWrites);assert(!loaded.unsaved);
  const bad=createLibraryStore(client,'jeopardy');state.offline=true;await assert.rejects(bad.load({id:'teacher'}),/offline/);await assert.rejects(bad.save({games:[]}),/LIBRARY_NOT_LOADED/);
  console.log('PASS: stale tabs, serialization, lost response, load failure, preserved cloud contents');
 })().catch(e=>{console.error(e);process.exitCode=1});
+
 
