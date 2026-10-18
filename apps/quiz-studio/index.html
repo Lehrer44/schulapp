@@ -325,6 +325,8 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 <script src="rich-text.js"></script>
 <script src="rich-editor.js" defer></script>
 <script src="play-modes.js"></script>
+<script src="pin.js"></script>
+<link rel="stylesheet" href="pin.css">
 <link rel="stylesheet" href="play-modes.css">
 </head>
 <body data-studio="quiz" data-dashboard-view="library">
@@ -350,6 +352,7 @@ const QUIZ_STORAGE_BUCKET = 'quiz-studio';
 const MAX_CLOUD_FILE_SIZE = 50 * 1024 * 1024;
 const cloudClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const TYPES = {
+  pin:         { label:'Pin', icon:'📍' },
   single:      { label:'Einfachauswahl', icon:'◉' },
   multiple:    { label:'Mehrfachauswahl', icon:'☑' },
   truefalse:   { label:'Wahr / Falsch',  icon:'⚖' },
@@ -557,6 +560,17 @@ function scheduleSave(){
 
 window.addEventListener('beforeunload',e=>{if(cloudDirty||saveTimer||libraryStore.unsaved){e.preventDefault();e.returnValue='';}});
 
+function mountPinQuestions(){
+ if(state.view==='editor')document.querySelectorAll('.qcard').forEach(card=>{
+  const q=state.draft.questions.find(q=>q.id===card.dataset.qid);if(q?.type!=='pin')return;
+  QuizPin.mount(card.querySelector('[data-quiz-pin]'),q,{editor:true,editable:true,showTarget:true,onChange:value=>{q.pinTarget=value;scheduleSave();},onAspect:value=>{if(q.pinAspect!==value){q.pinAspect=value;scheduleSave();}}});
+ });
+ if(state.view==='play'){
+  const s=state.session,q=s.questions[s.index];if(q.type!=='pin')return;
+  QuizPin.mount($app.querySelector('[data-quiz-pin]'),q,{answer:s.answers[s.index],showTarget:s.checked,editable:!s.checked,onChange:value=>{s.answers[s.index]=value;updatePrimaryBtn();}});
+ }
+}
+
 /* ---------- Quiz / Fragen erzeugen ---------- */
 function newQuiz(){
   return {
@@ -572,6 +586,7 @@ function newQuiz(){
 }
 function createQuestion(type){
   const base = { id: uid(), type, text: '', points: 1 };
+  if(type === 'pin') return {...base,playMode:'classic',pinTarget:null,pinAspect:1};
   if(type === 'single' || type === 'multiple'){
     return { ...base, options: [
       { id: uid(), text: '', correct: false },
@@ -605,6 +620,7 @@ function render(){
   else if(state.view === 'editor') $app.innerHTML = viewEditor();
   else if(state.view === 'play')   $app.innerHTML = viewPlay();
   else if(state.view === 'result') $app.innerHTML = viewResult();
+  mountPinQuestions();
   renderedEditorId = editorId;
   window.scrollTo({left:keepPosition?position.left:0,top:keepPosition?position.top:0,behavior:'instant'});
 }
@@ -715,18 +731,19 @@ function mediaMarkup(media, className){
   return '';
 }
 function questionMediaEditor(q){
+  const pin=q.type==='pin';
   const hasMedia = Boolean(q.media && q.media.data);
   const missingMedia = Boolean(q.media && q.media.storedInIndexedDB && !q.media.data);
   return `
     <div class="question-media-editor">
       <div class="media-tools">
-        <label class="btn secondary small media-upload-label">＋ Medien auswählen
-          <input type="file" accept="image/*,audio/*,video/*" data-qid="${q.id}" data-media-input aria-label="Bild-, Audio- oder Videodatei auswählen">
+        <label class="btn secondary small media-upload-label">＋ ${pin?'Bild':'Medien'} auswählen
+          <input type="file" accept="${pin?'image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp':'image/*,audio/*,video/*'}" data-qid="${q.id}" data-media-input aria-label="Bild-, Audio- oder Videodatei auswählen">
         </label>
         ${hasMedia ? `<button class="btn danger small" data-action="remove-question-media" data-qid="${q.id}">Medien entfernen</button>` : ''}
       </div>
       <div class="media-paste-hint">Ein Bild kannst du kopieren und direkt im Fragenfeld mit Strg+V einfügen. Audio- und Videodateien wählst du über „Medien auswählen“ aus. Bei größeren Dateien fragt das Studio vor dem Einfügen nach.</div>
-      ${mediaMarkup(q.media,'media-preview-editor')}
+      ${pin?'':mediaMarkup(q.media,'media-preview-editor')}
       ${missingMedia ? '<div class="media-paste-hint">Die frühere Mediendatei konnte nicht wiederhergestellt werden. Bitte füge sie erneut hinzu.</div>' : ''}
       ${hasMedia ? `<div class="media-paste-hint">Aktuelle Datei: ${esc(q.media.name || 'Eingebettete Mediendatei')}</div>` : ''}
     </div>`;
@@ -759,7 +776,7 @@ function questionCard(q,i){
       <button class="icon-btn" data-action="move-question" data-qid="${q.id}" data-dir="1" title="Nach unten">↓</button>
       <button class="icon-btn danger" data-action="del-question" data-qid="${q.id}" title="Frage löschen">✕</button>
     </div>
-    <label class="mode-field">Spielweise <select data-qid="${q.id}" data-field="play-mode" aria-label="Spielweise für Frage ${i+1}">${QuizModes.options(QuizModes.normalise(q.playMode))}</select></label>
+    ${q.type==='pin'?'<p class="pin-hint">Pin · Alle Treffer im Lösungsradius erhalten die Fragenpunkte.</p>':`<label class="mode-field">Spielweise <select data-qid="${q.id}" data-field="play-mode" aria-label="Spielweise für Frage ${i+1}">${QuizModes.options(QuizModes.normalise(q.playMode))}</select></label>`}
     ${richEditor(q,`data-qid="${q.id}" data-field="text"`,'Fragestellung …','qtext')}
     ${questionMediaEditor(q)}
     <div class="qbody">${questionBody(q)}</div>
@@ -767,6 +784,7 @@ function questionCard(q,i){
 }
 
 function questionBody(q){
+  if(q.type==='pin')return QuizPin.markup(q,{editable:true,editor:true,showTarget:true});
   if(q.type === 'single' || q.type === 'multiple'){
     const isSingle = q.type === 'single';
     return `
@@ -839,6 +857,7 @@ function isAnswered(q, ans){
     case 'truefalse':   return ans === true || ans === false;
     case 'ranking':     return true;
     case 'shortanswer': return String(ans||'').trim().length > 0;
+    case 'pin': return QuizPin.point(ans);
   }
   return false;
 }
@@ -900,10 +919,12 @@ function viewPlay(){
   <div class="panel play-panel">
     <div class="play-meta">Frage ${s.index+1} von ${total} · ${fmt(q.points)} ${Number(q.points)===1?'Punkt':'Punkte'}</div>
     <h2 class="play-question">${(q.text ? QuizRichText.render(q) : '') || '<em class="muted">Keine Frage formuliert</em>'}</h2>
-    ${mediaMarkup(q.media,'question-media-play')}
+    ${q.type==='pin'?'':mediaMarkup(q.media,'question-media-play')}
     ${playBody(q, ans, s.checked)}
     ${(s.checked && s.immediate) ? feedbackBox(q, res) : ''}
     <div class="play-actions">
+      <button class="btn secondary" data-action="preview-back" ${s.index===0?'disabled':''}>← Zurück</button>
+      <button class="btn secondary" data-action="preview-next" ${s.index===total-1?'disabled':''}>Weiter →</button>
       <button id="primaryBtn" class="btn primary big" data-action="primary"
         ${(!s.checked && !isAnswered(q, ans)) ? 'disabled' : ''}>${btnLabel}</button>
     </div>
@@ -911,6 +932,7 @@ function viewPlay(){
 }
 
 function playBody(q, ans, checked){
+  if(q.type==='pin')return QuizPin.markup(q,{answer:ans,showTarget:checked,editable:!checked});
   const dis = checked ? 'disabled' : '';
 
   if(q.type === 'single'){
@@ -989,6 +1011,7 @@ function feedbackBox(q, res){
 /* ---------- Auswertung ---------- */
 function evaluate(q, ans){
   const max = Number(q.points) || 0;
+  if(q.type==='pin'){const ok=QuizPin.correct(q,ans);return {ok,score:ok?max:0,max};}
 
   if(q.type === 'single'){
     const correctId = (q.options.find(o=>o.correct) || {}).id ?? null;
@@ -1029,6 +1052,7 @@ function evaluate(q, ans){
 }
 
 function formatCorrect(q){
+  if(q.type==='pin')return 'Grün markierter Bereich auf dem Bild';
   if(q.type === 'single'){
     const o = q.options.find(o=>o.correct);
     return o ? o.text : '—';
@@ -1051,6 +1075,7 @@ function formatCorrect(q){
 }
 
 function formatGiven(q, ans){
+  if(q.type==='pin')return QuizPin.point(ans)?'Pin bei '+ans.x.toLocaleString('de-DE')+' % / '+ans.y.toLocaleString('de-DE')+' %':'— keine Antwort —';
   if(q.type === 'single'){
     const o = q.options.find(o=>o.id === ans);
     return o && o.text ? o.text : (o ? '(leer)' : '— keine Antwort —');
@@ -1080,7 +1105,7 @@ function viewResult(){
   const s = state.session;
   if(!s) return '';
   const score = s.results.reduce((a,r)=>a + (r ? r.score : 0), 0);
-  const max = s.results.reduce((a,r)=>a + (r ? r.max : 0), 0);
+  const max = s.questions.reduce((a,q)=>a + (Number(q.points)||0), 0);
   const pct = max > 0 ? Math.round((score / max) * 100) : 0;
   const msg = pct >= 90 ? 'Hervorragend! 🏆'
             : pct >= 70 ? 'Sehr gut! 🎉'
@@ -1171,7 +1196,7 @@ document.addEventListener('click', async (e)=>{
     case 'remove-question-media': {
       const q = findQ();
       if(q){
-        q.media = null;
+        q.media = null;if(q.type==='pin')q.pinTarget=null;
         save();
         render();
         toast('Medien aus der Frage entfernt');
@@ -1179,6 +1204,8 @@ document.addEventListener('click', async (e)=>{
       break;
     }
     case 'live-quiz': {
+      const quiz=db.quizzes.find(q=>q.id===id);
+      if(quiz?.questions.some(q=>q.type==='pin'&&!QuizPin.valid(q))){toast('Bitte lege bei jeder Pin-Frage ein Bild, den Mittelpunkt und den Lösungsradius fest.');break;}
       clearTimeout(saveTimer);if(await save())location.href='live.html?quiz='+encodeURIComponent(id);
       break;
     }
@@ -1315,6 +1342,13 @@ document.addEventListener('click', async (e)=>{
       break;
     }
 
+    case 'preview-back':
+    case 'preview-next': {
+      const s=state.session;if(!s)break;
+      s.index=Math.max(0,Math.min(s.questions.length-1,s.index+(action==='preview-back'?-1:1)));
+      s.checked=s.immediate&&s.results[s.index]!==null;
+      render();break;
+    }
     case 'play-rank': {
       const s = state.session;
       if(!s || s.checked) break;
@@ -1358,7 +1392,7 @@ function advance(){
     state.view = 'result';
   } else {
     s.index++;
-    s.checked = false;
+    s.checked = s.immediate && s.results[s.index] !== null;
   }
   render();
 }
@@ -1429,6 +1463,7 @@ document.addEventListener('paste', (event)=>{
     const ext = (imageFile.type.split('/')[1] || 'png').replace('jpeg','jpg').replace(/[^a-z0-9]/gi,'');
     if(!sourceQuiz.questions.includes(question)) return;
     question.media = {type:'image',data,name:imageFile.name || ('clipboard-image.'+ext)};
+    if(question.type==='pin')question.pinTarget=null;
     save();
     if(state.view === 'editor' && state.draft === sourceQuiz) render();
     toast('Bild eingefügt und der Frage zugeordnet');
@@ -1450,6 +1485,7 @@ document.addEventListener('change', (event)=>{
   const type = file.type.startsWith('image/') ? 'image'
              : file.type.startsWith('audio/') ? 'audio'
              : file.type.startsWith('video/') ? 'video' : '';
+  if(question.type==='pin'&&(type!=='image'||!/^image\/(png|jpeg|webp|gif|avif|bmp)$/i.test(file.type))){toast('Für Pin-Fragen bitte ein PNG-, JPEG-, WebP-, GIF-, AVIF- oder BMP-Bild wählen.');input.value='';return;}
   if(!type){
     toast('Bitte wähle eine Bild-, Audio- oder Videodatei aus.');
     input.value = '';
@@ -1470,6 +1506,7 @@ document.addEventListener('change', (event)=>{
       return;
     }
     question.media = {type,data,name:file.name || type};
+    if(question.type==='pin')question.pinTarget=null;
     save();
     render();
     toast(type === 'image' ? 'Bild zur Frage hinzugefügt' : type === 'audio' ? 'Audio zur Frage hinzugefügt' : 'Video zur Frage hinzugefügt');
@@ -1678,6 +1715,7 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 
 

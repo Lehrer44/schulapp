@@ -26,6 +26,8 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 <link rel="stylesheet" href="rich-text.css">
 <script src="rich-text.js"></script>
 <script src="play-modes.js"></script>
+<script src="pin.js"></script>
+<link rel="stylesheet" href="pin.css">
 <link rel="stylesheet" href="play-modes.css">
 </head>
 <body data-studio="quiz" data-dashboard-view="live">
@@ -46,7 +48,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const BUCKET='quiz-studio';
 const app=document.getElementById('app');
 const params=new URLSearchParams(location.search);
-let user=null,session=null,participants=[],responses=[],serverLeaderboard=[],lastSignature='',refreshBusy=false,autoLockKey='',timerInterval=null,actionBusy=false,timerSeconds=30;
+let user=null,session=null,participants=[],responses=[],serverLeaderboard=[],lastSignature='',refreshBusy=false,autoLockKey='',timerInterval=null,actionBusy=false,timerSeconds=30,actionError='';
 const esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
 const errText=function(e){return e&&e.message?e.message:String(e||'Unbekannter Fehler');};
 function toast(message){const el=document.getElementById('saveStatus');if(el)el.textContent=message;}
@@ -55,7 +57,7 @@ function qstate(){if(!session||!Array.isArray(session.question_states))return {}
 function activeQuestion(){const qs=session&&session.quiz_snapshot&&session.quiz_snapshot.questions;const i=session?session.current_index:-1;return Array.isArray(qs)&&i>=0&&i<qs.length?qs[i]:null;}
 function displayMedia(media){if(!media||!media.data)return '';const src=esc(media.data);if(media.type==='image'&&/^data:image\//i.test(media.data))return '<img class="media" src="'+src+'" alt="Bild zur Frage">';if(media.type==='audio'&&/^data:audio\//i.test(media.data))return '<audio class="media media-audio" controls preload="metadata" src="'+src+'"></audio>';if(media.type==='video'&&/^data:video\//i.test(media.data))return '<video class="media" controls preload="metadata" src="'+src+'"></video>';return '';}
 function choices(q){if(!q)return [];if(q.type==='single'||q.type==='multiple')return q.options||[];if(q.type==='truefalse')return [{id:'true',text:'Wahr',correct:q.correct===true},{id:'false',text:'Falsch',correct:q.correct===false}];if(q.type==='ranking')return q.items||[];return [];}
-function responseText(q,a){if(a===null||a===undefined)return 'Keine Antwort';if(q.type==='single'){const o=(q.options||[]).find(x=>x.id===a);return o?o.text:'Antwort';}if(q.type==='multiple'){return Array.isArray(a)?a.map(id=>{const o=(q.options||[]).find(x=>x.id===id);return o?o.text:id;}).join(' · '):String(a);}if(q.type==='truefalse')return a===true?'Wahr':a===false?'Falsch':'Keine Antwort';if(q.type==='ranking')return Array.isArray(a)?a.map((id,i)=>{const o=(q.items||[]).find(x=>x.id===id);return (i+1)+'. '+(o?o.text:id);}).join(' → '):String(a);return String(a);}
+function responseText(q,a){if(q?.type==='pin')return QuizPin.point(a)?'Pin: '+a.x.toLocaleString('de-DE')+' % / '+a.y.toLocaleString('de-DE')+' %':'Kein Pin';if(a===null||a===undefined)return 'Keine Antwort';if(q.type==='single'){const o=(q.options||[]).find(x=>x.id===a);return o?o.text:'Antwort';}if(q.type==='multiple'){return Array.isArray(a)?a.map(id=>{const o=(q.options||[]).find(x=>x.id===id);return o?o.text:id;}).join(' · '):String(a);}if(q.type==='truefalse')return a===true?'Wahr':a===false?'Falsch':'Keine Antwort';if(q.type==='ranking')return Array.isArray(a)?a.map((id,i)=>{const o=(q.items||[]).find(x=>x.id===id);return (i+1)+'. '+(o?o.text:id);}).join(' → '):String(a);return String(a);}
 function leaderboardRows(){return serverLeaderboard;}
 function leaderboardMarkup(){
  const rows=leaderboardRows();
@@ -110,8 +112,8 @@ function questionToolbar(q,idx,count,st){
 }
 function renderQuestion(){
  const q=activeQuestion();const idx=session.current_index;const st=qstate();const revealed=!!st.revealed;const count=session.quiz_snapshot.questions.length;
- if(session.status==='lobby')return '<div class="panel"><div class="eyebrow">Wartelobby</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Die erste Frage ist noch verborgen. Warte, bis alle bereit sind, und starte dann das Quiz.</p><div class="board-status">Teilnehmende: '+participants.length+' · Alle Antworten und Punkte werden erst nach „Lösung einblenden“ ausgewertet.</div><div class="controls"><button data-action="start">▶ Quiz starten</button><button class="secondary" data-action="refresh">Aktualisieren</button></div></div>';
- if(session.status==='ended'||idx>=count)return '<div class="panel"><div class="eyebrow">Quiz beendet</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Das Quiz ist abgeschlossen. Die Rangliste enthält die endgültigen Punktstände.</p>'+leaderboardMarkup()+'<div class="controls"><button class="secondary" data-action="back" '+(count===0?'disabled':'')+'>← Zur letzten Frage</button><button class="secondary" data-action="back-dashboard">Zum Quiz Studio</button></div></div>';
+ if(session.status==='lobby')return '<div class="panel"><div class="eyebrow">Wartelobby</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Die erste Frage ist noch verborgen. Warte, bis alle bereit sind, und starte dann das Quiz.</p><div class="board-status">Teilnehmende: '+participants.length+' · Alle Antworten und Punkte werden erst nach „Lösung einblenden“ ausgewertet.</div><div class="controls"><button data-action="start">▶ Quiz starten</button></div></div>';
+ if(session.status==='ended'||idx>=count)return '<div class="panel"><div class="eyebrow">Quiz beendet</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Das Quiz ist abgeschlossen. Die Rangliste enthält die endgültigen Punktstände.</p>'+leaderboardMarkup()+'<div class="controls"><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></div>';
  if(!q)return '<div class="panel"><div class="board-status">Frage wird geladen …</div></div>';
  const options=choices(q);
  let body='';
@@ -120,7 +122,8 @@ function renderQuestion(){
   if(revealed&&q.type==='ranking')body='<div class="answers-board">'+(q.items||[]).map((o,i)=>'<div class="answer-board">'+(i+1)+'. '+QuizRichText.render(o)+'</div>').join('')+'</div>';
   if(revealed&&q.type==='truefalse')body='<div class="correct-note">Lösung: '+(q.correct?'Wahr':'Falsch')+'</div>';
  }else if(q.type==='shortanswer'&&revealed){body='<div class="correct-note">Akzeptierte Antworten: '+esc((q.answers||[]).join(' · '))+'</div>';}
- const media=displayMedia(q.media);
+ if(q.type==='pin')body=QuizPin.markup(q,{showTarget:revealed,markers:revealed?responses.filter(r=>r.question_index===idx).map(r=>({id:r.participant_id,name:participants.find(p=>p.id===r.participant_id)?.name||'Teilnehmende Person',answer:r.answer})):[]});
+ const media=q.type==='pin'?'':displayMedia(q.media);
  const answerRows=revealed&&(!st.mode||st.mode==='classic')?responses.filter(r=>r.question_index===idx).map(r=>{
    const person=participants.find(p=>p.id===r.participant_id);const ok=!!r.is_correct;
    return '<div class="response-row '+(ok?'correct':'wrong')+'"><span class="response-name">'+esc(person?person.name:'Teilnehmende Person')+'</span><span class="response-answer">'+esc(responseText(q,r.answer))+'</span><span class="response-points">'+(ok?'+'+(Number(r.awarded_points)||0):'0')+' P</span></div>';
@@ -131,7 +134,8 @@ function render(){
  if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
  const st=qstate();const q=activeQuestion();
  const phase=session.status==='lobby'?'Wartelobby':session.status==='ended'?'Beendet':'Live';
- app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div></div></div><div class="studio-actions"><span class="status-pill">'+participants.length+' Teilnehmende</span><button class="secondary" data-action="refresh">Aktualisieren</button><button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="secondary" data-action="back-dashboard">Zum Quiz Studio</button></div></header><div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div><div class="answer-count">Grün markiert bedeutet: Antwort abgegeben.</div></div></aside></div>';
+ app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div></div></div><div class="studio-actions"><span class="status-pill">'+participants.length+' Teilnehmende</span><button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div><div class="answer-count">Grün markiert bedeutet: Antwort abgegeben.</div></div></aside></div>';
+ if(q?.type==='pin')QuizPin.mount(app.querySelector('[data-quiz-pin]'),q,{showTarget:!!st.revealed});
  updateTimer();
 }
 async function loadSession(){
@@ -144,7 +148,7 @@ async function createFromQuiz(quizId){
  const store=createLibraryStore(db,'quiz');const library=await store.load(user);
  if(!library)throw new Error('Noch keine Quizbibliothek gespeichert.');
  const source=(library.quizzes||[]).find(q=>q.id===quizId);
- const quiz=source?{...source,rules_version:1,questions:source.questions.map(q=>({...q,playMode:QuizModes.normalise(q.playMode)}))}:null;
+ const quiz=source?{...source,rules_version:1,questions:source.questions.map(q=>({...q,playMode:q.type==='pin'?'classic':QuizModes.normalise(q.playMode)}))}:null;
  if(!quiz)throw new Error('Quiz nicht gefunden. Prüfe, ob es bereits in der Cloud gespeichert wurde.');
  if(!quiz.questions||!quiz.questions.length)throw new Error('Dieses Quiz enthält noch keine Fragen.');
  const created=await rpc('quiz_live_create',{p_quiz:quiz});
@@ -176,7 +180,7 @@ async function updateTimer(){
 window.addEventListener('online',()=>refresh(true));
 document.body.addEventListener('click',async function(e){
  const el=e.target.closest('[data-action]');if(!el)return;
- const action=el.dataset.action;if(action==='access'){openJoin();return;}if(actionBusy)return;actionBusy=true;const observedIndex=session?.current_index;app.querySelectorAll('button[data-action]').forEach(b=>b.disabled=true);el.disabled=true;
+ const action=el.dataset.action;if(action==='access'){openJoin();return;}if(actionBusy)return;actionBusy=true;actionError='';const observedIndex=session?.current_index;app.querySelectorAll('button[data-action]').forEach(b=>b.disabled=true);el.disabled=true;
  try{
   if(action==='start'){await act('quiz_live_start',{p_session_id:session.id});}
   else if(action==='judge-correct'||action==='judge-wrong'){await act('quiz_live_judge_entry',{p_session_id:session.id,p_question_index:observedIndex,p_response_id:el.dataset.responseId,p_correct:action==='judge-correct'});}
@@ -185,9 +189,8 @@ document.body.addEventListener('click',async function(e){
   else if(action==='timer'){const seconds=Number(document.getElementById('timerSeconds').value);await act('quiz_live_start_timer_at',{p_session_id:session.id,p_seconds:seconds,p_question_index:observedIndex});}
   else if(action==='lock'){await act('quiz_live_lock_question',{p_session_id:session.id,p_question_index:session.current_index});}
   else if(action==='reveal'){await act('quiz_live_reveal_question',{p_session_id:session.id,p_question_index:session.current_index});}
-  else if(action==='refresh'){await refresh(true);}
-  else if(action==='back-dashboard'){location.href='index.html';}
- }catch(err){toast(err.message==='STATE_CHANGED'?'Die Frage wurde inzwischen gewechselt. Bitte prüfe die aktuelle Ansicht.':'Aktion fehlgeschlagen: '+errText(err));}
+  else if(action==='end-quiz'){await rpc('quiz_live_end',{p_session_id:session.id});clearInterval(timerInterval);location.href='index.html';}
+ }catch(err){actionError=err.message==='STATE_CHANGED'?'Die Frage wurde inzwischen gewechselt. Bitte prüfe die aktuelle Ansicht.':'Aktion fehlgeschlagen: '+errText(err);toast(actionError);}
  finally{actionBusy=false;lastSignature='';await refresh(true);}
 });
 (async function init(){
@@ -202,6 +205,7 @@ document.body.addEventListener('click',async function(e){
 </script>
 </body>
 </html>
+
 
 
 
