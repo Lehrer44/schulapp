@@ -44,4 +44,4 @@ body[data-studio="quiz"][data-dashboard-view="live"] .ranking-panel{margin-botto
 }
 
 
-body button.end-quiz{background:#b53335;color:#fff;border-color:#92282a}body button.end-quiz:hover{background:#92282a}
+body[data-studio="quiz"][data-dashboard-view="live"] button.end-quiz.danger{background:#b53335;color:#fff;border-color:#92282a}body[data-studio="quiz"][data-dashboard-view="live"] button.end-quiz.danger:hover:not(:disabled){background:#92282a}
