@@ -1,0 +1,118 @@
+-- Dedicated EMPTY database only. Never run this fixture on a Supabase project.
+\set ON_ERROR_STOP on
+do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end;$$;
+create schema auth;
+create table auth.users(id uuid primary key);
+create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+grant usage on schema auth to anon,authenticated;
+create schema private;
+create function private.classroom_join_allowed(text) returns boolean language sql as $$select true$$;
+create table public.sessions(join_code text,status text);
+create table public.quiz_live_sessions(join_code text,status text);
+\ir ../supabase/bluff.sql
+
+create table private.bluff_test_fixture(sid uuid,a uuid,b uuid,c uuid,owner_id uuid);
+-- Full two-round game, secrets, duplicates, scores, identity and stale controls.
+do $$
+declare owner_id uuid:=gen_random_uuid(); sid uuid;a uuid;b uuid;c uuid;j jsonb;st jsonb;truth uuid;fake uuid;other uuid;cnt integer;rev integer;answer text; qid bigint;sid2 uuid;duplicate_id bigint;
+begin
+ insert into auth.users(id) values(owner_id);perform set_config('request.jwt.claim.sub',owner_id::text,false);
+ assert jsonb_array_length(public.bluff_question_list()->'questions')=10;
+ assert public.bluff_create(11,null)->>'error'='NOT_ENOUGH_QUESTIONS';
+ assert public.bluff_create(2,array[1::bigint,1::bigint])->>'error'='INVALID_SELECTION';
+ j:=public.bluff_question_save(null,'Welche Testfrage ist das?','Testlösung','Test','https://example.org');qid:=(j->>'id')::bigint;
+ assert j->>'ok'='true';
+ j:=public.bluff_question_save(null,'Welche Testfrage ist das?','Doppelte Lösung','Test','');duplicate_id:=(j->>'id')::bigint;
+ assert public.bluff_create(2,array[qid,duplicate_id])->>'error'='INVALID_SELECTION';
+ assert public.bluff_create(12,null)->>'error'='NOT_ENOUGH_QUESTIONS';
+ assert public.bluff_question_delete(duplicate_id)->>'ok'='true';
+ perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,false);
+ assert public.bluff_question_save(qid,'Angriff auf fremde Frage','X','','')->>'error'='NOT_OWNER';
+ assert public.bluff_create(1,array[qid])->>'error'='INVALID_SELECTION';
+ assert public.bluff_question_delete(qid)->>'error'='NOT_OWNER';
+ perform set_config('request.jwt.claim.sub',owner_id::text,false);
+ j:=public.bluff_create(2,array[qid,1::bigint]);sid:=(j->>'session_id')::uuid;assert j->>'ok'='true',j::text;
+ assert (select count(distinct question)=2 from private.bluff_rounds where session_id=sid);
+ assert public.bluff_host_action(sid,0,'lobby','start')->>'error'='NEED_TWO_PLAYERS';
+ assert public.classroom_resolve_code(j->>'join_code','bluff')->'kinds'='["bluff"]'::jsonb;
+ st:=public.bluff_join(j->>'join_code','Ada',repeat('a',64));a:=(st->>'player_id')::uuid;assert st->>'ok'='true';
+ assert public.bluff_join(j->>'join_code','ada',repeat('b',64))->>'error'='NAME_TAKEN';
+ st:=public.bluff_join(j->>'join_code','Ben',repeat('b',64));b:=(st->>'player_id')::uuid;
+ st:=public.bluff_join(j->>'join_code','Cleo',repeat('c',64));c:=(st->>'player_id')::uuid;
+ assert public.bluff_player_state(sid,a,repeat('x',64))->>'error'='INVALID_PARTICIPANT_TOKEN';
+ st:=public.bluff_player_state(sid,a,repeat('a',64));assert st->'question'='null'::jsonb;assert st->'correct_answer'='null'::jsonb;
+ assert public.bluff_host_action(sid,0,'lobby','start')->>'ok'='true';
+ assert public.bluff_join(j->>'join_code','Late',repeat('d',64))->>'error'='GAME_ALREADY_STARTED';
+ assert public.bluff_join(j->>'join_code','Ada',repeat('a',64))->>'ok'='true';
+ -- Editing the source after start never changes a stored round.
+ perform public.bluff_question_save(qid,'Geänderte Testfrage','Neue Lösung','','');
+ assert (select correct_answer='Testlösung' from private.bluff_rounds where session_id=sid and round_index=0);
+ assert public.bluff_host_action(sid,0,'question','open_bluff')->>'ok'='true';
+ assert public.bluff_submit(sid,a,repeat('a',64),0,' Testlösung ')->>'error'='ANSWER_MATCHES_TRUTH';
+ assert public.bluff_submit(sid,a,repeat('a',64),0,'Alte Erfindung')->>'ok'='true';
+ assert public.bluff_submit(sid,a,repeat('a',64),0,'Erfundene Lösung')->>'ok'='true';
+ assert public.bluff_submit(sid,b,repeat('b',64),0,'erfundene  Lösung!')->>'ok'='true';
+ assert public.bluff_submit(sid,c,repeat('c',64),0,'Andere Erfindung')->>'ok'='true';
+ st:=public.bluff_player_state(sid,a,repeat('a',64));assert jsonb_array_length(st->'entries')=0;assert st->'own_entry'->>'answer'='Erfundene Lösung';assert st->'correct_answer'='null'::jsonb;
+ assert jsonb_array_length(public.bluff_host_state(sid)->'entries')=3;
+ assert public.bluff_host_action(sid,0,'bluff','timer',5)->>'ok'='true';
+ update private.bluff_sessions set deadline=clock_timestamp()-interval '1 second' where id=sid;
+ assert public.bluff_submit(sid,a,repeat('a',64),0,'Zu spät')->>'error'='TIME_EXPIRED';
+ assert public.bluff_host_action(sid,0,'bluff','expire')->>'ok'='true';
+ select id into truth from private.bluff_options where session_id=sid and round_index=0 and is_truth;
+ select id into fake from private.bluff_options where session_id=sid and round_index=0 and cardinality(author_ids)=2;
+ assert (select count(*)=3 from private.bluff_options where session_id=sid and round_index=0);
+ assert (select count(*)=1 from private.bluff_options where session_id=sid and round_index=0 and is_truth);
+ st:=public.bluff_player_state(sid,c,repeat('c',64));assert not(st->'options'->0?'is_truth');assert not(st->'options'->0?'authors');assert not(st->'options'->0?'voters');
+ assert public.bluff_vote(sid,a,repeat('a',64),0,fake)->>'error'='OWN_VOTE_FORBIDDEN';
+ assert public.bluff_vote(sid,b,repeat('b',64),0,fake)->>'error'='OWN_VOTE_FORBIDDEN';
+ assert public.bluff_vote(sid,a,repeat('a',64),0,truth)->>'ok'='true';
+ assert public.bluff_vote(sid,a,repeat('a',64),0,truth)->>'ok'='true';
+ assert public.bluff_vote(sid,a,repeat('a',64),0,fake)->>'error'='OWN_VOTE_FORBIDDEN';
+ assert public.bluff_vote(sid,b,repeat('b',64),0,truth)->>'ok'='true';
+ assert public.bluff_vote(sid,c,repeat('c',64),0,fake)->>'ok'='true';
+ assert public.bluff_host_action(sid,0,'vote','reveal')->>'ok'='true';
+ assert public.bluff_vote(sid,c,repeat('c',64),0,truth)->>'error'='PHASE_CHANGED';
+ assert (select sum(score)=0 from private.bluff_players where session_id=sid);
+ assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,0)->>'ok'='true';
+ assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,0)->>'error'='PHASE_CHANGED';
+ st:=public.bluff_player_state(sid,a,repeat('a',64));assert (select count(*)=1 from jsonb_array_elements(st->'options') o where (o->>'revealed')::boolean);
+ assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,1)->>'ok'='true';
+ assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,2)->>'ok'='true';
+ assert (select score=3 from private.bluff_players where id=a);assert (select score=3 from private.bluff_players where id=b);assert (select score=0 from private.bluff_players where id=c);
+ assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,3)->>'error'='PHASE_CHANGED';
+ assert (select sum(score)=6 from private.bluff_players where session_id=sid);
+ assert public.bluff_host_action(sid,0,'leaderboard','next')->>'ok'='true';
+ assert public.bluff_submit(sid,a,repeat('a',64),0,'Stale')->>'error'='PHASE_CHANGED';
+ assert public.bluff_host_action(sid,1,'question','open_bluff')->>'ok'='true';
+ assert public.bluff_host_action(sid,1,'bluff','open_vote')->>'error'='NO_BLUFFS';
+ assert public.bluff_submit(sid,a,repeat('a',64),1,'Erfundene Antwort')->>'ok'='true';
+ assert public.bluff_host_action(sid,1,'bluff','open_vote')->>'ok'='true';
+ assert public.bluff_host_action(sid,1,'vote','timer',5)->>'ok'='true';
+ update private.bluff_sessions set deadline=clock_timestamp()-interval '1 second' where id=sid;
+ assert public.bluff_vote(sid,b,repeat('b',64),1,truth)->>'error'='TIME_EXPIRED';
+ assert public.bluff_host_action(sid,1,'vote','expire')->>'ok'='true';
+ assert public.bluff_host_action(sid,1,'reveal','reveal_next',null,0)->>'ok'='true';
+ assert public.bluff_host_action(sid,1,'reveal','reveal_next',null,1)->>'ok'='true';
+ assert public.bluff_host_action(sid,1,'leaderboard','next')->>'ok'='true';
+ assert public.bluff_player_state(sid,a,repeat('a',64))->>'phase'='ended';
+ perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,false);
+ assert public.bluff_host_state(sid)->>'error'='NOT_OWNER';assert public.bluff_host_action(sid,1,'ended','end')->>'error'='NOT_OWNER';
+ assert not has_function_privilege('anon','public.bluff_question_list()','execute');
+ assert not has_function_privilege('authenticated','private.bluff_state(uuid,uuid,boolean)','execute');
+ assert not has_table_privilege('anon','private.bluff_rounds','select');assert not has_table_privilege('authenticated','private.bluff_votes','select');
+ assert has_table_privilege('anon','public.bluff_live_signals','select');assert not has_table_privilege('anon','public.bluff_live_signals','update');
+ insert into private.bluff_test_fixture values(sid,a,b,c,owner_id);
+end;$$;
+-- Execute secure endpoints under the actual anonymous role, not only as database owner.
+grant usage on schema private to anon,authenticated;
+grant select on private.bluff_test_fixture to anon;
+set role anon;
+do $$declare f record;s jsonb;begin
+ select * into f from private.bluff_test_fixture;
+ s:=public.bluff_player_state(f.sid,f.a,repeat('a',64));assert s->>'ok'='true';
+ begin perform public.bluff_host_state(f.sid);raise exception 'Anonymous host API should fail';exception when insufficient_privilege then null;end;
+ begin perform correct_answer from private.bluff_rounds;raise exception 'Private answer read should fail';exception when insufficient_privilege then null;end;
+end;$$;
+reset role;
+select 'PASS: complete Bluff rounds, duplicate answers, secrets, timer expiry, server scoring, stale actions, tokens, ownership, anonymous RLS' as result;
