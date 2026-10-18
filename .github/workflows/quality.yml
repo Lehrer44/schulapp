@@ -9,6 +9,19 @@ jobs:
   regression:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,12 +36,18 @@ jobs:
           node tests/live-data.test.cjs
           node tests/pin-input.test.cjs
           node tests/structure.test.cjs
+      - name: Gemischte Quiz-Regeln in PostgreSQL prüfen
+        run: |
+          psql -f tests/quiz-modes-db.sql
+          node tests/quiz-modes-concurrency.cjs
       - name: Testbrowser vorbereiten
         run: |
           npm install --no-save --package-lock=false playwright@1.62.1 jsqr@1.4.0
           npx playwright install --with-deps chromium
       - name: Unterrichtsabläufe im Browser prüfen
-        run: node tests/browser.test.cjs
+        run: |
+          node tests/browser.test.cjs
+          node tests/quiz-modes.browser.cjs
       - name: Testansichten aufbewahren
         if: always()
         uses: actions/upload-artifact@v4
@@ -42,7 +61,9 @@ jobs:
             test-results/studio-*.png
             test-results/editor-*.png
             test-results/live-*.png
+            test-results/modes-*.png
           if-no-files-found: ignore
+
 
 
 

@@ -15,6 +15,8 @@
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="rich-text.css">
 <script src="rich-text.js"></script>
+<script src="play-modes.js"></script>
+<link rel="stylesheet" href="play-modes.css">
 </head>
 <body>
 <div class="wrap">
@@ -53,7 +55,7 @@ async function join(code,name,existingId){
  sessionId=r.session_id;participantId=r.participant_id;saveStoredJoin();
  await refreshState(true);
  if(pollTimer)clearInterval(pollTimer);
- pollTimer=setInterval(()=>refreshState(false),1600);
+ let polledAt=0;pollTimer=setInterval(()=>{const interval=studentState?.play_mode&&studentState.play_mode!=='classic'?500:1600;if(Date.now()-polledAt>=interval){polledAt=Date.now();refreshState(false);}},250);
  if(timerTimer)clearInterval(timerTimer);
  timerTimer=setInterval(updateTimerDisplay,500);
 }
@@ -114,23 +116,42 @@ function render(){
  }else if(!s.question){
   main='<div class="panel"><div class="waiting">Die nächste Frage wird vorbereitet …</div></div>';
  }else{
-  const st=s.question_state||{},own=s.own_response||null;
+  const st=s.question_state||{},own=s.own_response||null,mode=s.play_mode||st.mode||'classic';
+  if(mode==='buzzer'){main=buzzerMarkup(s,q,idx);}
+  else{
   let answer=getAnswerDraft(q,idx);
   if(own&&own.answer!==undefined&&!Object.prototype.hasOwnProperty.call(draftByQuestion,idx))answer=own.answer;
-  const locked=!!s.locked||!!s.revealed;
+  const locked=!!s.locked||!!s.revealed||s.round_open===false||(mode==='speed'&&!!own);
   let result='';
   if(s.revealed){
     if(own)result='<div class="result '+(own.is_correct?'':'wrong')+'">'+(own.is_correct?'Richtig!':'Diesmal nicht richtig.')+' · '+(Number(own.awarded_points)||0)+' Punkte'+(q.type==='single'||q.type==='multiple'?'<div style="margin-top:5px">Die richtigen Antwort(en) sind grün markiert.</div>':'')+'</div>';
     else result='<div class="result wrong">Du hast keine Antwort abgegeben. Für diese Frage gibt es 0 Punkte.</div>';
-  }else if(own)result='<div class="result">'+(s.locked?'Antwortphase gesperrt. Deine gespeicherte Antwort bleibt erhalten.':'Antwort abgegeben. Du kannst sie bis zur Sperre noch ändern.')+'</div>';
+  }else if(own)result='<div class="result">'+(mode==='speed'?'Verbindlich abgegeben. Die Antworten werden in Eingangsreihenfolge geprüft.':s.locked?'Antwortphase gesperrt. Deine gespeicherte Antwort bleibt erhalten.':'Antwort abgegeben. Du kannst sie bis zur Sperre noch ändern.')+'</div>';
   const timer=st.timer_deadline&&!s.locked&&!s.revealed?'<span class="timer" data-deadline="'+esc(st.timer_deadline)+'"></span>':'';
-  main='<div class="panel"><div class="question-bar"><span>Frage '+(idx+1)+' von '+s.question_count+'</span><span>'+esc(q.points||0)+' Punkte</span>'+timer+'</div><h1>'+ (q.type==='ranking'?'Bringe die Elemente in die richtige Reihenfolge.':q.type==='truefalse'?'Wahr oder falsch?':q.type==='shortanswer'?'Trage deine Antwort ein.':'Wähle deine Antwort'+(q.type==='multiple'?'(n)':'')+'.')+'</h1>'+inputChoices(q,idx,locked,!!s.revealed,answer)+result+'<div class="row" style="margin-top:15px"><button id="submitAnswer" '+(locked||saveBusy?'disabled':'')+'>Antwort abgeben</button><span class="muted" style="font-size:.82rem">'+(s.revealed?'Antwortphase abgeschlossen.':s.locked?'Antwortphase gesperrt.':own?'Du kannst deine Antwort noch ändern.':'Deine Antwort bleibt bis zur Abgabe auf diesem Gerät.')+'</span></div></div>';
+  main='<div class="panel"><div class="question-bar"><span>Frage '+(idx+1)+' von '+s.question_count+'</span><span>'+esc(q.points||0)+' Punkte</span>'+timer+'</div><h1>'+ (q.type==='ranking'?'Bringe die Elemente in die richtige Reihenfolge.':q.type==='truefalse'?'Wahr oder falsch?':q.type==='shortanswer'?'Trage deine Antwort ein.':'Wähle deine Antwort'+(q.type==='multiple'?'(n)':'')+'.')+'</h1>'+inputChoices(q,idx,locked,!!s.revealed,answer)+result+'<div class="row" style="margin-top:15px"><button id="submitAnswer" '+(locked||saveBusy?'disabled':'')+'>Antwort abgeben</button><span class="muted" style="font-size:.82rem">'+(s.round_open===false?'Warte auf die Freigabe.':s.revealed?'Antwortphase abgeschlossen.':mode==='speed'&&own?'Deine erste Abgabe zählt.':s.locked?'Antwortphase gesperrt.':own?'Du kannst deine Antwort noch ändern.':'Deine Antwort bleibt bis zur Abgabe auf diesem Gerät.')+'</span></div></div>';
+  }
  }
  app.innerHTML='<div class="layout"><div class="main">'+main+'</div><aside class="side"><div class="panel"><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2><div class="muted" style="font-size:.82rem;margin-bottom:11px">Die Punkte werden erst nach der Lösungsanzeige aktualisiert.</div>'+renderRanking(s.leaderboard||[])+'</div><div class="panel"><h2>Dein Status</h2><div class="row"><span class="status '+(s.own_response?'green':'')+'">'+(s.own_response?'Antwort gespeichert':'Noch keine Antwort')+'</span></div><p class="muted" style="font-size:.86rem;margin-bottom:0">Teilnahmecode: <strong>'+esc(joinCode)+'</strong></p></div></aside></div>';
  bindAnswerInputs(q,idx);
+ const buzz=document.getElementById('buzzButton');if(buzz)buzz.onclick=submitBuzz;
  const submit=document.getElementById('submitAnswer');if(submit)submit.onclick=submitAnswer;
  updateTimerDisplay();
  if(focusId){const next=document.getElementById(focusId);if(next&&!next.disabled){next.focus({preventScroll:true});if(typeof start==='number'&&next.setSelectionRange)next.setSelectionRange(start,end);}}
+}
+function buzzerMarkup(s,q,idx){
+ const own=s.own_response,disabled=s.round_open===false||s.locked||s.revealed||!!own||saveBusy;
+ let status=s.round_open===false?'Warte auf die Freigabe durch die Lehrkraft.':own?'Dein Buzzer ist registriert. Antworte erst, wenn du aufgerufen wirst.':'Drücke, sobald du die Antwort weißt.';
+ if(s.revealed)status=own?.is_correct?'Richtig! Du erhältst '+(Number(own.awarded_points)||0)+' Punkte.':'Die Runde ist abgeschlossen.';
+ const time=own&&s.elapsed_ms!=null?'<p class="race-time">Eingang nach '+(Number(s.elapsed_ms)/1000).toLocaleString('de-DE',{minimumFractionDigits:3,maximumFractionDigits:3})+' s</p>':'';
+ return '<div class="panel"><div class="question-bar"><span>Frage '+(idx+1)+' von '+s.question_count+'</span><span>'+esc(q.points||0)+' Punkte</span></div><h1>Buzzer</h1><p class="muted">'+status+'</p><button class="buzzer" id="buzzButton" '+(disabled?'disabled':'')+' aria-label="Buzzer drücken">'+(own?'✓':'BUZZ')+'</button>'+time+'</div>';
+}
+async function submitBuzz(){
+ const s=studentState;if(!s||saveBusy||s.round_open===false||s.locked||s.revealed||s.own_response)return;
+ if(!navigator.onLine){setConnectionStatus('error','Offline. Dein Buzzer wurde nicht übertragen.');return;}
+ saveBusy=true;const button=document.getElementById('buzzButton');if(button)button.disabled=true;
+ try{await rpc('quiz_live_submit_response_secure',{p_session_id:sessionId,p_participant_id:participantId,p_question_index:s.current_index,p_answer:{buzz:true},p_token:participantToken});await refreshState(true);}
+ catch(error){setConnectionStatus('error','Buzzer nicht registriert. '+messageFor(error.message));}
+ finally{saveBusy=false;render();}
 }
 function bindAnswerInputs(q,idx){
  const root=app;const saveDraft=()=>{const cur=studentState.question;if(!cur)return;let val;
@@ -144,7 +165,7 @@ function bindAnswerInputs(q,idx){
  root.querySelectorAll('input[name="studentAnswer"],#shortAnswer').forEach(el=>{el.addEventListener('change',saveDraft);el.addEventListener('input',saveDraft);});
 }
 async function submitAnswer(){
- const s=studentState;if(!s||!s.question||s.locked||s.revealed||saveBusy)return;
+ const s=studentState;if(!s||!s.question||s.locked||s.revealed||s.round_open===false||saveBusy||(s.play_mode==='speed'&&s.own_response))return;
  const q=s.question,idx=s.current_index;let answer=draftByQuestion[idx];
  if(q.type==='shortanswer'){const input=document.getElementById('shortAnswer');answer=input?input.value.trim():String(answer||'');}
  if(q.type==='single'||q.type==='truefalse'){const selected=app.querySelector('input[name="studentAnswer"]:checked');if(selected)answer=q.type==='truefalse'?selected.value==='true':selected.value;}
@@ -156,7 +177,7 @@ async function submitAnswer(){
  setConnectionStatus('waiting','Antwort wird gespeichert …');saveBusy=true;const button=document.getElementById('submitAnswer');if(button)button.disabled=true;
  try{await rpc('quiz_live_submit_response_secure',{p_session_id:sessionId,p_participant_id:participantId,p_question_index:idx,p_answer:answer,p_token:participantToken});draftByQuestion[idx]=answer;setConnectionStatus('ready','Antwort gespeichert.');await refreshState(true);}
  catch(err){setConnectionStatus('error','Antwort nicht gespeichert. Deine Eingabe bleibt erhalten. '+messageFor(err.message));await refreshState(true);}
- finally{saveBusy=false;const b=document.getElementById('submitAnswer');if(b&&studentState&&!studentState.locked&&!studentState.revealed)b.disabled=false;}
+ finally{saveBusy=false;const b=document.getElementById('submitAnswer');if(b&&studentState&&!studentState.locked&&!studentState.revealed&&studentState.round_open!==false&&!(studentState.play_mode==='speed'&&studentState.own_response))b.disabled=false;}
 }
 function updateTimerDisplay(){const el=app.querySelector('[data-deadline]');if(!el)return;const deadline=el.dataset.deadline;const s=studentState;if(!deadline||s.locked||s.revealed){el.textContent='';return;}const secs=Math.max(0,Math.ceil((Date.parse(deadline)-Date.now())/1000));el.textContent=secs>0?'⏱ '+secs+' s':'⏱ Zeit abgelaufen';el.classList.toggle('expired',secs===0);}
 async function refreshState(force){
@@ -189,5 +210,6 @@ app.addEventListener('click',async e=>{
 </script>
 </body>
 </html>
+
 
 

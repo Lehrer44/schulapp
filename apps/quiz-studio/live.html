@@ -25,6 +25,8 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 <link rel="stylesheet" href="live.css">
 <link rel="stylesheet" href="rich-text.css">
 <script src="rich-text.js"></script>
+<script src="play-modes.js"></script>
+<link rel="stylesheet" href="play-modes.css">
 </head>
 <body data-studio="quiz" data-dashboard-view="live">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -84,12 +86,34 @@ function lockButton(){
  const st=qstate(),inactive=session.status!=='running'||!activeQuestion()||st.locked||st.revealed;
  return '<button class="secondary icon-button lock-button" data-action="lock" aria-label="Antworten sperren" title="'+(st.locked||st.revealed?'Antworten sind gesperrt':'Antworten sperren')+'" '+(inactive?'disabled':'')+'><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></svg></button>';
 }
+function roundTools(st){
+ if(!st.mode)return '';
+ const waiting=!st.opened_at&&!st.revealed;
+ return '<div class="round-tools"><label class="mode-field">Spielweise <select id="roundMode" '+(!waiting?'disabled':'')+'>'+QuizModes.options(st.mode)+'</select></label>'+(waiting?'<button data-action="open-round">▶ Frage freigeben</button><p>Die Frage ist sichtbar. Auf den Handys wird die Antwort erst nach der Freigabe möglich.</p>':'<span class="status-pill">'+(st.revealed?'Runde abgeschlossen':st.locked?'Abgaben geschlossen':'Freigegeben')+'</span>')+'</div>';
+}
+function raceMarkup(st){
+ const rows=responses.filter(r=>r.question_index===session.current_index),active=rows.find(r=>r.id===st.active_response_id),q=activeQuestion();
+ const entries=rows.map((r,i)=>{
+  const person=participants.find(p=>p.id===r.participant_id),ms=st.opened_at?Math.max(0,Date.parse(r.submitted_at)-Date.parse(st.opened_at)):0;
+  const shown=(st.shown_ids||[]).includes(r.id),current=r.id===st.active_response_id;
+  return '<div class="race-entry '+(current?'active ':'')+(st.winner_id===r.participant_id?'winner':'')+'"><span>'+(i+1)+'</span><strong>'+esc(person?.name||'Teilnehmende Person')+'</strong><span class="race-time">'+(ms/1000).toLocaleString('de-DE',{minimumFractionDigits:3,maximumFractionDigits:3})+' s</span><div class="race-answer">'+(st.mode==='buzzer'?(current?'Du bist dran – antworte mündlich.':r.reviewed?(r.is_correct?'Richtig':'Ausgeschieden'):'Buzzer gedrückt'):shown?esc(responseText(q,r.answer)):'🔒 Antwort verdeckt')+'</div></div>';
+ }).join('');
+ const controls=st.revealed?'<p class="race-note">'+(st.winner_id?'Die erste richtige Antwort erhält die Punkte.':'Runde abgeschlossen – keine richtige Antwort bewertet.')+'</p>':active?'<div class="race-actions"><button data-action="judge-wrong" data-response-id="'+esc(active.id)+'" class="danger">✕ Falsch · nächste Person</button><button data-action="judge-correct" data-response-id="'+esc(active.id)+'">✓ Richtig · Punkte vergeben</button></div>':rows.length&&st.opened_at?'<button data-action="begin-review">Abgaben schließen · '+(st.mode==='buzzer'?'erste Person aufrufen':'erste Antwort aufdecken')+'</button>':'';
+ return '<section class="race-panel" aria-label="Eingangsreihenfolge"><h2 style="margin-top:20px">'+(st.mode==='buzzer'?'Buzzer-Reihenfolge':'Antwort-Reihenfolge')+'</h2><div class="race-list">'+(entries||'<div class="board-status">'+(st.opened_at?'Noch keine Eingänge.':'Die Runde ist noch nicht freigegeben.')+'</div>')+'</div>'+controls+'<p class="muted" style="font-size:.78rem">Zeiten ab Freigabe, gemessen beim Eingang auf dem Server. Netzverzögerungen können die Reihenfolge beeinflussen.</p></section>';
+}
+app.addEventListener('change',async event=>{
+ if(event.target.id!=='roundMode'||actionBusy)return;
+ actionBusy=true;
+ try{await act('quiz_live_set_round_mode',{p_session_id:session.id,p_question_index:session.current_index,p_mode:event.target.value});}
+ catch(error){toast('Spielweise konnte nicht geändert werden: '+errText(error));}
+ finally{actionBusy=false;await refresh(true);}
+});
 function questionToolbar(q,idx,count,st){
- const revealed=!!st.revealed,points=Number(q.points)||0;
+ const revealed=!!st.revealed,waiting=!!st.mode&&!st.opened_at,points=Number(q.points)||0;
  const durations=[[15,'15s'],[30,'30s'],[45,'45s'],[60,'60s'],[90,'90s'],[120,'2min'],[180,'3min']];
  return '<div class="question-toolbar"><div class="question-progress"><button class="secondary icon-button" data-action="back" aria-label="Vorherige Frage" title="Vorherige Frage" '+(idx===0?'disabled':'')+'>←</button><span>Frage '+(idx+1)+' von '+count+'</span></div>'+
  '<button class="reveal-button studio-primary" data-action="reveal" aria-label="'+(revealed?'Lösung eingeblendet':'Lösung einblenden')+' · '+points+' Punkte" title="'+(revealed?'Lösung eingeblendet':'Lösung einblenden')+'" '+(revealed?'disabled':'')+'><span>✓ '+(revealed?'Aufgelöst':'Lösung')+'</span><span class="question-points">'+esc(points)+' P</span></button>'+
- '<div class="timer-box"><select id="timerSeconds" aria-label="Timerdauer" '+(revealed||st.locked?'disabled':'')+'>'+durations.map(([value,label])=>'<option value="'+value+'" '+(value===timerSeconds?'selected':'')+'>'+label+'</option>').join('')+'</select><button class="secondary icon-button" data-action="timer" aria-label="Timer starten" title="Timer starten" '+(revealed||st.locked?'disabled':'')+'>'+clockIcon()+'</button><span class="timer" id="timerDisplay" role="timer" aria-live="off"></span></div>'+
+ '<div class="timer-box"><select id="timerSeconds" aria-label="Timerdauer" '+(revealed||st.locked||waiting?'disabled':'')+'>'+durations.map(([value,label])=>'<option value="'+value+'" '+(value===timerSeconds?'selected':'')+'>'+label+'</option>').join('')+'</select><button class="secondary icon-button" data-action="timer" aria-label="Timer starten" title="Timer starten" '+(revealed||st.locked||waiting?'disabled':'')+'>'+clockIcon()+'</button><span class="timer" id="timerDisplay" role="timer" aria-live="off"></span></div>'+
  '<button class="secondary next-question" data-action="next" aria-label="'+(idx===count-1?'Quiz beenden':'Weiter zur nächsten Frage')+'" title="'+(idx===count-1?'Quiz beenden':'Nächste Frage')+'" '+(!revealed?'disabled':'')+'><span class="next-label">'+(idx===count-1?'Beenden':'Weiter')+'</span> '+(idx===count-1?'✓':'→')+'</button></div>';
 }
 function renderQuestion(){
@@ -105,11 +129,11 @@ function renderQuestion(){
   if(revealed&&q.type==='truefalse')body='<div class="correct-note">Lösung: '+(q.correct?'Wahr':'Falsch')+'</div>';
  }else if(q.type==='shortanswer'&&revealed){body='<div class="correct-note">Akzeptierte Antworten: '+esc((q.answers||[]).join(' · '))+'</div>';}
  const media=displayMedia(q.media);
- const answerRows=revealed?responses.filter(r=>r.question_index===idx).map(r=>{
+ const answerRows=revealed&&(!st.mode||st.mode==='classic')?responses.filter(r=>r.question_index===idx).map(r=>{
    const person=participants.find(p=>p.id===r.participant_id);const ok=!!r.is_correct;
    return '<div class="response-row '+(ok?'correct':'wrong')+'"><span class="response-name">'+esc(person?person.name:'Teilnehmende Person')+'</span><span class="response-answer">'+esc(responseText(q,r.answer))+'</span><span class="response-points">'+(ok?'+'+(Number(r.awarded_points)||0):'0')+' P</span></div>';
  }).join(''):'';
- return '<div class="panel question-panel">'+questionToolbar(q,idx,count,st)+'<div class="question-text">'+QuizRichText.render(q)+'</div>'+media+body+'<div class="answer-count">'+responses.filter(r=>r.question_index===idx).length+' von '+participants.length+' haben geantwortet</div>'+(revealed?'<h2 style="margin-top:22px">Antworten der Schülerinnen und Schüler</h2><div class="responses">'+(answerRows||'<div class="board-status">Noch keine Antworten eingegangen.</div>')+'</div>':'')+'</div>';
+ return '<div class="panel question-panel">'+questionToolbar(q,idx,count,st)+roundTools(st)+'<div class="question-text">'+QuizRichText.render(q)+'</div>'+media+body+(st.mode&&st.mode!=='classic'?raceMarkup(st):'')+'<div class="answer-count">'+responses.filter(r=>r.question_index===idx).length+' von '+participants.length+' haben geantwortet</div>'+(revealed&&(!st.mode||st.mode==='classic')?'<h2 style="margin-top:22px">Antworten der Schülerinnen und Schüler</h2><div class="responses">'+(answerRows||'<div class="board-status">Noch keine Antworten eingegangen.</div>')+'</div>':'')+'</div>';
 }
 function render(){
  if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
@@ -127,11 +151,12 @@ async function loadSession(){
 async function createFromQuiz(quizId){
  const store=createLibraryStore(db,'quiz');const library=await store.load(user);
  if(!library)throw new Error('Noch keine Quizbibliothek gespeichert.');
- const quiz=(library.quizzes||[]).find(q=>q.id===quizId);
+ const source=(library.quizzes||[]).find(q=>q.id===quizId);
+ const quiz=source?{...source,rules_version:1,defaultMode:QuizModes.normalise(params.get('mode'))}:null;
  if(!quiz)throw new Error('Quiz nicht gefunden. Prüfe, ob es bereits in der Cloud gespeichert wurde.');
  if(!quiz.questions||!quiz.questions.length)throw new Error('Dieses Quiz enthält noch keine Fragen.');
  const created=await rpc('quiz_live_create',{p_quiz:quiz});
- session={id:created.session_id,owner_id:user.id,quiz_title:created.title,quiz_snapshot:quiz,status:'lobby',join_code:created.join_code,current_index:-1,question_states:quiz.questions.map(()=>({locked:false,revealed:false,timer_seconds:null,timer_deadline:null})),updated_at:new Date().toISOString()};
+ session={id:created.session_id,owner_id:user.id,quiz_title:created.title,quiz_snapshot:quiz,status:'lobby',join_code:created.join_code,current_index:-1,question_states:quiz.questions.map(q=>({mode:QuizModes.normalise(q.playMode==='inherit'||!q.playMode?quiz.defaultMode:q.playMode),opened_at:null,locked:true,revealed:false,timer_seconds:null,timer_deadline:null})),updated_at:new Date().toISOString()};
  history.replaceState(null,'',location.pathname+'?session='+encodeURIComponent(session.id));
 }
 async function refresh(force){
@@ -162,6 +187,9 @@ document.body.addEventListener('click',async function(e){
  const action=el.dataset.action;if(action==='access'){openJoin();return;}if(actionBusy)return;actionBusy=true;const observedIndex=session?.current_index;app.querySelectorAll('button[data-action]').forEach(b=>b.disabled=true);el.disabled=true;
  try{
   if(action==='start'){await act('quiz_live_start',{p_session_id:session.id});}
+  else if(action==='open-round'){await act('quiz_live_open_round',{p_session_id:session.id,p_question_index:observedIndex});}
+  else if(action==='begin-review'){await act('quiz_live_begin_review',{p_session_id:session.id,p_question_index:observedIndex});}
+  else if(action==='judge-correct'||action==='judge-wrong'){await act('quiz_live_judge_entry',{p_session_id:session.id,p_question_index:observedIndex,p_response_id:el.dataset.responseId,p_correct:action==='judge-correct'});}
   else if(action==='back'){if(session.current_index>0)await act('quiz_live_navigate_from',{p_session_id:session.id,p_target_index:observedIndex-1,p_expected_index:observedIndex});}
   else if(action==='next'){const count=session.quiz_snapshot.questions.length;await act('quiz_live_navigate_from',{p_session_id:session.id,p_target_index:observedIndex+1,p_expected_index:observedIndex});}
   else if(action==='timer'){const seconds=Number(document.getElementById('timerSeconds').value);await act('quiz_live_start_timer_at',{p_session_id:session.id,p_seconds:seconds,p_question_index:observedIndex});}
@@ -178,12 +206,13 @@ document.body.addEventListener('click',async function(e){
   if(params.get('session')){await loadSession();}
   else if(params.get('quiz')){await createFromQuiz(params.get('quiz'));}
   else throw new Error('Es wurde kein Quiz ausgewählt.');
-  await refresh(true);timerInterval=setInterval(function(){updateTimer();if(!document.hidden)refresh(false);},1500);
+  await refresh(true);let polledAt=0;timerInterval=setInterval(function(){updateTimer();const interval=qstate().mode&&qstate().mode!=='classic'?500:1500;if(!document.hidden&&Date.now()-polledAt>=interval){polledAt=Date.now();refresh(false);}},250);
  }catch(e){app.innerHTML='<div class="panel"><h1>Live-Quiz konnte nicht gestartet werden</h1><p class="notice">'+esc(errText(e))+'</p><button onclick="location.href=\'index.html\'">Zum Quiz Studio</button></div>';toast(errText(e));}
 })();
 </script>
 </body>
 </html>
+
 
 
 
