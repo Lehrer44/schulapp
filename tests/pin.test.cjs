@@ -6,5 +6,5 @@ for(const pinTarget of [null,{x:50,y:50,radius:0},{x:50,y:50,radius:51},{x:50,y:
 assert(!pin.valid({...q,media:{type:'image',data:'data:image/svg+xml;base64,AAAA'}}));
 assert(!pin.markup({...q,media:{type:'image',data:'javascript:alert(1)'}}).includes('<img'));
 assert(!pin.markup(q,{markers:[{id:'A',name:'<img src=x onerror=alert(1)>',answer:{x:50,y:50}}]}).includes('<img src=x'));
-assert.equal(pin.color('id'),pin.color('id'));
+assert.equal(pin.color('id'),pin.color('id'));assert.notEqual(pin.color('p1'),pin.color('p2'));const hues=['p1','p2'].map(id=>Number(pin.color(id).match(/\d+/)[0]));assert(Math.abs(hues[1]-hues[0])>100);
 console.log('PASS: circular geometry, inclusive edge, aspect correction, input bounds, raster images and escaped names');

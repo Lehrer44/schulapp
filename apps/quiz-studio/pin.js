@@ -7,7 +7,7 @@
  const target=q=>point(q?.pinTarget)&&typeof q.pinTarget.radius==='number'&&q.pinTarget.radius>=.5&&q.pinTarget.radius<=50&&Number.isFinite(q.pinAspect)&&q.pinAspect>=.01&&q.pinAspect<=100;
  const valid=q=>!!image(q)&&target(q);
  function correct(q,a){return target(q)&&point(a)&&Math.hypot(a.x-q.pinTarget.x,(a.y-q.pinTarget.y)/q.pinAspect)<=q.pinTarget.radius+1e-9;}
- function color(id){let hash=0;for(const c of String(id))hash=(hash*31+c.charCodeAt(0))>>>0;return 'hsl('+(hash%360)+',68%,38%)';}
+ function color(id){let hash=0;for(const c of String(id))hash=(hash*31+c.charCodeAt(0))>>>0;return 'hsl('+Math.round((hash*137.508)%360)+',68%,38%)';}
  function markup(q,{answer=null,showTarget=false,editable=false,editor=false,markers=[]}={}){
   const src=image(q);if(!src)return '<p class="pin-hint">Bitte füge ein Bild für die Pin-Frage ein.</p>';
   const marks=markers.filter(m=>point(m.answer));
