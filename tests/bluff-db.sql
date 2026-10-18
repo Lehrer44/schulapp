@@ -12,6 +12,7 @@ create table public.quiz_live_sessions(join_code text,status text);
 \ir ../supabase/bluff.sql
 \ir ../supabase/bluff_library.sql
 \ir ../supabase/bluff_flow.sql
+\ir ../supabase/bluff_reveal.sql
 
 create table private.bluff_test_fixture(sid uuid,a uuid,b uuid,c uuid,owner_id uuid);
 -- Full two-round game, secrets, duplicates, scores, identity and stale controls.
@@ -83,12 +84,10 @@ begin
  assert public.bluff_vote(sid,c,repeat('c',64),0,fake)->>'ok'='true';
  assert public.bluff_host_action(sid,0,'vote','reveal')->>'ok'='true';
  assert public.bluff_vote(sid,c,repeat('c',64),0,truth)->>'error'='PHASE_CHANGED';
- assert (select sum(score)=0 from private.bluff_players where session_id=sid);
- assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,0)->>'ok'='true';
- assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,0)->>'error'='PHASE_CHANGED';
- st:=public.bluff_player_state(sid,a,repeat('a',64));assert (select count(*)=1 from jsonb_array_elements(st->'options') o where (o->>'revealed')::boolean);
- assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,1)->>'ok'='true';
- assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,2)->>'ok'='true';
+ assert public.bluff_host_state(sid)->>'phase'='leaderboard';
+ st:=public.bluff_player_state(sid,a,repeat('a',64));assert (select count(*)=3 from jsonb_array_elements(st->'options') o where (o->>'revealed')::boolean);
+ assert (select bool_and(o?'authors' and o?'voters' and o?'is_truth') from jsonb_array_elements(st->'options') o);
+ assert public.bluff_host_action(sid,0,'vote','reveal')->>'error'='PHASE_CHANGED';
  assert (select score=3 from private.bluff_players where id=a);assert (select score=3 from private.bluff_players where id=b);assert (select score=0 from private.bluff_players where id=c);
  assert public.bluff_host_action(sid,0,'reveal','reveal_next',null,3)->>'error'='PHASE_CHANGED';
  assert (select sum(score)=6 from private.bluff_players where session_id=sid);
@@ -105,8 +104,8 @@ begin
  update private.bluff_sessions set deadline=clock_timestamp()-interval '1 second' where id=sid;
  assert public.bluff_vote(sid,b,repeat('b',64),1,truth)->>'error'='TIME_EXPIRED';
  assert public.bluff_host_action(sid,1,'vote','expire')->>'ok'='true';
- assert public.bluff_host_action(sid,1,'reveal','reveal_next',null,0)->>'ok'='true';
- assert public.bluff_host_action(sid,1,'reveal','reveal_next',null,1)->>'ok'='true';
+ assert public.bluff_host_state(sid)->>'phase'='leaderboard';
+ st:=public.bluff_host_state(sid);assert (select bool_and((o->>'revealed')::boolean) from jsonb_array_elements(st->'options') o);
  assert public.bluff_host_action(sid,1,'leaderboard','next')->>'ok'='true';
  assert public.bluff_player_state(sid,a,repeat('a',64))->>'phase'='ended';
  perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,false);
