@@ -10,6 +10,7 @@ create function private.classroom_join_allowed(text) returns boolean language sq
 create table public.sessions(join_code text,status text);
 create table public.quiz_live_sessions(join_code text,status text);
 \ir ../supabase/bluff.sql
+\ir ../supabase/bluff_library.sql
 
 create table private.bluff_test_fixture(sid uuid,a uuid,b uuid,c uuid,owner_id uuid);
 -- Full two-round game, secrets, duplicates, scores, identity and stale controls.
@@ -116,3 +117,45 @@ do $$declare f record;s jsonb;begin
 end;$$;
 reset role;
 select 'PASS: complete Bluff rounds, duplicate answers, secrets, timer expiry, server scoring, stale actions, tokens, ownership, anonymous RLS' as result;
+
+-- Library lifecycle, stable saved copies and per-account starter edits/hiding.
+do $$declare a uuid:=gen_random_uuid();b uuid:=gen_random_uuid();qid bigint;saved uuid;sid uuid;j jsonb;begin
+ insert into auth.users(id) values(a),(b);
+ perform set_config('request.jwt.claim.sub',a::text,false);
+ assert public.bluff_quiz_save(null,'',array[1::bigint])->>'error'='INVALID_NAME';
+ assert public.bluff_quiz_save(null,'Invalid',array[999999::bigint])->>'error'='INVALID_SELECTION';
+ assert public.bluff_quiz_save(null,'Invalid',array[]::bigint[])->>'error'='INVALID_SELECTION';
+ assert public.bluff_quiz_save(null,'Invalid',array[1::bigint,1::bigint])->>'error'='INVALID_SELECTION';
+ j:=public.bluff_question_save(1,'Meine persönlich geänderte Startfrage?','Meine Lösung','','');qid:=(j->>'id')::bigint;
+ assert qid<>1;
+ assert not exists(select 1 from jsonb_array_elements(public.bluff_question_list()->'questions') q where q->>'id'='1');
+ saved:=(public.bluff_quiz_save(null,'Mein Quiz',array[qid,2::bigint])->>'id')::uuid;assert saved is not null;
+ assert jsonb_array_length(public.bluff_quiz_list()->'quizzes')=1;
+ assert public.bluff_question_delete(qid)->>'ok'='true';
+ assert public.bluff_question_delete(2)->>'ok'='true';
+ assert public.bluff_create(9,null)->>'error'='NOT_ENOUGH_QUESTIONS';
+ assert public.bluff_create(1,array[2::bigint])->>'error'='INVALID_SELECTION';
+ -- Removed bank questions remain playable and editable in the saved game.
+ assert public.bluff_quiz_save(saved,'Umbenannt',array[qid,2::bigint])->>'ok'='true';
+ sid:=(public.bluff_quiz_start(saved)->>'session_id')::uuid;
+ assert (select round_count=2 from private.bluff_sessions where id=sid);
+ assert (select correct_answer='Meine Lösung' from private.bluff_rounds where session_id=sid and round_index=0);
+ perform set_config('request.jwt.claim.sub',b::text,false);
+ assert jsonb_array_length(public.bluff_question_list()->'questions')=10;
+ assert jsonb_array_length(public.bluff_quiz_list()->'quizzes')=0;
+ assert public.bluff_quiz_start(saved)->>'error'='NOT_OWNER';
+ assert public.bluff_quiz_save(saved,'Fremdes Quiz',array[3::bigint])->>'error'='NOT_OWNER';
+ assert public.bluff_quiz_delete(saved)->>'error'='NOT_OWNER';
+ assert public.bluff_quiz_save(null,'Fremde Frage',array[qid])->>'error'='INVALID_SELECTION';
+ perform set_config('request.jwt.claim.sub',a::text,false);
+ assert public.bluff_quiz_delete(saved)->>'ok'='true';
+ assert jsonb_array_length(public.bluff_quiz_list()->'quizzes')=0;
+ assert not has_function_privilege('anon','public.bluff_quiz_list()','execute');
+ assert not has_function_privilege('authenticated','private.bluff_create_saved(jsonb)','execute');
+ assert not has_table_privilege('authenticated','private.bluff_quizzes','select');
+ assert not has_table_privilege('anon','private.bluff_hidden_questions','select');
+ perform set_config('request.jwt.claim.sub','',false);
+ assert public.bluff_quiz_list()->>'error'='NOT_AUTHENTICATED';
+ assert public.bluff_quiz_start(saved)->>'error'='NOT_AUTHENTICATED';
+end;$$;
+select 'PASS: named quiz CRUD, private starter edits/deletions, saved snapshots, random selection and cross-account isolation' as result;
