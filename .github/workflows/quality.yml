@@ -45,7 +45,9 @@ jobs:
           npm install --no-save --package-lock=false playwright@1.62.1 jsqr@1.4.0
           npx playwright install --with-deps chromium
       - name: Unterrichtsabläufe im Browser prüfen
-        run: node tests/browser.test.cjs
+        run: |
+          node tests/browser.test.cjs
+          node tests/quiz-modes.browser.cjs
       - name: Testansichten aufbewahren
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,6 +61,7 @@ jobs:
             test-results/studio-*.png
             test-results/editor-*.png
             test-results/live-*.png
+            test-results/modes-*.png
           if-no-files-found: ignore
 
 

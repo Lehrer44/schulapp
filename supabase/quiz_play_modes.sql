@@ -322,7 +322,7 @@ begin
  if not found or s.owner_id is distinct from auth.uid() then return jsonb_build_object('ok',false,'error','NOT_OWNER'); end if;
  if s.status<>'running' or s.current_index<>p_question_index or s.quiz_snapshot->>'rules_version' is distinct from '1' then return jsonb_build_object('ok',false,'error','QUESTION_NOT_ACTIVE'); end if;
  st:=s.question_states->p_question_index;
- if st->>'opened_at' is not null or exists(select 1 from public.quiz_live_responses where session_id=s.id and question_index=p_question_index) then return jsonb_build_object('ok',false,'error','ROUND_ALREADY_OPEN'); end if;
+ if st->>'opened_at' is not null or coalesce((st->>'revealed')::boolean,false) or exists(select 1 from public.quiz_live_responses where session_id=s.id and question_index=p_question_index) then return jsonb_build_object('ok',false,'error','ROUND_ALREADY_OPEN'); end if;
  if p_mode is null or p_mode not in ('classic','buzzer','speed') then return jsonb_build_object('ok',false,'error','INVALID_MODE'); end if;
  update public.quiz_live_sessions set question_states=jsonb_set(question_states,array[p_question_index::text,'mode'],to_jsonb(p_mode)),updated_at=clock_timestamp() where id=s.id;
  return jsonb_build_object('ok',true);
