@@ -45,6 +45,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f tests/pin-db.sql
           createdb bluff_tests
           PGDATABASE=bluff_tests psql -v ON_ERROR_STOP=1 -f tests/bluff-db.sql
+          PGDATABASE=bluff_tests psql -v ON_ERROR_STOP=1 -f tests/external-links-db.sql
       - name: Testbrowser vorbereiten
         run: |
           npm install --no-save --package-lock=false playwright@1.62.1 jsqr@1.4.0
@@ -52,6 +53,7 @@ jobs:
       - name: Unterrichtsabläufe im Browser prüfen
         run: |
           PGDATABASE=bluff_tests node tests/bluff.browser.cjs
+          PGDATABASE=bluff_tests node tests/external-links.browser.cjs
           node tests/browser.test.cjs
           node tests/quiz-modes.browser.cjs
           node tests/pin.browser.cjs
@@ -61,6 +63,7 @@ jobs:
         with:
           name: synthetische-testansichten
           path: |
+            test-results/external-links-*.png
             test-results/bluff-*.png
             test-results/pin-*.png
             test-results/pin-desktop.png
