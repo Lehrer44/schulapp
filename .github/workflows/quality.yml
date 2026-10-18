@@ -51,10 +51,10 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Unterrichtsabläufe im Browser prüfen
         run: |
+          PGDATABASE=bluff_tests node tests/bluff.browser.cjs
           node tests/browser.test.cjs
           node tests/quiz-modes.browser.cjs
           node tests/pin.browser.cjs
-          PGDATABASE=bluff_tests node tests/bluff.browser.cjs
       - name: Testansichten aufbewahren
         if: always()
         uses: actions/upload-artifact@v4
