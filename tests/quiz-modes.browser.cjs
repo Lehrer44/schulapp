@@ -45,7 +45,7 @@ const server=http.createServer((req,res)=>{const name=decodeURIComponent(new URL
  context.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));
  const teacher=await context.newPage();await teacher.goto(base+'/apps/quiz-studio/index.html');await teacher.locator('[data-action="open-quiz"]').click();
  const mode=teacher.locator('select[data-field="play-mode"]').nth(1);await mode.selectOption('speed');await teacher.locator('#retryCloudSave').click();assert.equal(quiz.questions[1].playMode,'speed');
- await teacher.locator('[data-action="live-quiz"]').click();await teacher.locator('#liveModeDialog').waitFor({state:'visible'});await teacher.locator('input[name="liveMode"][value="buzzer"]').check();await teacher.locator('#confirmLiveMode').click();await teacher.waitForURL('**/live.html?session=mode-session');
+ await teacher.locator('[data-action="back-to-list"]').click();await teacher.locator('[data-action="live-quiz"]').click();await teacher.locator('#liveModeDialog').waitFor({state:'visible'});await teacher.locator('input[name="liveMode"][value="buzzer"]').check();await teacher.locator('#confirmLiveMode').click();await teacher.waitForURL('**/live.html?session=mode-session');
  assert.equal(session.quiz_snapshot.defaultMode,'buzzer');await teacher.locator('[data-action="start"]').click();
  assert.equal(await teacher.locator('#roundMode').inputValue(),'buzzer');await teacher.locator('#roundMode').selectOption('speed');await teacher.locator('#roundMode').selectOption('buzzer');
  const players=[];

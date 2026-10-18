@@ -98,6 +98,26 @@ begin
  assert public.quiz_live_reveal_question(sid,0)->>'ok'='true';
  assert (select awarded_points=1 from public.quiz_live_responses where session_id=sid);
 
+ -- Exhausted race queue ends with zero points; no hidden answer is auto-awarded.
+ j:=public.quiz_live_create('{"rules_version":1,"defaultMode":"speed","questions":[{"type":"shortanswer","answers":["4"],"points":2}]}');sid:=(j->>'session_id')::uuid;
+ a:=gen_random_uuid();b:=gen_random_uuid();insert into public.quiz_live_participants(id,session_id,name) values(a,sid,'Wrong A'),(b,sid,'Wrong B');insert into private.test_tokens values(a,'a'),(b,'b');
+ assert public.quiz_live_start(sid)->>'ok'='true';assert public.quiz_live_open_round(sid,0)->>'ok'='true';
+ assert public.quiz_live_submit_response_secure(sid,a,0,'"wrong"','a')->>'ok'='true';assert public.quiz_live_submit_response_secure(sid,b,0,'"wrong"','b')->>'ok'='true';
+ assert public.quiz_live_begin_review(sid,0)->>'ok'='true';
+ select id into first_id from public.quiz_live_responses where session_id=sid and participant_id=a;
+ select id into next_id from public.quiz_live_responses where session_id=sid and participant_id=b;
+ assert public.quiz_live_judge_entry(sid,0,first_id,false)->>'ok'='true';assert public.quiz_live_judge_entry(sid,0,next_id,false)->>'ok'='true';
+ assert (select (question_states->0->>'revealed')::boolean from public.quiz_live_sessions where id=sid);
+ assert (select sum(awarded_points)=0 from public.quiz_live_responses where session_id=sid);
+
+ -- A server deadline rejects late submissions even if a phone has not polled yet.
+ j:=public.quiz_live_create('{"rules_version":1,"defaultMode":"speed","questions":[{"type":"shortanswer","answers":["4"],"points":2}]}');sid:=(j->>'session_id')::uuid;
+ a:=gen_random_uuid();insert into public.quiz_live_participants(id,session_id,name) values(a,sid,'Late');insert into private.test_tokens values(a,'late');
+ assert public.quiz_live_start(sid)->>'ok'='true';assert public.quiz_live_open_round(sid,0)->>'ok'='true';
+ update public.quiz_live_sessions set question_states=jsonb_set(question_states,'{0,timer_deadline}',to_jsonb(clock_timestamp()-interval '1 second')) where id=sid;
+ assert public.quiz_live_submit_response_secure(sid,a,0,'"4"','late')->>'error'='QUESTION_LOCKED';
+ assert (select count(*)=0 from public.quiz_live_responses where session_id=sid);
+
  -- Leave an isolated open round for the parallel-submission test.
  j:=public.quiz_live_create('{"rules_version":1,"defaultMode":"speed","questions":[{"type":"shortanswer","answers":["4"],"points":1}]}');sid:=(j->>'session_id')::uuid;
  a:=gen_random_uuid();b:=gen_random_uuid();c:=gen_random_uuid();
