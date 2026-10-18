@@ -894,6 +894,7 @@ function renderHome(){
                   '</div>' +
                   '<button data-action="start">▶ Starten</button>' +
                   '<button class="secondary" data-action="edit">✎ Bearbeiten</button>' +
+                  '<button class="secondary" data-action="duplicate" title="Duplizieren" aria-label="Spiel duplizieren">⧉ Duplizieren</button>' +
                   '<button class="danger" data-action="delete">Löschen</button>' +
                 '</div>' +
               '</div>').join('')
@@ -911,6 +912,7 @@ function renderHome(){
     const id = card.getAttribute('data-game-id');
     card.querySelector('[data-action="start"]').onclick = () => startGame(id);
     card.querySelector('[data-action="edit"]').onclick = () => editGame(id);
+    card.querySelector('[data-action="duplicate"]').onclick = () => duplicateGame(id);
     card.querySelector('[data-action="delete"]').onclick = () => deleteGame(id);
     card.querySelector('[data-action="up"]').onclick = () => moveGame(id, -1);
     card.querySelector('[data-action="down"]').onclick = () => moveGame(id, 1);
@@ -1418,6 +1420,16 @@ function editGame(id){
   if(g) openSetup(g);
 }
 
+async function duplicateGame(id){
+  const index=games.findIndex(g=>g.id===id);if(index<0)return;
+  const copy=JSON.parse(JSON.stringify(games[index]));
+  copy.id=uid();copy.name=String(copy.name||'Spiel')+' (Kopie)';
+  games.splice(index+1,0,copy);dirty=true;
+  const saved=(cloudUser||gamesFileHandle)?await saveGamesFile(false):false;
+  renderHome();
+  toast(saved?'Spiel dupliziert und gespeichert':'Spiel dupliziert. Die Kopie ist noch nicht dauerhaft gespeichert.');
+}
+
 async function deleteGame(id){
   const ok = await customConfirm('Spiel wirklich löschen?', { danger: true, okLabel: 'Löschen', title: 'Spiel löschen' });
   if(!ok) return;
@@ -1812,6 +1824,7 @@ initializeJeopardy();
 </script>
 </body>
 </html>
+
 
 
 

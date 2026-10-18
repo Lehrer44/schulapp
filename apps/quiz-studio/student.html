@@ -16,6 +16,8 @@
 <link rel="stylesheet" href="rich-text.css">
 <script src="rich-text.js"></script>
 <script src="play-modes.js"></script>
+<script src="pin.js"></script>
+<link rel="stylesheet" href="pin.css">
 <link rel="stylesheet" href="play-modes.css">
 </head>
 <body>
@@ -83,6 +85,7 @@ function renderRankingChoices(q,answer,idx,disabled){
  return '<div class="rank-choices">'+items.map((id,i)=>'<div class="rank-choice"><span class="rank-name"><span class="rank-num">'+(i+1)+'</span>'+QuizRichText.render(map[id]||{text:''})+'</span><button type="button" data-action="rank-move" data-index="'+idx+'" data-pos="'+i+'" data-dir="-1" aria-label="Element nach oben verschieben" '+(disabled||i===0?'disabled':'')+'>↑</button><button type="button" data-action="rank-move" data-index="'+idx+'" data-pos="'+i+'" data-dir="1" aria-label="Element nach unten verschieben" '+(disabled||i===items.length-1?'disabled':'')+'>↓</button></div>').join('')+'</div>';
 }
 function inputChoices(q,idx,locked,revealed,answer){
+ if(q.type==='pin')return QuizPin.markup(q,{answer,showTarget:revealed,editable:!locked&&!revealed});
  const opts=q.type==='single'||q.type==='multiple'?(q.options||[]):q.type==='truefalse'?[{id:'true',text:'Wahr',value:true},{id:'false',text:'Falsch',value:false}]:[];
  const selected=(q.type==='multiple'&&Array.isArray(answer))?answer:[];
  if(q.type==='shortanswer')return '<input class="text-answer" id="shortAnswer" aria-label="Deine Kurzantwort" type="text" maxlength="2000" placeholder="Deine Antwort …" value="'+esc(answer==null?'':answer)+'" '+(locked||revealed?'disabled':'')+' autocomplete="off">';
@@ -128,7 +131,7 @@ function render(){
     else result='<div class="result wrong">Du hast keine Antwort abgegeben. Für diese Frage gibt es 0 Punkte.</div>';
   }else if(own)result='<div class="result">'+(mode==='speed'?'Verbindlich abgegeben. Die Antworten werden in Eingangsreihenfolge geprüft.':s.locked?'Antwortphase gesperrt. Deine gespeicherte Antwort bleibt erhalten.':'Antwort abgegeben. Du kannst sie bis zur Sperre noch ändern.')+'</div>';
   const timer=st.timer_deadline&&!s.locked&&!s.revealed?'<span class="timer" data-deadline="'+esc(st.timer_deadline)+'"></span>':'';
-  main='<div class="panel"><div class="question-bar"><span>Frage '+(idx+1)+' von '+s.question_count+'</span><span>'+esc(q.points||0)+' Punkte</span>'+timer+'</div><h1>'+ (q.type==='ranking'?'Bringe die Elemente in die richtige Reihenfolge.':q.type==='truefalse'?'Wahr oder falsch?':q.type==='shortanswer'?'Trage deine Antwort ein.':'Wähle deine Antwort'+(q.type==='multiple'?'(n)':'')+'.')+'</h1>'+inputChoices(q,idx,locked,!!s.revealed,answer)+result+'<div class="row" style="margin-top:15px"><button id="submitAnswer" '+(locked||saveBusy?'disabled':'')+'>Antwort abgeben</button><span class="muted" style="font-size:.82rem">'+(s.round_open===false?'Warte auf die Freigabe.':s.revealed?'Antwortphase abgeschlossen.':mode==='speed'&&own?'Deine erste Abgabe zählt.':s.locked?'Antwortphase gesperrt.':own?'Du kannst deine Antwort noch ändern.':'Deine Antwort bleibt bis zur Abgabe auf diesem Gerät.')+'</span></div></div>';
+  main='<div class="panel"><div class="question-bar"><span>Frage '+(idx+1)+' von '+s.question_count+'</span><span>'+esc(q.points||0)+' Punkte</span>'+timer+'</div><h1>'+ (q.type==='pin'?'Setze deinen Pin auf die gesuchte Stelle.':q.type==='ranking'?'Bringe die Elemente in die richtige Reihenfolge.':q.type==='truefalse'?'Wahr oder falsch?':q.type==='shortanswer'?'Trage deine Antwort ein.':'Wähle deine Antwort'+(q.type==='multiple'?'(n)':'')+'.')+'</h1>'+inputChoices(q,idx,locked,!!s.revealed,answer)+result+'<div class="row" style="margin-top:15px"><button id="submitAnswer" '+(locked||saveBusy?'disabled':'')+'>Antwort abgeben</button><span class="muted" style="font-size:.82rem">'+(s.round_open===false?'Warte auf die Freigabe.':s.revealed?'Antwortphase abgeschlossen.':mode==='speed'&&own?'Deine erste Abgabe zählt.':s.locked?'Antwortphase gesperrt.':own?'Du kannst deine Antwort noch ändern.':'Deine Antwort bleibt bis zur Abgabe auf diesem Gerät.')+'</span></div></div>';
   }
  }
  app.innerHTML='<div class="layout"><div class="main">'+main+'</div><aside class="side"><div class="panel"><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2><div class="muted" style="font-size:.82rem;margin-bottom:11px">Die Punkte werden erst nach der Lösungsanzeige aktualisiert.</div>'+renderRanking(s.leaderboard||[])+'</div><div class="panel"><h2>Dein Status</h2><div class="row"><span class="status '+(s.own_response?'green':'')+'">'+(s.own_response?'Antwort gespeichert':'Noch keine Antwort')+'</span></div><p class="muted" style="font-size:.86rem;margin-bottom:0">Teilnahmecode: <strong>'+esc(joinCode)+'</strong></p></div></aside></div>';
@@ -154,6 +157,7 @@ async function submitBuzz(){
  finally{saveBusy=false;render();}
 }
 function bindAnswerInputs(q,idx){
+ if(q?.type==='pin')QuizPin.mount(app.querySelector('[data-quiz-pin]'),q,{answer:getAnswerDraft(q,idx),showTarget:!!studentState.revealed,editable:!studentState.locked&&!studentState.revealed&&studentState.round_open!==false,onChange:value=>{draftByQuestion[idx]=value;}});
  const root=app;const saveDraft=()=>{const cur=studentState.question;if(!cur)return;let val;
  if(q.type==='single'){const r=root.querySelector('input[name="studentAnswer"]:checked');val=r?r.value:null;}
  else if(q.type==='multiple'){val=Array.from(root.querySelectorAll('input[name="studentAnswer"]:checked')).map(el=>el.value);}
@@ -166,7 +170,7 @@ function bindAnswerInputs(q,idx){
 }
 async function submitAnswer(){
  const s=studentState;if(!s||!s.question||s.locked||s.revealed||s.round_open===false||saveBusy||(s.play_mode==='speed'&&s.own_response))return;
- const q=s.question,idx=s.current_index;let answer=draftByQuestion[idx];
+ const q=s.question,idx=s.current_index;let answer=getAnswerDraft(q,idx);
  if(q.type==='shortanswer'){const input=document.getElementById('shortAnswer');answer=input?input.value.trim():String(answer||'');}
  if(q.type==='single'||q.type==='truefalse'){const selected=app.querySelector('input[name="studentAnswer"]:checked');if(selected)answer=q.type==='truefalse'?selected.value==='true':selected.value;}
  if(q.type==='multiple'){answer=Array.from(app.querySelectorAll('input[name="studentAnswer"]:checked')).map(el=>el.value);}
@@ -210,6 +214,7 @@ app.addEventListener('click',async e=>{
 </script>
 </body>
 </html>
+
 
 
 

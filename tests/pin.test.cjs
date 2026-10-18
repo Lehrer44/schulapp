@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),pin=require('../apps/quiz-studio/pin.js');
+const q={type:'pin',pinAspect:2,pinTarget:{x:50,y:50,radius:10},media:{type:'image',data:'data:image/png;base64,AAAA'}};
+assert(pin.valid(q));assert(pin.correct(q,{x:50,y:50}));assert(pin.correct(q,{x:60,y:50}));assert(pin.correct(q,{x:50,y:70}));assert(!pin.correct(q,{x:50,y:70.01}));assert(!pin.correct(q,{x:60.01,y:50}));
+for(const answer of [null,{},[],{x:'50',y:50},{x:Infinity,y:0},{x:NaN,y:50},{x:-1,y:50},{x:50,y:101}])assert(!pin.point(answer));
+for(const pinTarget of [null,{x:50,y:50,radius:0},{x:50,y:50,radius:51},{x:50,y:50,radius:'10'}])assert(!pin.valid({...q,pinTarget}));
+assert(!pin.valid({...q,media:{type:'image',data:'data:image/svg+xml;base64,AAAA'}}));
+assert(!pin.markup({...q,media:{type:'image',data:'javascript:alert(1)'}}).includes('<img'));
+assert(!pin.markup(q,{markers:[{id:'A',name:'<img src=x onerror=alert(1)>',answer:{x:50,y:50}}]}).includes('<img src=x'));
+assert.equal(pin.color('id'),pin.color('id'));
+console.log('PASS: circular geometry, inclusive edge, aspect correction, input bounds, raster images and escaped names');
