@@ -59,4 +59,4 @@ Neue Teilnehmende können nur in der Lobby beitreten. Eine bestehende Teilnahme 
 
 Tests: `tests/bluff-db.sql` benötigt eine eigene leere Testdatenbank. Es prüft den vollständigen Ablauf, anonyme Zugriffe, Wahrheitsschutz, Eigentümerschaft, Duplikate, Timer, Eigenstimmen und wiederholte Aktionen. `tests/bluff.browser.cjs` verbindet die echten PostgreSQL-RPCs über eine lokale Testbrücke mit einer Spielleiterseite und drei mobilen Browserkontexten. Die Brücke ist ausschließlich Testcode und wird von keiner App-Seite geladen.
 
-Die Bluff-Spieleransicht enthält keine Dashboard- oder Editor-Navigation. Lehrkraftansichten bleiben über Anmeldung und serverseitige Besitzprüfung geschützt.
+Die Bluff-Spieleransicht enthält keine Dashboard- oder Editor-Navigation. Das Dashboard zeigt die Anwendungsauswahl erst nach erfolgreicher Anmeldung; anonyme Spielteilnahmen geben sie nicht frei. Lehrkraftansichten bleiben über Anmeldung und serverseitige Besitzprüfung geschützt.
