@@ -43,14 +43,14 @@ function fixtures(){
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(out,'pin-editor-mobile.png'),fullPage:true});
  const mobileCircle=await first.locator('.quiz-pin-target').boundingBox();assert(Math.abs(mobileCircle.width-mobileCircle.height)<2);
  await page.goto(base+'/apps/quiz-studio/student.html?code=ABCDE');await page.locator('#studentName').fill('Ada');await page.locator('#joinForm button').click();
- await page.locator('.quiz-pin-board').waitFor();assert.equal(await page.locator('.quiz-pin-target').isVisible(),false);
+ await page.locator('.quiz-pin-board').waitFor();assert.match(await page.locator('.main h1').innerText(),/Wo liegt/);assert.equal(await page.locator('.quiz-pin-target').isVisible(),false);
  await page.locator('.quiz-pin-board').focus();await page.keyboard.press('Home');await page.keyboard.press('ArrowRight');assert.equal(await page.locator('[data-pin-x]').inputValue(),'51');
  await page.locator('[data-pin-x]').fill('60');await page.locator('[data-pin-y]').fill('30');await page.locator('#submitAnswer').click();
  await page.waitForFunction(()=>window.__calls.some(c=>c.name==='quiz_live_submit_response_secure'));assert.deepEqual(await page.evaluate(()=>window.__calls.find(c=>c.name==='quiz_live_submit_response_secure').args.p_answer),{x:60,y:30});
  await page.screenshot({path:path.join(out,'pin-student-mobile.png'),fullPage:true});
  await page.evaluate(()=>{window.__session.question_states[0].revealed=true;window.__session.question_states[0].locked=true;});await page.waitForSelector('.quiz-pin-target:not([hidden])');
  assert.match(await page.locator('.result').innerText(),/Richtig/);assert.equal(await page.locator('[data-pin-x]').count(),0);
- await page.goto(base+'/apps/quiz-studio/live.html?session=live');await page.locator('[data-action="reveal"]').click();assert.equal(await page.locator('.quiz-pin-marker').count(),2);assert.match(await page.locator('.quiz-pin-legend').innerText(),/Ada.*Ben/s);
+ await page.goto(base+'/apps/quiz-studio/live.html?session=live');await page.locator('[data-action="reveal"]').click();assert.equal(await page.locator('.quiz-pin-marker').count(),2);assert.match(await page.locator('.quiz-pin-legend').innerText(),/Ada.*Ben/s);assert.notEqual(await page.locator('.quiz-pin-marker').nth(0).evaluate(el=>getComputedStyle(el).backgroundColor),await page.locator('.quiz-pin-marker').nth(1).evaluate(el=>getComputedStyle(el).backgroundColor));assert.equal(await page.locator('header [data-action="end-quiz"]').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(181, 51, 53)');
  assert.equal(await page.getByRole('button',{name:'Aktualisieren',exact:true}).count(),0);
  await page.setViewportSize({width:1280,height:900});await page.screenshot({path:path.join(out,'pin-live-desktop.png'),fullPage:true});
  await page.evaluate(()=>window.__failEnd=true);await page.locator('header [data-action="end-quiz"]').click();assert(page.url().includes('live.html'));assert.match(await page.getByRole('alert').innerText(),/fehlgeschlagen/);
