@@ -121,9 +121,14 @@ declare sid uuid;code text;ids bigint[];begin
  if p_round_count is null or p_round_count not between 1 and 50 then return jsonb_build_object('ok',false,'error','INVALID_ROUND_COUNT');end if;
  if p_question_ids is not null then
  if cardinality(p_question_ids)<>p_round_count or cardinality(p_question_ids)<>(select count(distinct x) from unnest(p_question_ids) x) or exists(select 1 from unnest(p_question_ids) x where not exists(select 1 from private.bluff_questions where id=x and (owner_id=auth.uid() or owner_id is null))) then return jsonb_build_object('ok',false,'error','INVALID_SELECTION');end if;
+ if (select count(distinct private.bluff_normalize(question)) from private.bluff_questions where id=any(p_question_ids))<>p_round_count then return jsonb_build_object('ok',false,'error','INVALID_SELECTION');end if;
  ids:=p_question_ids;
  else
- select array_agg(id) into ids from (select id from private.bluff_questions where owner_id=auth.uid() or owner_id is null order by random() limit p_round_count) q;
+ select array_agg(id) into ids from (select id from (
+ select distinct on (private.bluff_normalize(question)) id from private.bluff_questions
+ where owner_id=auth.uid() or owner_id is null
+ order by private.bluff_normalize(question),(owner_id is not null) desc,id desc
+ ) unique_questions order by random() limit p_round_count) q;
  if coalesce(cardinality(ids),0)<>p_round_count then return jsonb_build_object('ok',false,'error','NOT_ENOUGH_QUESTIONS');end if;
  end if;
  for attempt in 1..30 loop

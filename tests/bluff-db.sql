@@ -14,7 +14,7 @@ create table public.quiz_live_sessions(join_code text,status text);
 create table private.bluff_test_fixture(sid uuid,a uuid,b uuid,c uuid,owner_id uuid);
 -- Full two-round game, secrets, duplicates, scores, identity and stale controls.
 do $$
-declare owner_id uuid:=gen_random_uuid(); sid uuid;a uuid;b uuid;c uuid;j jsonb;st jsonb;truth uuid;fake uuid;other uuid;cnt integer;rev integer;answer text; qid bigint;sid2 uuid;
+declare owner_id uuid:=gen_random_uuid(); sid uuid;a uuid;b uuid;c uuid;j jsonb;st jsonb;truth uuid;fake uuid;other uuid;cnt integer;rev integer;answer text; qid bigint;sid2 uuid;duplicate_id bigint;
 begin
  insert into auth.users(id) values(owner_id);perform set_config('request.jwt.claim.sub',owner_id::text,false);
  assert jsonb_array_length(public.bluff_question_list()->'questions')=10;
@@ -22,6 +22,10 @@ begin
  assert public.bluff_create(2,array[1::bigint,1::bigint])->>'error'='INVALID_SELECTION';
  j:=public.bluff_question_save(null,'Welche Testfrage ist das?','Testlösung','Test','https://example.org');qid:=(j->>'id')::bigint;
  assert j->>'ok'='true';
+ j:=public.bluff_question_save(null,'Welche Testfrage ist das?','Doppelte Lösung','Test','');duplicate_id:=(j->>'id')::bigint;
+ assert public.bluff_create(2,array[qid,duplicate_id])->>'error'='INVALID_SELECTION';
+ assert public.bluff_create(12,null)->>'error'='NOT_ENOUGH_QUESTIONS';
+ assert public.bluff_question_delete(duplicate_id)->>'ok'='true';
  perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,false);
  assert public.bluff_question_save(qid,'Angriff auf fremde Frage','X','','')->>'error'='NOT_OWNER';
  assert public.bluff_create(1,array[qid])->>'error'='INVALID_SELECTION';

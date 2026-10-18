@@ -22,6 +22,7 @@ server.on('request',async(req,res)=>{
  try{
  const hc=await context(true,{width:1280,height:900}),host=await hc.newPage();host.on('pageerror',e=>errors.push(e.message));host.on('dialog',d=>d.accept());
  await host.goto(base+'/apps/quiz-studio/bluff/index.html');await host.locator('[data-action="new-question"]').click();await host.locator('#questionText').fill('Was ist die echte Browser-Testantwort?');await host.locator('#correctAnswer').fill('Die geheime Wahrheit');await host.locator('#category').fill('Browser-Test');await host.locator('#questionForm button[type="submit"]').click();await host.locator('#questionRows').getByText('Was ist die echte Browser-Testantwort?',{exact:true}).waitFor();
+ assert.equal(await host.locator('#gameForm button[type="submit"]').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(118, 83, 146)');
  await host.locator('#roundCount').fill('2');await host.locator('#selectionMode').selectOption('manual');const qid=JSON.parse(sql("select json_agg(id) from private.bluff_questions where owner_id="+sqlLiteral(teacher))).at(-1);
  await host.locator('[data-select-question="'+qid+'"]').check();await host.locator('[data-select-question="1"]').check();await host.screenshot({path:path.join(output,'bluff-collection-desktop.png'),fullPage:true});
  await host.locator('#gameForm button[type="submit"]').click();await host.waitForURL('**/bluff/live.html?session=*');const sid=new URL(host.url()).searchParams.get('session');await host.locator('.bluff-code').waitFor();const code=await host.locator('.bluff-code').innerText();
