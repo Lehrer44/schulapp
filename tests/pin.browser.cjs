@@ -53,7 +53,7 @@ function fixtures(){
  await page.goto(base+'/apps/quiz-studio/live.html?session=live');await page.locator('[data-action="reveal"]').click();assert.equal(await page.locator('.quiz-pin-marker').count(),2);assert.match(await page.locator('.quiz-pin-legend').innerText(),/Ada.*Ben/s);
  assert.equal(await page.getByRole('button',{name:'Aktualisieren',exact:true}).count(),0);
  await page.setViewportSize({width:1280,height:900});await page.screenshot({path:path.join(out,'pin-live-desktop.png'),fullPage:true});
- await page.evaluate(()=>window.__failEnd=true);await page.locator('header [data-action="end-quiz"]').click();assert(page.url().includes('live.html'));assert.match(await page.locator('[role="alert"]').innerText(),/fehlgeschlagen/);
+ await page.evaluate(()=>window.__failEnd=true);await page.locator('header [data-action="end-quiz"]').click();assert(page.url().includes('live.html'));assert.match(await page.getByRole('alert').innerText(),/fehlgeschlagen/);
  await page.evaluate(()=>window.__failEnd=false);await page.locator('header [data-action="end-quiz"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');
  await page.goto(base+'/apps/jeopardy/index.html');await page.locator('[data-action="duplicate"]').click();await page.waitForFunction(()=>window.__calls.some(c=>c.name==='save_teacher_library'));
  const games=await page.evaluate(()=>window.__calls.filter(c=>c.name==='save_teacher_library').at(-1).args.p_payload.games);assert.equal(games.length,2);assert.notEqual(games[0].id,games[1].id);assert.equal(games[1].name,'Original (Kopie)');assert.deepEqual(games[0].cells,games[1].cells);
