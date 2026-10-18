@@ -214,8 +214,10 @@ async function fixtures(){
  assert(await page.evaluate(()=>document.querySelector('#joinDialog').scrollWidth<=document.querySelector('#joinDialog').clientWidth));
  await page.screenshot({path:path.join(outputRoot,'live-quiz-qr-mobile.png'),fullPage:true});
  await page.locator('#closeJoin').click();await page.setViewportSize({width:1280,height:900});
- await page.locator('#timerSeconds').selectOption('45');await page.locator('[data-action="refresh"]').click();
- await page.waitForFunction(()=>!document.querySelector('[data-action="refresh"]').disabled);
+ const refreshCount=await page.evaluate(()=>window.__calls.filter(c=>c.name==='quiz_live_teacher_state').length);
+ await page.locator('#timerSeconds').selectOption('45');
+ assert.equal(await page.locator('[data-action="refresh"]').count(),0);
+ await page.waitForFunction(previous=>window.__calls.filter(c=>c.name==='quiz_live_teacher_state').length>previous,refreshCount);
  assert.equal(await page.locator('#timerSeconds').inputValue(),'45');
  await page.locator('[data-action="timer"]').click();await page.waitForFunction(()=>window.__calls.some(x=>x.name==='quiz_live_start_timer_at'));
  assert.equal(await page.evaluate(()=>window.__calls.find(x=>x.name==='quiz_live_start_timer_at').args.p_seconds),45);
@@ -229,6 +231,7 @@ async function fixtures(){
  await page.setViewportSize({width:390,height:844});await page.goto(base+'/index.html');await page.screenshot({path:path.join(outputRoot,'hub-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.goto(base+'/join.html');await page.screenshot({path:path.join(outputRoot,'join-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));assert.equal(errors.length,0,errors.join('\n'));
  await browser.close();server.close();console.log('PASS: native image clipboard, nested formatted paste targets, files-only/embedded HTML images, safe persisted media and unchanged formatting/scroll, stable editor scroll on desktop/mobile for question/option add/delete, delayed media upload/paste/removal, view navigation, decoded local QR code, access dialog, compact teacher controls, timer selection, ranking lock, top navigation, studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
 })().catch(e=>{console.error(e);server.close();process.exit(1)});
+
 
 
 
