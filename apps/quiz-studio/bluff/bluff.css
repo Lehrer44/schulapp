@@ -5,3 +5,11 @@ body[data-studio="quiz"][data-dashboard-view="bluff"] button.bluff-primary{backg
 .bluff-message.is-success{color:#386449}body[data-studio="quiz"][data-dashboard-view="bluff"] .panel .bluff-question{font-size:clamp(23px,3.2vw,38px);line-height:1.25;letter-spacing:-.035em}
 
 .bluff-grid.bluff-lobby{display:block}.bluff-lobby>aside.bluff-stack{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:22px}
+
+.bluff-option.revealed{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,.8fr);gap:24px;align-items:center}
+.bluff-option-answer{min-width:0}.bluff-authors{font-size:20px;font-weight:750;line-height:1.4;overflow-wrap:anywhere}
+.bluff-option .bluff-voters{margin:0;padding-left:20px;border-left:1px solid #c9bfce;color:#34382f;min-width:0}
+.bluff-voters-label{display:block;font-size:13px;font-weight:650;margin-bottom:8px}.bluff-voter-list{display:flex;flex-wrap:wrap;gap:8px}
+.bluff-voter{display:inline-block;box-sizing:border-box;max-width:100%;padding:7px 11px;border:1px solid #c6bea9;border-radius:9px;background:#fffefa;color:#34382f;font-size:22px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+.bluff-no-votes{font-size:16px;color:#686456}
+@media(max-width:520px){.bluff-option.revealed{grid-template-columns:minmax(0,1fr) minmax(95px,.8fr);gap:12px;padding:14px}.bluff-option .bluff-voters{padding-left:12px}.bluff-voter{font-size:18px;padding:6px 8px}.bluff-authors{font-size:18px}}

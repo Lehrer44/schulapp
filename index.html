@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="shared/accessibility.css">
 <style>
 :root{color-scheme:light;--bg:#f3f1e9;--surface:#fffefa;--text:#34382f;--muted:#635e51;--line:#d9d2c2;--accent:#746442}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 0 0,#fffdf6,transparent 65%),var(--bg);color:var(--text);font:16px/1.55 Inter,"Avenir Next",system-ui,sans-serif}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 0 0,#fffdf6,transparent 65%),var(--bg);color:var(--text);font:16px/1.55 Inter,"Avenir Next",system-ui,sans-serif}
 a{color:inherit}button{font:inherit}header,main,footer{width:min(1160px,100%);margin:auto;padding-left:28px;padding-right:28px}.header{display:flex;justify-content:space-between;align-items:center;gap:24px;padding-top:28px;padding-bottom:28px;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:800;letter-spacing:-.04em}.brand-mark{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--accent);color:#fffefa;font-size:21px;letter-spacing:-.08em}.account{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--muted)}.account-action{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 16px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:10px;text-decoration:none;cursor:pointer}.account-action:hover{background:#eee8d9}
 main{padding-top:28px}.section-label{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:8px 0 18px}.section-label h2{font-size:16px;margin:0;font-weight:650}
 .apps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.app-card{display:flex;flex-direction:column;position:relative;min-height:320px;padding:28px;border:1px solid var(--line);border-radius:21px;background:var(--surface);text-decoration:none;box-shadow:0 8px 26px #53462506;transition:transform .18s,border-color .18s,box-shadow .18s}.app-card:hover{transform:translateY(-4px);border-color:#a69b83;box-shadow:0 14px 30px #53462510}.app-icon{display:grid;place-items:center;width:58px;height:58px;border-radius:17px;margin-bottom:24px}.app-icon svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.survey{background:#e5eee7;color:#386449}.quiz{background:#eee7d5;color:#80682f}.jeopardy{background:#e5e9f1;color:#4e6289}.app-card h3{font-size:25px;letter-spacing:-.04em;margin:0 0 10px;line-height:1.2}.app-card p{font-size:15px;color:var(--muted);margin:0 0 26px;line-height:1.65}.open{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:auto;padding-top:18px;border-top:1px solid #ece7dc;font-size:14px;font-weight:700}.open span{font-size:20px}footer{padding-top:46px;padding-bottom:28px;color:var(--muted);font-size:12px}.footer-line{border-top:1px solid var(--line);padding-top:20px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}[hidden]{display:none!important}
@@ -23,7 +23,8 @@ main{padding-top:28px}.section-label{display:flex;justify-content:space-between;
   <div class="account"><span class="account-status" id="accountStatus" role="status" aria-live="polite">Dein Unterrichtsbereich</span><a class="account-action" id="loginLink" href="login.html">Anmelden</a><button class="account-action" id="logoutBtn" type="button" hidden>Abmelden</button></div>
 </header>
 <main>
-  <section aria-labelledby="appsTitle">
+  <section id="hubAccess" aria-labelledby="accessTitle"><h2 id="accessTitle">Lehrkraft-Anmeldung</h2><p id="accessMessage" role="status">Anmeldung wird geprüft …</p><a class="account-action" href="login.html">Anmelden</a></section>
+  <section id="teacherApps" aria-labelledby="appsTitle" hidden>
     <div class="section-label"><h2 id="appsTitle">Deine Anwendungen</h2></div>
     <div class="apps">
       <a class="app-card" href="apps/umfrage/index.html"><div class="app-icon survey" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 25V16h4v9M14 25V7h4v18M22 25V12h4v13M4 25h24"/></svg></div><h3>Umfrage</h3><p>Meinungen sammeln, Rückmeldungen sichtbar machen und Ergebnisse gemeinsam auswerten.</p><div class="open">Zum Umfrage Studio <span aria-hidden="true">↗</span></div></a>
@@ -37,14 +38,18 @@ main{padding-top:28px}.section-label{display:flex;justify-content:space-between;
 'use strict';
 const accountStatus=document.getElementById('accountStatus'),loginLink=document.getElementById('loginLink'),logoutBtn=document.getElementById('logoutBtn');
 const authClient=window.supabase?.createClient('https://mqtcwiiawmuxrpkjfrfc.supabase.co','sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-');
+const teacherApps=document.getElementById('teacherApps'),hubAccess=document.getElementById('hubAccess'),accessMessage=document.getElementById('accessMessage');
 async function refreshAccount(){
-  if(!authClient){accountStatus.textContent='Anmeldung derzeit nicht erreichbar';return;}
+  teacherApps.hidden=true;hubAccess.hidden=false;
+  if(!authClient){accountStatus.textContent='Anmeldung derzeit nicht erreichbar';accessMessage.textContent='Die Anmeldung ist gerade nicht erreichbar. Bitte lade die Seite erneut.';return;}
   try{
     const {data,error}=await authClient.auth.getUser();
-    const signedIn=Boolean(data?.user);
+    const signedIn=Boolean(!error&&data?.user);
+    teacherApps.hidden=!signedIn;hubAccess.hidden=signedIn;
+    accessMessage.textContent=error&&error.name!=='AuthSessionMissingError'?'Die Anmeldung konnte nicht geprüft werden. Bitte versuche es erneut.':'Bitte melde dich mit deinem Lehrkraftkonto an, um die Anwendungen zu öffnen.';
     loginLink.hidden=signedIn;logoutBtn.hidden=!signedIn;
     accountStatus.textContent=signedIn?'Angemeldet · Inhalte in deinem Konto':'Dein Unterrichtsbereich';
-  }catch{accountStatus.textContent='Anmeldung derzeit nicht erreichbar';}
+  }catch{accountStatus.textContent='Anmeldung derzeit nicht erreichbar';accessMessage.textContent='Die Anmeldung ist gerade nicht erreichbar. Bitte lade die Seite erneut.';}
 }
 logoutBtn.addEventListener('click',async()=>{
   logoutBtn.disabled=true;
@@ -56,3 +61,4 @@ refreshAccount();
 </script>
 </body>
 </html>
+
