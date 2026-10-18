@@ -324,6 +324,8 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 <link rel="stylesheet" href="rich-text.css">
 <script src="rich-text.js"></script>
 <script src="rich-editor.js" defer></script>
+<script src="play-modes.js"></script>
+<link rel="stylesheet" href="play-modes.css">
 </head>
 <body data-studio="quiz" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -332,6 +334,19 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
   <div class="footer-note" role="status" aria-live="polite" id="cloudStatus">Quiz Studio · Quizze und Medien werden in deinem Supabase-Konto gespeichert.</div>
 </div>
 <div id="toast"></div>
+
+<dialog id="liveModeDialog" class="mode-dialog" aria-labelledby="liveModeTitle">
+ <form id="liveModeForm">
+  <h2 id="liveModeTitle">Live-Quiz starten</h2>
+  <p class="muted">Wähle den Standard für diese Sitzung. Einzelne Fragen können eine eigene Spielweise haben.</p>
+  <div class="mode-choices">
+   <label class="mode-choice"><input type="radio" name="liveMode" value="classic" checked><strong>Klassisch</strong><span>Alle antworten, anschließend wird aufgelöst.</span></label>
+   <label class="mode-choice"><input type="radio" name="liveMode" value="buzzer"><strong>Buzzer</strong><span>Die schnellste Person antwortet zuerst mündlich.</span></label>
+   <label class="mode-choice"><input type="radio" name="liveMode" value="speed"><strong>Schnellantwort</strong><span>Abgaben werden nach Eingangsreihenfolge aufgedeckt.</span></label>
+  </div>
+  <div class="race-actions"><button class="btn secondary" type="button" id="cancelLiveMode">Abbrechen</button><button class="btn primary" type="submit" id="confirmLiveMode">Sitzung erstellen</button></div>
+ </form>
+</dialog>
 
 <script>
 /* =========================================================
@@ -553,6 +568,16 @@ function scheduleSave(){
 
 window.addEventListener('beforeunload',e=>{if(cloudDirty||saveTimer||libraryStore.unsaved){e.preventDefault();e.returnValue='';}});
 
+let pendingLiveQuizId=null,creatingLive=false;
+const liveModeDialog=document.getElementById('liveModeDialog');
+document.getElementById('cancelLiveMode').onclick=()=>liveModeDialog.close();
+document.getElementById('liveModeForm').addEventListener('submit',async event=>{
+ event.preventDefault();if(creatingLive||!pendingLiveQuizId)return;creatingLive=true;
+ const button=document.getElementById('confirmLiveMode');button.disabled=true;
+ try{clearTimeout(saveTimer);if(await save())location.href='live.html?quiz='+encodeURIComponent(pendingLiveQuizId)+'&mode='+encodeURIComponent(new FormData(event.target).get('liveMode'));}
+ finally{creatingLive=false;button.disabled=false;}
+});
+
 /* ---------- Quiz / Fragen erzeugen ---------- */
 function newQuiz(){
   return {
@@ -755,6 +780,7 @@ function questionCard(q,i){
       <button class="icon-btn" data-action="move-question" data-qid="${q.id}" data-dir="1" title="Nach unten">↓</button>
       <button class="icon-btn danger" data-action="del-question" data-qid="${q.id}" title="Frage löschen">✕</button>
     </div>
+    <label class="mode-field">Spielweise <select data-qid="${q.id}" data-field="play-mode" aria-label="Spielweise für Frage ${i+1}">${QuizModes.options(q.playMode,true)}</select></label>
     ${richEditor(q,`data-qid="${q.id}" data-field="text"`,'Fragestellung …','qtext')}
     ${questionMediaEditor(q)}
     <div class="qbody">${questionBody(q)}</div>
@@ -1174,7 +1200,7 @@ document.addEventListener('click', async (e)=>{
       break;
     }
     case 'live-quiz': {
-      clearTimeout(saveTimer);if(await save())window.location.href = 'live.html?quiz=' + encodeURIComponent(id);
+      pendingLiveQuizId=id;document.getElementById('liveModeDialog').showModal();
       break;
     }
     case 'play-quiz': {
@@ -1434,6 +1460,7 @@ document.addEventListener('paste', (event)=>{
 
 document.addEventListener('change', (event)=>{
   const input = event.target;
+  if(input.matches('select[data-field="play-mode"]')){editorInput(input);return;}
   if(!input.matches('input[data-media-input]')) return;
   if(state.view !== 'editor' || !state.draft) return;
   const file = input.files && input.files[0];
@@ -1492,6 +1519,7 @@ function editorInput(t){
   if(field === 'text'){
     Object.assign(q,QuizRichText.read(t));
   }
+  else if(field === 'play-mode'){q.playMode=t.value==='inherit'?'inherit':QuizModes.normalise(t.value);}
   else if(field === 'points'){
     const v = Number(t.value);
     q.points = isNaN(v) ? 0 : Math.max(0, v);
@@ -1671,6 +1699,7 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 
 
