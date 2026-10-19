@@ -46,6 +46,9 @@ jobs:
           createdb bluff_tests
           PGDATABASE=bluff_tests psql -v ON_ERROR_STOP=1 -f tests/bluff-db.sql
           PGDATABASE=bluff_tests psql -v ON_ERROR_STOP=1 -f tests/external-links-db.sql
+          createdb yesno_tests
+          PGDATABASE=yesno_tests psql -v ON_ERROR_STOP=1 -f tests/yesno-db.sql
+          PGDATABASE=yesno_tests node tests/yesno-concurrency.cjs
       - name: Testbrowser vorbereiten
         run: |
           npm install --no-save --package-lock=false playwright@1.62.1 jsqr@1.4.0
@@ -54,6 +57,7 @@ jobs:
         run: |
           PGDATABASE=bluff_tests node tests/bluff.browser.cjs
           PGDATABASE=bluff_tests node tests/external-links.browser.cjs
+          PGDATABASE=yesno_tests node tests/yesno.browser.cjs
           node tests/browser.test.cjs
           node tests/quiz-modes.browser.cjs
           node tests/pin.browser.cjs
@@ -63,6 +67,7 @@ jobs:
         with:
           name: synthetische-testansichten
           path: |
+            test-results/yesno-*.png
             test-results/external-links-*.png
             test-results/bluff-*.png
             test-results/pin-*.png
@@ -75,6 +80,7 @@ jobs:
             test-results/live-*.png
             test-results/modes-*.png
           if-no-files-found: ignore
+
 
 
 
