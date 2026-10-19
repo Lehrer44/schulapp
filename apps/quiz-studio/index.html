@@ -328,6 +328,9 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 <script src="pin.js"></script>
 <link rel="stylesheet" href="bluff/library.css">
 <script src="bluff/library.js"></script>
+<link rel="stylesheet" href="yesno/yesno.css">
+<script src="yesno/common.js"></script>
+<script src="yesno/library.js"></script>
 <link rel="stylesheet" href="pin.css">
 <link rel="stylesheet" href="play-modes.css">
 </head>
@@ -631,6 +634,7 @@ function render(){
   else if(state.view === 'result') $app.innerHTML = viewResult();
   mountPinQuestions();
   if(state.view==='list') window.BluffLibrary.mount(document.getElementById('bluffLibrary'),cloudClient);
+  if(state.view==='list') window.YesNoLibrary.mount(document.getElementById('yesnoLibrary'),cloudClient);
   renderedEditorId = editorId;
   window.scrollTo({left:keepPosition?position.left:0,top:keepPosition?position.top:0,behavior:'instant'});
 }
@@ -669,6 +673,18 @@ function viewList(){
       </div>
     </div>
     <div data-bluff-list></div><p data-bluff-status role="status"></p>
+  </section>
+  <section class="panel" id="yesnoLibrary">
+    <div class="library-heading">
+      <h2>Ja/Nein-Schätzspiel</h2><div class="library-count" data-yn-count>0 Spiele</div>
+      <div class="studio-actions">
+        <button data-yn-action="random">Zufälliges Spiel</button>
+        <a class="btn" href="yesno/index.html">Fragen bearbeiten</a>
+        <button class="studio-primary" data-yn-action="new">+ Neues Ja/Nein-Spiel</button>
+      </div>
+    </div>
+    <p class="muted">Antworte geheim und schätze, wie viele in der Gruppe Ja sagen. Volltreffer sammeln Punkte!</p>
+    <div data-yn-list></div><p data-yn-status role="status"></p>
   </section>
   `;
 }
@@ -1738,6 +1754,7 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 
 
