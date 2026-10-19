@@ -56,8 +56,8 @@
  function joinLink(){const u=new URL('../../../join.html',location.href);u.searchParams.set('kind','yesno');u.searchParams.set('code',state.join_code);return u.href;}
  function participation(){
   const url=joinLink(),d=dialog('Teilnahme','<div class="yn-code">'+esc(state.join_code)+'</div><div class="yn-qr"></div><a class="yn-join-link" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">'+esc(url)+'</a>');
-  const canvas=document.createElement('canvas');d.querySelector('.yn-qr').append(canvas);canvas.setAttribute('aria-label','QR-Code zum Beitreten');canvas.setAttribute('role','img');
-  if(window.QRCode)QRCode.toCanvas(canvas,url,{width:240,margin:2,errorCorrectionLevel:'M'},e=>{if(e)canvas.remove();});
+  const qr=d.querySelector('.yn-qr');qr.setAttribute('aria-label','QR-Code zum Beitreten');qr.setAttribute('role','img');
+  if(typeof window.QRCode==='function'){new QRCode(qr,{text:url,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});qr.removeAttribute('title');}
  }
  function answerForm(){
   if(state.own_answer)return '<div class="yn-tag">✓ Deine Antwort wurde gespeichert</div><p>Nur für dich: <strong>'+ (state.own_answer.answer?'JA':'NEIN')+'</strong> · Schätzung: <strong>'+state.own_answer.estimate+'</strong></p><p class="muted">Warte auf die Auswertung. Die Abgabe ist verbindlich.</p>';
