@@ -39,13 +39,13 @@ const server=http.createServer(async(req,res)=>{
  }
  await sql('insert into auth.users(id) values('+quote(teacher)+') on conflict do nothing');
  await new Promise(r=>server.listen(0,'127.0.0.1',r));fs.mkdirSync(output,{recursive:true});
- const base='http://127.0.0.1:'+server.address().port+'/SchulApp',browser=await chromium.launch({args:['--no-sandbox']}),contexts=[],errors=[];
+ const base='http://127.0.0.1:'+server.address().port+'/SchulApp',browser=await chromium.launch({args:['--no-sandbox'],...(process.env.YESNO_CHROMIUM_EXECUTABLE?{executablePath:process.env.YESNO_CHROMIUM_EXECUTABLE}:{})}),contexts=[],errors=[];
  async function context(host,viewport){
   const c=await browser.newContext({viewport});contexts.push(c);
   await c.addInitScript(host=>{
    window.__payloads=[];window.supabase={createClient:()=>({
     auth:{getUser:async()=>({data:{user:host?{id:'11111111-1111-4111-8111-111111111111'}:null}})},
-    from(){const q={select(){return q},eq(){return q},maybeSingle:async()=>({data:{revision:1,payload:{quizzes:[]}}})};return q;},
+    from(){const q={select(){return q},eq(){return q},maybeSingle:async()=>({data:{revision:1,payload:{quizzes:[{id:'classic',title:'Klassisches Quiz',questions:[]}]}}})};return q;},
     async rpc(name,args={}){const r=await fetch('/rpc',{method:'POST',body:JSON.stringify({name,args,host})}),data=await r.json();window.__payloads.push({name,data});return data;},
     channel(){const c={on(){return c},subscribe(cb){cb('SUBSCRIBED');return c}};return c;},removeChannel(){}
    })};
@@ -75,7 +75,7 @@ const server=http.createServer(async(req,res)=>{
   }
   await host.locator('[data-action="start"]:enabled').waitFor();await host.locator('[data-action="start"]').click();await players[0].locator('#ynAnswerForm').waitFor();
   assert(await players[0].locator('#ynAnswerForm [type="submit"]').isDisabled());
-  await players[0].locator('[data-answer="yes"]').click();assert(await players[0].locator('#ynAnswerForm [type="submit"]').isDisabled());await players[0].locator('[data-estimate="1"]').click();await screenshot(players[0],'question-mobile');await players[0].locator('#ynAnswerForm [type="submit"]').click();await players[0].getByText('✓ Deine Antwort wurde gespeichert',{exact:true}).waitFor();
+  await players[0].locator('[data-answer="yes"]').click();assert(await players[0].locator('#ynAnswerForm [type="submit"]').isDisabled());await players[0].locator('[data-estimate="1"]').click();assert.equal(await players[0].locator('[data-answer="yes"]').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(56, 107, 100)');await screenshot(players[0],'question-mobile');await players[0].locator('#ynAnswerForm [type="submit"]').click();await players[0].getByText('✓ Deine Antwort wurde gespeichert',{exact:true}).waitFor();
   await players[0].reload();await players[0].getByText('✓ Deine Antwort wurde gespeichert',{exact:true}).waitFor();
   await host.waitForFunction(()=>window.__payloads.some(p=>p.name==='yesno_host_state'&&p.data.data.phase==='question'&&p.data.data.players.some(x=>x.submitted)));
   const hidden=await host.evaluate(()=>window.__payloads.filter(p=>p.name==='yesno_host_state').at(-1).data.data);assert.equal(hidden.yes_count,null);assert.deepEqual(hidden.results,[]);assert.equal(hidden.own_answer,null);assert(hidden.players.every(p=>!('answer'in p)&&!('estimate'in p)));
@@ -101,5 +101,5 @@ const server=http.createServer(async(req,res)=>{
   await host.locator('[data-yn-action="delete"]').click();await host.locator('#yesnoLibrary .empty').waitFor();
   await host.locator('[data-yn-action="random"]').click();await host.locator('[name="rounds"]').fill('1');for(const checkbox of await host.locator('[name="pack"]').all())await checkbox.uncheck();await host.locator('[name="pack"][value="Freizeit"]').check();await host.locator('#ynGameForm [type="submit"]').click();await host.waitForURL('**/yesno/live.html?session=*');await host.locator('[data-action="end"]').click();await host.getByRole('heading',{name:'Spiel beendet',exact:true}).waitFor();
   assert.deepEqual(errors,[]);console.log('PASS: real database + desktop/mobile UI, catalog CRUD, saved/random games, ready lobby, secret dual input, resume, custom points, auto reveal, timeout, podium, keyboard input and layout');
- }finally{await browser.close();await new Promise(r=>server.close(r));if(db)await db.close();}
+ }catch(e){for(const c of contexts)for(const p of c.pages()){console.error('Test page:',p.url(),await p.locator('#appMessage,[data-yn-status],#cloudStatus').allTextContents());await p.screenshot({path:path.join(output,'yesno-failure-'+contexts.indexOf(c)+'.png'),fullPage:true}).catch(()=>{});}console.error('Browser errors:',errors,'Recent RPCs:',payloads.slice(-3));throw e;}finally{await browser.close();await new Promise(r=>server.close(r));if(db)await db.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close();});

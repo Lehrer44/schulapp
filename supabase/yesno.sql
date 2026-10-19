@@ -105,13 +105,13 @@ returns setof private.yesno_questions language sql stable security definer set s
  select q.* from private.yesno_questions q where (q.owner_id=auth.uid() or q.owner_id is null)
  and not exists(select 1 from private.yesno_hidden_questions h where h.owner_id=auth.uid() and h.question_id=q.id);
 $$;
-create or replace function public.yesno_question_list()
+create or replace function private.yesno_api_question_list()
 returns jsonb language plpgsql security definer set search_path='' as $$
 begin
  if auth.uid() is null then return jsonb_build_object('ok',false,'error','NOT_AUTHENTICATED');end if;
  return jsonb_build_object('ok',true,'questions',(select coalesce(jsonb_agg(jsonb_build_object('id',id,'question',question,'pack',pack) order by pack,id),'[]') from private.yesno_available_questions()));
 end;$$;
-create or replace function public.yesno_question_save(p_id bigint,p_question text,p_pack text)
+create or replace function private.yesno_api_question_save(p_id bigint,p_question text,p_pack text)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare q private.yesno_questions%rowtype; v_id bigint;
 begin
@@ -129,7 +129,7 @@ begin
  end if;
  return jsonb_build_object('ok',true,'id',v_id);
 end;$$;
-create or replace function public.yesno_question_delete(p_id bigint)
+create or replace function private.yesno_api_question_delete(p_id bigint)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare q private.yesno_questions%rowtype;
 begin
@@ -140,14 +140,14 @@ begin
  else delete from private.yesno_questions where id=p_id and owner_id=auth.uid();end if;
  return jsonb_build_object('ok',true);
 end;$$;
-create or replace function public.yesno_game_list()
+create or replace function private.yesno_api_game_list()
 returns jsonb language plpgsql security definer set search_path='' as $$
 begin
  if auth.uid() is null then return jsonb_build_object('ok',false,'error','NOT_AUTHENTICATED');end if;
  return jsonb_build_object('ok',true,'games',(select coalesce(jsonb_agg(jsonb_build_object('id',id,'name',name,'questions',questions) order by updated_at desc,id),'[]') from private.yesno_games where owner_id=auth.uid()),
  'sessions',(select coalesce(jsonb_agg(jsonb_build_object('id',id,'title',title,'join_code',join_code,'phase',phase) order by created_at desc),'[]') from (select * from private.yesno_sessions where owner_id=auth.uid() and phase in ('lobby','question','result') order by created_at desc limit 20) s));
 end;$$;
-create or replace function public.yesno_game_save(p_id uuid,p_name text,p_question_ids bigint[])
+create or replace function private.yesno_api_game_save(p_id uuid,p_name text,p_question_ids bigint[])
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare old_questions jsonb:='[]';chosen jsonb;v_id uuid;
 begin
@@ -165,7 +165,7 @@ begin
  else update private.yesno_games set name=btrim(p_name),questions=chosen,updated_at=now() where id=p_id and owner_id=auth.uid() returning id into v_id;end if;
  return jsonb_build_object('ok',true,'id',v_id);
 end;$$;
-create or replace function public.yesno_game_delete(p_id uuid)
+create or replace function private.yesno_api_game_delete(p_id uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
 begin
  if auth.uid() is null then return jsonb_build_object('ok',false,'error','NOT_AUTHENTICATED');end if;
@@ -185,7 +185,7 @@ create or replace function private.yesno_token_valid(p_session uuid,p_player uui
 returns boolean language sql stable security definer set search_path='' as $$
  select coalesce(p_token~'^[a-f0-9]{64}$',false) and exists(select 1 from private.yesno_players where id=p_player and session_id=p_session and token_hash=encode(sha256(convert_to(p_token,'UTF8')),'hex'));
 $$;
-create or replace function public.yesno_create(p_request_id uuid,p_game_id uuid,p_rounds integer,p_seconds integer,p_exact integer,p_near integer,p_packs text[] default null)
+create or replace function private.yesno_api_create(p_request_id uuid,p_game_id uuid,p_rounds integer,p_seconds integer,p_exact integer,p_near integer,p_packs text[] default null)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare pool jsonb;chosen jsonb;s private.yesno_sessions%rowtype;v_title text:='Zufälliges Ja/Nein-Spiel';code text;tries integer;
 begin
@@ -212,7 +212,7 @@ begin
  perform private.yesno_touch(s.id);
  return jsonb_build_object('ok',true,'session_id',s.id,'join_code',s.join_code);
 end;$$;
-create or replace function public.yesno_join(p_code text,p_name text,p_token text)
+create or replace function private.yesno_api_join(p_code text,p_name text,p_token text)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare s private.yesno_sessions%rowtype;p private.yesno_players%rowtype;v_name text:=btrim(p_name);v_hash text;
 begin
@@ -230,7 +230,7 @@ begin
  perform private.yesno_touch(s.id);
  return jsonb_build_object('ok',true,'session_id',s.id,'player_id',p.id,'name',p.name,'join_code',s.join_code);
 end;$$;
-create or replace function public.yesno_ready(p_session_id uuid,p_player_id uuid,p_token text,p_ready boolean)
+create or replace function private.yesno_api_ready(p_session_id uuid,p_player_id uuid,p_token text,p_ready boolean)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare phase text;
 begin
@@ -275,17 +275,17 @@ begin
  return jsonb_build_object('ok',true,'session_id',s.id,'title',s.title,'join_code',s.join_code,'phase',s.phase,'round_index',s.round_index,'round_count',jsonb_array_length(s.questions),'seconds',s.seconds,'exact_points',s.exact_points,'near_points',s.near_points,'deadline',s.deadline,'server_now',clock_timestamp(),'revision',s.revision,
  'question',case when s.phase='lobby' then null else s.questions->s.round_index->>'question' end,'player_count',case when s.phase='lobby' then jsonb_array_length(players) else s.player_count end,'players',players,'own_answer',own,'yes_count',v_yes,'no_count',v_no,'results',coalesce(results,'[]'));
 end;$$;
-create or replace function public.yesno_host_state(p_session_id uuid)
+create or replace function private.yesno_api_host_state(p_session_id uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$begin
  if not exists(select 1 from private.yesno_sessions where id=p_session_id and owner_id=auth.uid()) then return jsonb_build_object('ok',false,'error','NOT_OWNER');end if;
  return private.yesno_state(p_session_id,null);
 end;$$;
-create or replace function public.yesno_player_state(p_session_id uuid,p_player_id uuid,p_token text)
+create or replace function private.yesno_api_player_state(p_session_id uuid,p_player_id uuid,p_token text)
 returns jsonb language plpgsql security definer set search_path='' as $$begin
  if not private.yesno_token_valid(p_session_id,p_player_id,p_token) then return jsonb_build_object('ok',false,'error','INVALID_PARTICIPANT_TOKEN');end if;
  return private.yesno_state(p_session_id,p_player_id);
 end;$$;
-create or replace function public.yesno_submit(p_session_id uuid,p_player_id uuid,p_token text,p_round integer,p_answer boolean,p_estimate integer)
+create or replace function private.yesno_api_submit(p_session_id uuid,p_player_id uuid,p_token text,p_round integer,p_answer boolean,p_estimate integer)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare s private.yesno_sessions%rowtype;existing private.yesno_answers%rowtype;
 begin
@@ -304,7 +304,7 @@ begin
  perform private.yesno_touch(s.id);perform private.yesno_settle(s.id);
  return jsonb_build_object('ok',true);
 end;$$;
-create or replace function public.yesno_host_action(p_session_id uuid,p_round integer,p_phase text,p_action text)
+create or replace function private.yesno_api_host_action(p_session_id uuid,p_round integer,p_phase text,p_action text)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare s private.yesno_sessions%rowtype;v_count integer;
 begin
@@ -326,6 +326,62 @@ begin
  perform private.yesno_touch(s.id);return jsonb_build_object('ok',true);
 end;$$;
 
+-- Public wrappers never elevate privileges. Only the checked implementations
+-- in the non-exposed private schema run as the function owner.
+grant usage on schema private to anon,authenticated;
+create or replace function public.yesno_question_list()
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_question_list();
+$$;
+create or replace function public.yesno_question_save(p_id bigint,p_question text,p_pack text)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_question_save(p_id,p_question,p_pack);
+$$;
+create or replace function public.yesno_question_delete(p_id bigint)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_question_delete(p_id);
+$$;
+create or replace function public.yesno_game_list()
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_game_list();
+$$;
+create or replace function public.yesno_game_save(p_id uuid,p_name text,p_question_ids bigint[])
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_game_save(p_id,p_name,p_question_ids);
+$$;
+create or replace function public.yesno_game_delete(p_id uuid)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_game_delete(p_id);
+$$;
+create or replace function public.yesno_create(p_request_id uuid,p_game_id uuid,p_rounds integer,p_seconds integer,p_exact integer,p_near integer,p_packs text[] default null)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_create(p_request_id,p_game_id,p_rounds,p_seconds,p_exact,p_near,p_packs);
+$$;
+create or replace function public.yesno_join(p_code text,p_name text,p_token text)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_join(p_code,p_name,p_token);
+$$;
+create or replace function public.yesno_ready(p_session_id uuid,p_player_id uuid,p_token text,p_ready boolean)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_ready(p_session_id,p_player_id,p_token,p_ready);
+$$;
+create or replace function public.yesno_host_state(p_session_id uuid)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_host_state(p_session_id);
+$$;
+create or replace function public.yesno_player_state(p_session_id uuid,p_player_id uuid,p_token text)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_player_state(p_session_id,p_player_id,p_token);
+$$;
+create or replace function public.yesno_submit(p_session_id uuid,p_player_id uuid,p_token text,p_round integer,p_answer boolean,p_estimate integer)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_submit(p_session_id,p_player_id,p_token,p_round,p_answer,p_estimate);
+$$;
+create or replace function public.yesno_host_action(p_session_id uuid,p_round integer,p_phase text,p_action text)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.yesno_api_host_action(p_session_id,p_round,p_phase,p_action);
+$$;
+
 -- Revoke PostgreSQL's default PUBLIC execute before exposing the narrow APIs.
 do $$declare f record;begin
  for f in select p.oid::regprocedure sig from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and p.proname like 'yesno\_%' escape '\' loop
@@ -334,6 +390,9 @@ do $$declare f record;begin
 end;$$;
 grant execute on function public.yesno_question_list(),public.yesno_question_save(bigint,text,text),public.yesno_question_delete(bigint),public.yesno_game_list(),public.yesno_game_save(uuid,text,bigint[]),public.yesno_game_delete(uuid),public.yesno_create(uuid,uuid,integer,integer,integer,integer,text[]),public.yesno_host_state(uuid),public.yesno_host_action(uuid,integer,text,text) to authenticated;
 grant execute on function public.yesno_join(text,text,text),public.yesno_ready(uuid,uuid,text,boolean),public.yesno_player_state(uuid,uuid,text),public.yesno_submit(uuid,uuid,text,integer,boolean,integer) to anon,authenticated;
+
+grant execute on function private.yesno_api_question_list(),private.yesno_api_question_save(bigint,text,text),private.yesno_api_question_delete(bigint),private.yesno_api_game_list(),private.yesno_api_game_save(uuid,text,bigint[]),private.yesno_api_game_delete(uuid),private.yesno_api_create(uuid,uuid,integer,integer,integer,integer,text[]),private.yesno_api_host_state(uuid),private.yesno_api_host_action(uuid,integer,text,text) to authenticated;
+grant execute on function private.yesno_api_join(text,text,text),private.yesno_api_ready(uuid,uuid,text,boolean),private.yesno_api_player_state(uuid,uuid,text),private.yesno_api_submit(uuid,uuid,text,integer,boolean,integer) to anon,authenticated;
 
 create or replace function public.classroom_resolve_code(p_join_code text,p_kind_hint text default null)
 returns jsonb language plpgsql security definer set search_path='' as $$
