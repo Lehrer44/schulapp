@@ -88,7 +88,7 @@ const server=http.createServer(async(req,res)=>{
   await players[1].locator('[data-answer="yes"]').click();await players[1].locator('[data-estimate="2"]').click();await players[1].locator('#ynAnswerForm [type="submit"]').click();
   await players[0].waitForFunction(()=>document.querySelector('.yn-player.done'));
   assert.equal(await players[0].locator('[data-answer="no"]').getAttribute('aria-pressed'),'true');assert.equal(await players[0].locator('#ynEstimateNumber').inputValue(),'0');
-  await players[0].locator('#ynAnswerForm [type="submit"]').click();
+  await players[0].locator('#ynAnswerForm [type="submit"]').click();await players[0].getByText('✓ Deine Antwort wurde gespeichert',{exact:true}).waitFor();
   await sql('update private.yesno_sessions set deadline=clock_timestamp()-interval \'1 second\' where id='+quote(sid));
   await host.locator('.yn-podium').waitFor();await players[2].locator('.yn-podium').waitFor();assert(await host.getByText('Ohne Abgabe: 1',{exact:true}).isVisible());await screenshot(host,'final-desktop');await screenshot(players[2],'final-mobile');
   assert.equal(await host.locator('[data-action="next"]').count(),0);
