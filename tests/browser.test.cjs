@@ -8,6 +8,9 @@ async function fixtures(){
  window.__calls=[];let signedIn=true;
  const owner='00000000-0000-4000-8000-000000000001';
  const quiz={id:'quiz1',title:'Testquiz',questions:[{id:'q1',type:'shortanswer',text:'Wie viel ist zwei plus zwei?',textFormat:location.pathname.endsWith('/live.html')?{align:'center',ranges:[{start:0,end:8,bold:true}]}:undefined,points:1,answers:['4']},{id:'q2',type:'truefalse',text:'Die Erde ist rund.',points:1,correct:true}]};
+ // A separate test tab receives the exact question saved by the rich-text editor.
+ const formattedQuestion=location.pathname.endsWith('/quiz-studio/live.html')&&sessionStorage.getItem('test.formattedLiveQuestion');
+ if(formattedQuestion)quiz.questions[0]=JSON.parse(formattedQuestion);
  const survey={owner_id:owner,id:'survey-session',title:'Testumfrage',survey_snapshot:[{type:'Pin setzen',question:'Setze einen Punkt auf die Karte.'}],current_slide:0,status:'running',join_code:'AAAAA',updated_at:'2026-10-12T17:00:00Z'};
  const quizSession={id:'quiz-session',owner_id:owner,quiz_title:'Testquiz',quiz_snapshot:quiz,current_index:0,status:'running',join_code:'BBBBB',question_states:[{locked:false,revealed:false},{locked:false,revealed:false}],updated_at:'initial'};
  let surveyAnswer=null,quizAnswer=null;
@@ -121,12 +124,23 @@ async function fixtures(){
   await page.locator('[data-action="back-to-list"]').click();await page.locator('[data-action="open-quiz"]').click();
   assert((await page.locator('.qtext').first().innerHTML()).includes('<strong>'));
   assert.equal(await page.locator('.qtext').first().getAttribute('data-align'),'center');
-  await page.locator('[data-action="play-quiz"]').click();
-  assert.equal(await page.locator('.play-question .quiz-rich-line').count(),3);
-  assert.equal(await page.locator('.play-question u').first().innerText(),'Erste');
-  assert.equal(await page.locator('.play-question .quiz-rich').evaluate(el=>getComputedStyle(el).textAlign),'center');
-  await page.screenshot({path:path.join(outputRoot,'editor-quiz-formatted-preview.png'),fullPage:true});
-  page.once('dialog',dialog=>dialog.accept());await page.locator('[data-action="quit-play"]').click();await page.locator('[data-action="open-quiz"]').click();
+  // Verify the saved formatting on the teacher's live board; there is no preview button.
+  const live=await context.newPage();live.on('pageerror',e=>errors.push(e.message));
+  try{
+   await live.goto(base+'/index.html');
+   await live.evaluate(question=>sessionStorage.setItem('test.formattedLiveQuestion',JSON.stringify(question)),saved);
+   await live.goto(base+'/apps/quiz-studio/live.html?session=quiz-session');
+   await live.locator('.question-text .quiz-rich-line').first().waitFor();
+   for(const width of [1280,390]){
+    await live.setViewportSize({width,height:900});
+    assert.equal(await live.locator('.question-text .quiz-rich-line').count(),3);
+    assert.equal(await live.locator('.question-text u').first().innerText(),'Erste');
+    assert(await live.locator('.question-text strong,.question-text b').count()>0);
+    assert.equal(await live.locator('.question-text .quiz-rich').evaluate(el=>getComputedStyle(el).textAlign),'center');
+    assert(await live.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Formatted live question fits at '+width);
+    await live.screenshot({path:path.join(outputRoot,'live-quiz-formatted-'+(width===1280?'desktop':'mobile')+'.png'),fullPage:true});
+   }
+  }finally{await live.close();}
   // Plain-text paste must not import active HTML or change the grading text.
   await page.locator('[data-action="add-question"][data-type="single"]').click();
   const option=page.locator('[data-field="option-text"]').first();await option.fill('Antwort');
