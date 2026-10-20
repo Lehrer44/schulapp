@@ -31,7 +31,7 @@ server.on('request',async(req,res)=>{
  await host.locator('#bluffLibrary a').click();await host.waitForURL('**/bluff/index.html');
  assert.equal(await host.locator('#gameForm,#category,#sourceUrl,.bluff-banner').count(),0);
  assert.equal(await host.locator('[data-action="edit-question"]').count(),10);
- await host.locator('[data-question-id="1"] [data-action="edit-question"]').click();await host.locator('#questionText').fill('Meine persönliche Startfrage im Browsertest?');await host.locator('#correctAnswer').fill('Persönliche Lösung');await host.locator('#questionForm button[type="submit"]').click();await host.locator('#questionRows').getByText('Meine persönliche Startfrage im Browsertest?',{exact:true}).waitFor();
+ await host.locator('[data-question-id="1"] [data-action="edit-question"]').click();await host.locator('#questionText').fill('Meine persönliche Startfrage im Browsertest?');await host.locator('#correctAnswer').fill('Persönliche Lösung');assert.equal(await host.locator('#correctAnswer').inputValue(),'PERSÖNLICHE LÖSUNG');await host.locator('#questionForm button[type="submit"]').click();await host.locator('#questionRows').getByText('Meine persönliche Startfrage im Browsertest?',{exact:true}).waitFor();
  const personal=JSON.parse(sql("select json_agg(id) from private.bluff_questions where owner_id="+sqlLiteral(teacher))).at(-1);
  await host.locator('[data-question-id="'+personal+'"] [data-action="delete-question"]').click();await host.locator('[data-question-id="'+personal+'"]').waitFor({state:'detached'});
  await host.locator('[data-action="new-question"]').click();await host.locator('#questionText').fill('Was ist die echte Browser-Testantwort?');await host.locator('#correctAnswer').fill('Die geheime Wahrheit');await host.locator('#questionForm button[type="submit"]').click();await host.locator('#questionRows').getByText('Was ist die echte Browser-Testantwort?',{exact:true}).waitFor();
@@ -58,14 +58,22 @@ server.on('request',async(req,res)=>{
  // Anonymous players cannot open the dashboard application list even by URL.
  const anonymousHub=await players[0].context().newPage();await anonymousHub.goto(base+'/index.html');await anonymousHub.getByText('Bitte melde dich mit deinem Lehrkraftkonto an, um die Anwendungen zu öffnen.',{exact:true}).waitFor();assert(await anonymousHub.locator('#teacherApps').isHidden());assert.equal(await anonymousHub.locator('.app-card:visible').count(),0);assert(await anonymousHub.locator('#loginLink').isVisible());await anonymousHub.close();
  await host.locator('[data-action="start"]').click();await players[0].locator('#bluffAnswer').waitFor();assert.equal(await host.locator('[data-action="open_bluff"]').count(),0);assert(await host.locator('[data-action="show_answers"]').isDisabled());
- for(let i=0;i<players.length;i++){await players[i].locator('#bluffAnswer').fill(i<2?'Ein gemeinsamer Bluff':'Eine andere Erfindung');await players[i].locator('#sendBluff').click();await players[i].getByText('✓ Gespeichert: '+(i<2?'Ein gemeinsamer Bluff':'Eine andere Erfindung'),{exact:true}).waitFor();}
- await players[0].reload();await players[0].locator('#bluffAnswer').waitFor();assert.equal(await players[0].locator('#bluffAnswer').inputValue(),'Ein gemeinsamer Bluff');
+ // Typing and paste change the actual value, including umlauts and sharp-S.
+ await players[0].locator('#bluffAnswer').fill('straße, öl & grüße 42!');
+ assert.equal(await players[0].locator('#bluffAnswer').inputValue(),'STRASSE, ÖL & GRÜSSE 42!');
+ await players[0].locator('#bluffAnswer').evaluate(el=>{el.value='klein eingefügt';el.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste'}));});
+ assert.equal(await players[0].locator('#bluffAnswer').inputValue(),'KLEIN EINGEFÜGT');
+ await players[0].locator('#bluffAnswer').evaluate(el=>{el.value='abßcd';el.setSelectionRange(3,3);el.dispatchEvent(new InputEvent('input',{bubbles:true}));});
+ assert.equal(await players[0].locator('#bluffAnswer').inputValue(),'ABSSCD');
+ assert.equal(await players[0].locator('#bluffAnswer').evaluate(el=>el.selectionStart),4);
+ for(let i=0;i<players.length;i++){await players[i].locator('#bluffAnswer').fill(i<2?'Ein gemeinsamer Bluff':'Eine andere Erfindung');await players[i].locator('#sendBluff').click();await players[i].getByText('✓ Gespeichert: '+(i<2?'EIN GEMEINSAMER BLUFF':'EINE ANDERE ERFINDUNG'),{exact:true}).waitFor();}
+ await players[0].reload();await players[0].locator('#bluffAnswer').waitFor();assert.equal(await players[0].locator('#bluffAnswer').inputValue(),'EIN GEMEINSAMER BLUFF');
  assert.equal(await players[0].locator('.bluff-option').count(),0);const own=await players[0].evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_player_state').at(-1).data.data);assert.deepEqual(own.entries,[]);assert.equal(own.correct_answer,null);
  await host.waitForFunction(()=>window.__payloads.filter(p=>p.name==='bluff_host_state').at(-1)?.data.data.players.every(p=>p.submitted));
- const hidden=await host.evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_host_state').at(-1).data.data);assert.deepEqual(hidden.entries,[]);assert.deepEqual(hidden.options,[]);assert.equal(hidden.correct_answer,null);assert.equal(await host.locator('.bluff-option').count(),0);assert.equal(await host.getByText('Ein gemeinsamer Bluff',{exact:true}).count(),0);
+ const hidden=await host.evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_host_state').at(-1).data.data);assert.deepEqual(hidden.entries,[]);assert.deepEqual(hidden.options,[]);assert.equal(hidden.correct_answer,null);assert.equal(await host.locator('.bluff-option').count(),0);assert.equal(await host.getByText('EIN GEMEINSAMER BLUFF',{exact:true}).count(),0);
  await host.screenshot({path:path.join(output,'bluff-hidden-host.png'),fullPage:true});
  await host.locator('[data-action="show_answers"]').click();for(const page of players)await page.locator('.bluff-option').first().waitFor();
- assert.equal(await host.locator('.bluff-option').count(),3);
+ assert.equal(await host.locator('.bluff-option').count(),3);assert((await host.locator('.bluff-option h3').allTextContents()).every(t=>t===t.toUpperCase()));
  for(const page of players){assert.equal(await page.locator('[data-action="vote"]').count(),0);assert.equal(await page.locator('#bluffForm').count(),0);const preview=await page.evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_player_state').at(-1).data.data);assert.equal(preview.phase,'answers');assert(preview.options.every(o=>!('authors' in o)&&!('is_truth' in o)&&!('voters' in o)));}
  const anonymous=await host.evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_host_state').at(-1).data.data);assert(anonymous.options.every(o=>!('authors' in o)&&!('is_truth' in o)&&!('voters' in o)));assert.deepEqual(anonymous.entries,[]);
  await host.screenshot({path:path.join(output,'bluff-anonymous-host.png'),fullPage:true});await players[0].screenshot({path:path.join(output,'bluff-anonymous-mobile.png'),fullPage:true});

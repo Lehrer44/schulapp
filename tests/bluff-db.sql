@@ -13,6 +13,7 @@ create table public.quiz_live_sessions(join_code text,status text);
 \ir ../supabase/bluff_library.sql
 \ir ../supabase/bluff_flow.sql
 \ir ../supabase/bluff_reveal.sql
+\ir ../supabase/bluff_uppercase.sql
 
 create table private.bluff_test_fixture(sid uuid,a uuid,b uuid,c uuid,owner_id uuid);
 -- Full two-round game, secrets, duplicates, scores, identity and stale controls.
@@ -58,7 +59,7 @@ begin
  assert public.bluff_host_action(sid,0,'bluff','show_answers')->>'error'='WAITING_FOR_ANSWERS';
  assert public.bluff_submit(sid,b,repeat('b',64),0,'erfundene  Lösung!')->>'ok'='true';
  assert public.bluff_submit(sid,c,repeat('c',64),0,'Andere Erfindung')->>'ok'='true';
- st:=public.bluff_player_state(sid,a,repeat('a',64));assert jsonb_array_length(st->'entries')=0;assert st->'own_entry'->>'answer'='Erfundene Lösung';assert st->'correct_answer'='null'::jsonb;
+ st:=public.bluff_player_state(sid,a,repeat('a',64));assert jsonb_array_length(st->'entries')=0;assert st->'own_entry'->>'answer'='ERFUNDENE LÖSUNG';assert st->'correct_answer'='null'::jsonb;
  assert jsonb_array_length(public.bluff_host_state(sid)->'entries')=0;assert public.bluff_host_state(sid)->'options'='[]'::jsonb;
  assert public.bluff_host_action(sid,0,'bluff','timer',5)->>'ok'='true';
  update private.bluff_sessions set deadline=clock_timestamp()-interval '1 second' where id=sid;
@@ -170,3 +171,38 @@ do $$declare a uuid:=gen_random_uuid();b uuid:=gen_random_uuid();qid bigint;save
  assert public.bluff_quiz_start(saved)->>'error'='NOT_AUTHENTICATED';
 end;$$;
 select 'PASS: named quiz CRUD, private starter edits/deletions, saved snapshots, random selection and cross-account isolation' as result;
+
+-- Mixed case APIs, Unicode, legacy sessions, length expansion and secret-safe display.
+do $$declare owner_id uuid:=gen_random_uuid();qid bigint;sid uuid;a uuid;b uuid;j jsonb;st jsonb;begin
+ assert private.bluff_upper('Straße, öl & grüße 42!')='STRASSE, ÖL & GRÜSSE 42!';
+ assert private.bluff_upper(U&'gru\0308sse')='GRÜSSE';
+ assert not has_function_privilege('anon','private.bluff_upper(text)','execute');
+ assert not has_function_privilege('authenticated','private.bluff_upper(text)','execute');
+ insert into auth.users(id) values(owner_id);perform set_config('request.jwt.claim.sub',owner_id::text,false);
+ qid:=(public.bluff_question_save(null,'Welche Schreibweise ist die richtige?','Straße','','')->>'id')::bigint;
+ j:=public.bluff_create(1,array[qid]);sid:=(j->>'session_id')::uuid;
+ a:=(public.bluff_join(j->>'join_code','Ada',repeat('a',64))->>'player_id')::uuid;
+ b:=(public.bluff_join(j->>'join_code','Ben',repeat('b',64))->>'player_id')::uuid;
+ assert public.bluff_host_action(sid,0,'lobby','start')->>'ok'='true';
+ assert public.bluff_submit(sid,a,repeat('a',64),0,'strasse')->>'error'='ANSWER_MATCHES_TRUTH';
+ assert public.bluff_submit(sid,a,repeat('a',64),0,'straße')->>'error'='ANSWER_MATCHES_TRUTH';
+ assert public.bluff_submit(sid,a,repeat('a',64),0,'grüße aus köln')->>'ok'='true';
+ assert (select answer='GRÜSSE AUS KÖLN' from private.bluff_entries where session_id=sid and player_id=a);
+ assert public.bluff_submit(sid,a,repeat('a',64),0,repeat('x',179)||'ß')->>'error'='INVALID_ANSWER';
+ assert public.bluff_submit(sid,b,repeat('b',64),0,'grüsse aus köln')->>'ok'='true';
+ -- A pre-migration entry is normalized on read and grouped with the canonical answer.
+ update private.bluff_entries set answer='grüße aus köln' where session_id=sid and player_id=a;
+ st:=public.bluff_player_state(sid,a,repeat('a',64));
+ assert st->'own_entry'->>'answer'='GRÜSSE AUS KÖLN';assert st->'correct_answer'='null'::jsonb;
+ assert public.bluff_host_action(sid,0,'bluff','show_answers')->>'ok'='true';
+ assert (select count(*)=2 from private.bluff_options where session_id=sid);
+ -- Existing option IDs stay usable; lowercase legacy option values still render uppercase.
+ update private.bluff_options set answer='Straße' where session_id=sid and is_truth;
+ st:=public.bluff_player_state(sid,a,repeat('a',64));
+ assert (select bool_and(o->>'answer' in ('STRASSE','GRÜSSE AUS KÖLN') and not(o?'is_truth') and not(o?'authors')) from jsonb_array_elements(st->'options') o);
+ assert st->'correct_answer'='null'::jsonb;
+ assert public.bluff_host_action(sid,0,'answers','start_vote')->>'ok'='true';
+ assert public.bluff_host_action(sid,0,'vote','reveal')->>'ok'='true';
+ assert public.bluff_host_state(sid)->>'correct_answer'='STRASSE';
+end;$$;
+select 'PASS: uppercase API, German Unicode, legacy display, grouped bluffs, length and secret boundaries' as result;
