@@ -8,7 +8,7 @@
  let draftRound=null,draftAnswer=null,draftEstimate=null,questions=[],editing=null;
  function say(text,success=false){notice.textContent=text;notice.classList.toggle('yn-success',success);}
  function header(title,actions=''){return '<header class="yn-heading"><div><span class="yn-tag">JA/NEIN-SCHÄTZSPIEL</span><h1>'+esc(title)+'</h1></div><div class="yn-actions">'+actions+'</div></header>';}
- function rules(){return '<p class="muted">Die eigene Antwort bleibt privat. Schätze die Zahl aller Ja-Stimmen inklusive deiner eigenen.</p><ul class="yn-rules"><li>Genau richtig: '+(state?.exact_points??3)+' Punkte.</li><li>Um eins daneben: '+(state?.near_points??1)+' Punkte.</li><li>Sonst oder ohne Abgabe: 0 Punkte.</li></ul>';}
+ function rules(){return '<p class="muted">'+(state?.reveal_answers?'Die eigenen Antworten werden bei der Auswertung aufgedeckt.':'Die eigene Antwort bleibt privat.')+' Schätze die Zahl aller Ja-Stimmen inklusive deiner eigenen.</p><ul class="yn-rules"><li>Genau richtig: '+(state?.exact_points??3)+' Punkte.</li><li>Bis zu '+(state?.tolerance??1)+' Personen daneben: '+(state?.near_points??1)+' Punkte.</li><li>Sonst oder ohne Abgabe: 0 Punkte.</li></ul>';}
  async function requireTeacher(){
   const {data,error:failure}=await client.auth.getUser();
   if(failure||!data?.user){location.href='../../../login.html?next=apps%2Fquiz-studio%2Findex.html';return false;}return true;
@@ -56,7 +56,10 @@
  function joinLink(){const u=new URL('../../../join.html',location.href);u.searchParams.set('kind','yesno');u.searchParams.set('code',state.join_code);return u.href;}
  function participation(){
   const url=joinLink(),d=dialog('Teilnahme','<div class="yn-code">'+esc(state.join_code)+'</div><div class="yn-qr"></div><a class="yn-join-link" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">'+esc(url)+'</a>');
-  const qr=d.querySelector('.yn-qr');qr.setAttribute('aria-label','QR-Code zum Beitreten');qr.setAttribute('role','img');
+  drawQr(d.querySelector('.yn-qr'),url);
+ }
+ function drawQr(qr,url){
+  qr.setAttribute('aria-label','QR-Code zum Beitreten');qr.setAttribute('role','img');
   if(typeof window.QRCode==='function'){new QRCode(qr,{text:url,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});qr.removeAttribute('title');}
  }
  function answerForm(){
@@ -68,23 +71,23 @@
  }
  function results(){
   const n=state.player_count,yes=state.yes_count,no=state.no_count,missing=n-yes-no;
-  return '<div class="yn-result-hero yn-pop"><span class="yn-total">'+yes+'</span><strong>von '+n+' sagen JA</strong><div class="yn-distribution yn-bar-enter" role="img" aria-label="'+yes+' Ja, '+no+' Nein, '+missing+' ohne Abgabe"><span class="yes" style="width:'+100*yes/n+'%"></span><span class="no" style="width:'+100*no/n+'%"></span><span class="missing" style="width:'+100*missing/n+'%"></span></div><div class="yn-legend"><span>● JA: '+yes+'</span><span>● NEIN: '+no+'</span>'+(missing?'<span>Ohne Abgabe: '+missing+'</span>':'')+'</div></div><h2>Die Schätzungen</h2>'+state.results.map(r=>'<div class="yn-result-row '+(r.exact?'exact yn-pop':'')+'"><strong>'+esc(r.name)+(r.exact?' · Volltreffer!':'')+'</strong><span>'+(r.estimate===null?'Keine Abgabe':'Tipp: '+r.estimate)+'</span><span class="yn-points">+'+r.points+'</span></div>').join('')+'<p class="muted">Persönliche Ja/Nein-Antworten werden nicht veröffentlicht.</p>';
+  return '<div class="yn-result-hero yn-pop"><span class="yn-total">'+yes+'</span><strong>von '+n+' sagen JA</strong><div class="yn-distribution yn-bar-enter" role="img" aria-label="'+yes+' Ja, '+no+' Nein, '+missing+' ohne Abgabe"><span class="yes" style="width:'+100*yes/n+'%"></span><span class="no" style="width:'+100*no/n+'%"></span><span class="missing" style="width:'+100*missing/n+'%"></span></div><div class="yn-legend"><span>● JA: '+yes+'</span><span>● NEIN: '+no+'</span>'+(missing?'<span>Ohne Abgabe: '+missing+'</span>':'')+'</div></div><h2>Die Schätzungen</h2>'+state.results.map(r=>'<div class="yn-result-row '+(r.exact?'exact yn-pop':'')+'"><strong>'+esc(r.name)+(r.exact?' · Volltreffer!':'')+'</strong><span>'+(r.estimate===null?'Keine Abgabe':'Tipp: '+r.estimate+(state.reveal_answers?' · Antwort: '+(r.answer?'JA':'NEIN'):''))+'</span><span class="yn-points">+'+r.points+'</span></div>').join('')+(state.reveal_answers?'':'<p class="muted">Persönliche Ja/Nein-Antworten werden nicht veröffentlicht.</p>');
  }
  function renderGame(){
   if(draftRound!==state.round_index){draftRound=state.round_index;draftAnswer=null;draftEstimate=null;}
   if(state.own_answer){draftAnswer=state.own_answer.answer;draftEstimate=state.own_answer.estimate;}
-  const phase=state.phase,terminal=['finished','ended'].includes(phase),me=state.players.find(p=>p.id===credentials?.player),actions=isHost?'<button data-action="participation">Teilnahme</button>'+(!terminal?'<button data-action="end">Spiel beenden</button>':'<a class="btn" href="../index.html">Zum Quiz Studio</a>'):'';
+  const phase=state.phase,terminal=['finished','ended'].includes(phase),me=state.players.find(p=>p.id===credentials?.player),actions=isHost?(phase==='lobby'?'<button data-action="participation">Teilnahme</button>':'')+(!terminal?'<button data-action="end">Spiel beenden</button>':'<a class="btn" href="../index.html">Zum Quiz Studio</a>'):'';
   let content='';
   if(phase==='lobby'){
    const allReady=state.players.length>=2&&state.players.every(p=>p.ready);
-   content='<h2>'+(isHost?'Gemeinsam starten':'Du bist dabei, '+esc(credentials?.name)+'!')+'</h2>'+(isHost?'<div class="yn-code">'+esc(state.join_code)+'</div>':'')+'<p>'+state.round_count+' Runden · '+state.seconds+' Sekunden pro Frage · '+state.players.length+' Personen</p>'+(isHost?participants():'')+
-    (isHost?'<p class="muted">Alle bereit? Dann geht es los. Die Gruppengröße bleibt während des Spiels fest.</p><button class="yn-primary" data-action="start" '+(!allReady?'disabled':'')+'>Spiel starten</button>':'<p class="yn-tag" role="status">'+(me?.ready?'✓ Du bist bereit. Warte auf den Spielstart.':'Deine Teilnahme wird vorbereitet …')+'</p>')+rules();
+   content='<h2>'+(isHost?'Gemeinsam starten':'Du bist dabei, '+esc(credentials?.name)+'!')+'</h2>'+(isHost?'<div class="yn-lobby-join"><div class="yn-code">'+esc(state.join_code)+'</div><div class="yn-qr" data-lobby-qr></div></div>':'')+'<p>'+state.round_count+' Runden · '+state.seconds+' Sekunden pro Frage · '+state.players.length+' Personen</p>'+(isHost?participants():'')+
+    (isHost?'<button class="yn-primary" data-action="start" '+(!allReady?'disabled':'')+'>Spiel starten</button>':'<p class="yn-tag" role="status">'+(me?.ready?'✓ Du bist bereit. Warte auf den Spielstart.':'Deine Teilnahme wird vorbereitet …')+'</p>')+rules();
   }else if(phase==='ended'){
    content='<h2>Spiel beendet</h2><p>Die bereits vergebenen Punkte bleiben erhalten. Eine abgebrochene Runde wird nicht gewertet.</p>';
   }else{
    const roundLabel='Runde '+(state.round_index+1)+'/'+state.round_count;
    content='<div class="yn-heading"><span class="yn-tag">'+roundLabel+'</span>'+(phase==='question'?'<span class="yn-clock" id="ynCountdown" role="timer" aria-label="Verbleibende Zeit"></span>':'<span class="yn-tag">Auswertung</span>')+'</div><h2 class="yn-question">'+esc(state.question)+'</h2>';
-   if(phase==='question')content+=(isHost?participants():'')+(isHost?'<p class="muted">Die Antworten und Schätzungen bleiben bis zur Auswertung geheim. Die Runde endet automatisch nach Ablauf der Zeit oder sobald alle abgegeben haben.</p>':answerForm());
+   if(phase==='question')content+=(isHost?participants():answerForm());
    else{
     if(phase==='finished'){
      const top=state.players[0]?.score??0,winners=state.players.filter(p=>p.score===top);
@@ -97,6 +100,7 @@
   }
   const showScores=isHost||['result','finished','ended'].includes(phase);
   app.innerHTML=header(state.title,actions)+'<div class="yn-grid'+(showScores?'':' yn-solo')+'"><section class="panel">'+content+'</section>'+(showScores?'<aside>'+scoreboard()+'</aside>':'')+'</div>';
+  if(isHost&&phase==='lobby')drawQr(app.querySelector('[data-lobby-qr]'),joinLink());
   app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));bindAnswers();updateClock();
  }
  function bindAnswers(){
