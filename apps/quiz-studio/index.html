@@ -708,14 +708,8 @@ function quizCard(q){
       <div class="muted">${q.questions.length} ${q.questions.length === 1 ? 'Frage' : 'Fragen'} · ${fmt(pts)} Punkte</div>
     </div>
     <div class="card-actions">
-      <div class="order-actions" aria-label="Reihenfolge ändern">
-        <button class="order-button" data-action="quiz-up" data-id="${q.id}" aria-label="Quiz nach oben verschieben" title="Nach oben" ${index === 0 ? 'disabled' : ''}>↑</button>
-        <button class="order-button" data-action="quiz-down" data-id="${q.id}" aria-label="Quiz nach unten verschieben" title="Nach unten" ${index === db.quizzes.length - 1 ? 'disabled' : ''}>↓</button>
-      </div>
-      <button class="btn primary small" data-action="play-quiz" data-id="${q.id}">▶ Vorschau</button>
       <button class="studio-primary" data-action="live-quiz" data-id="${q.id}">Spiel starten</button>
       <button class="icon-btn" data-action="open-quiz" data-id="${q.id}" title="Bearbeiten" aria-label="Quiz bearbeiten">✎</button>
-      <button class="icon-btn" data-action="dup-quiz" data-id="${q.id}" title="Duplizieren">⧉</button>
       <button class="icon-btn danger" data-action="del-quiz" data-id="${q.id}" title="Löschen" aria-label="Quiz löschen">×</button>
     </div>
   </div>`;
@@ -733,7 +727,6 @@ function viewEditor(){
       <button class="btn secondary" data-action="back-to-list">← Meine Quizze</button>
       <button class="btn secondary" data-action="export-quiz" data-id="${q.id}">⭳ Export</button>
       <button class="studio-primary" data-action="retry-cloud-save" id="retryCloudSave">Erneut speichern</button>
-      <button class="btn" data-action="play-quiz" data-id="${q.id}">▶ Spielen</button>
     </div>
   </header>
 
