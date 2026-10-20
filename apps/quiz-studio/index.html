@@ -123,16 +123,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 
 /* Unified headers and compact game controls */
-#classicLibrary>.library-heading,#bluffLibrary>.library-heading,#yesnoLibrary>.library-heading{display:grid;grid-template-columns:minmax(0,1fr) 110px minmax(0,auto);align-items:center}
+#classicLibrary>.library-heading,#bluffLibrary>.library-heading,#yesnoLibrary>.library-heading{display:grid;grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr);align-items:center;gap:12px}
 #classicLibrary>.library-heading .library-count,#bluffLibrary>.library-heading .library-count,#yesnoLibrary>.library-heading .library-count{width:110px;text-align:center;box-sizing:border-box;justify-self:center}
 #classicLibrary>.library-heading .studio-actions,#bluffLibrary>.library-heading .studio-actions,#yesnoLibrary>.library-heading .studio-actions{justify-self:end}
 #classicLibrary .qzcard,#bluffLibrary .qzcard,#yesnoLibrary .qzcard{padding:9px 12px}
 #classicLibrary .qzcard .card-actions,#bluffLibrary .qzcard .card-actions,#yesnoLibrary .qzcard .card-actions{gap:6px;flex-wrap:nowrap}
 #classicLibrary .qzcard .studio-primary,#bluffLibrary .qzcard .studio-primary,#yesnoLibrary .qzcard .studio-primary{padding:7px 11px;min-height:34px;font-size:.86rem}
 #classicLibrary .qzcard .icon-btn,#bluffLibrary .qzcard .icon-btn,#yesnoLibrary .qzcard .icon-btn{width:34px;height:34px;min-height:34px;padding:0;font-size:1.1rem}
-@media(max-width:900px){#classicLibrary>.library-heading,#bluffLibrary>.library-heading,#yesnoLibrary>.library-heading{grid-template-columns:minmax(0,1fr) 110px}#classicLibrary>.library-heading .studio-actions,#bluffLibrary>.library-heading .studio-actions,#yesnoLibrary>.library-heading .studio-actions{grid-column:1/-1;justify-self:start}}
+@media(max-width:700px){#classicLibrary>.library-heading,#bluffLibrary>.library-heading,#yesnoLibrary>.library-heading{grid-template-columns:minmax(0,1fr) 110px}#classicLibrary>.library-heading .studio-actions,#bluffLibrary>.library-heading .studio-actions,#yesnoLibrary>.library-heading .studio-actions{grid-column:1/-1;justify-self:start}}
 @media(max-width:460px){#classicLibrary .qzcard .card-actions,#bluffLibrary .qzcard .card-actions,#yesnoLibrary .qzcard .card-actions{flex-wrap:wrap}}
-/* ---------- Quiz cards ---------- */
+#classicLibrary>.library-heading h2,#bluffLibrary>.library-heading h2,#yesnoLibrary>.library-heading h2{margin:0;font-size:1.32rem}
+#classicLibrary>.library-heading .studio-actions,#bluffLibrary>.library-heading .studio-actions,#yesnoLibrary>.library-heading .studio-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#classicLibrary>.library-heading .studio-add,#bluffLibrary>.library-heading .studio-add,#yesnoLibrary>.library-heading .studio-add{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;min-height:40px;padding:0;font-size:1.5rem;line-height:1;font-weight:600}
+#classicLibrary .qzcard .studio-primary,#bluffLibrary .qzcard .studio-primary,#yesnoLibrary .qzcard .studio-primary{min-height:34px;padding:7px 11px;font-size:.86rem;line-height:1.25;border-radius:9px}
+ /* ---------- Quiz cards ---------- */
 .grid{display:flex;flex-direction:column;gap:7px}
 .qzcard{
   min-width:0;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;
@@ -663,7 +667,7 @@ function viewList(){
       <div class="studio-actions">
         <button type="button" data-action="import">Importieren</button>
         <button type="button" data-action="export-all">Exportieren</button>
-        <button class="studio-primary" type="button" data-action="new-quiz">＋ Neues Quiz</button>
+        <button class="studio-primary studio-add" type="button" data-action="new-quiz" title="Neues Quiz" aria-label="Neues Quiz">+</button>
       </div>
     </div>
     ${ quizzes.length === 0
@@ -679,7 +683,7 @@ function viewList(){
       <div class="studio-actions">
         <button data-bluff-action="random">Zufälliges Spiel</button>
         <a class="btn" href="bluff/index.html">Fragenkatalog</a>
-        <button class="studio-primary" data-bluff-action="new">+ Neues Bluff-Quiz</button>
+        <button class="studio-primary studio-add" data-bluff-action="new" title="Neues Bluff-Quiz" aria-label="Neues Bluff-Quiz">+</button>
       </div>
     </div>
     <div data-bluff-list></div><p data-bluff-status role="status"></p>
@@ -690,10 +694,9 @@ function viewList(){
       <div class="studio-actions">
         <button data-yn-action="random">Zufälliges Spiel</button>
         <a class="btn" href="yesno/index.html">Fragenkatalog</a>
-        <button class="studio-primary" data-yn-action="new">+ Neues Ja/Nein-Spiel</button>
+        <button class="studio-primary studio-add" data-yn-action="new" title="Neues Ja/Nein-Spiel" aria-label="Neues Ja/Nein-Spiel">+</button>
       </div>
     </div>
-    <p class="muted">Antworte geheim und schätze, wie viele in der Gruppe Ja sagen. Volltreffer sammeln Punkte!</p>
     <div data-yn-list></div><p data-yn-status role="status"></p>
   </section>
   `;
