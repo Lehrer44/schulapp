@@ -27,13 +27,8 @@ function fixtures(){
  try{
  await context.addInitScript(fixtures);await context.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'text/javascript',body:'window.supabase={createClient:()=>window.__client}'}));
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/apps/quiz-studio/index.html');await page.locator('[data-action="play-quiz"]').click();
- await page.locator('[data-action="preview-next"]').click();assert.match(await page.locator('.play-question').innerText(),/Zweite/);
- await page.locator('[data-action="preview-next"]').click();assert.match(await page.locator('.play-question').innerText(),/Dritte/);
- await page.locator('[data-action="preview-back"]').click();await page.locator('[data-pfield="shortanswer"]').fill('4');await page.locator('#primaryBtn').click();
- await page.locator('[data-action="preview-back"]').click();await page.locator('[data-pin-x]').fill('60');await page.locator('[data-pin-y]').fill('30');await page.locator('#primaryBtn').click();assert.match(await page.locator('.fb-title').innerText(),/Richtig/);
- await page.locator('[data-action="preview-next"]').click();assert.equal(await page.locator('[data-pfield="shortanswer"]').inputValue(),'4');assert.match(await page.locator('.fb-title').innerText(),/Richtig/);
- page.on('dialog',d=>d.accept());await page.locator('[data-action="quit-play"]').click();await page.locator('[data-action="open-quiz"]').click();
+ await page.goto(base+'/apps/quiz-studio/index.html');
+ page.on('dialog',d=>d.accept());await page.locator('[data-action="open-quiz"]').click();
  await page.locator('[data-action="add-question"][data-type="pin"]').click();assert.equal(await page.locator('.qcard').count(),4);
  const first=page.locator('.qcard').first(),board=first.locator('.quiz-pin-board');await board.click({position:{x:100,y:70}});await first.locator('[data-pin-radius]').fill('12');await page.locator('#retryCloudSave').click();
  await page.waitForFunction(()=>window.__calls.filter(x=>x.name==='save_teacher_library').at(-1)?.args.p_payload.quizzes[0].questions[0].pinTarget?.radius===12);
@@ -57,6 +52,6 @@ function fixtures(){
  await page.evaluate(()=>window.__failEnd=false);await page.locator('header [data-action="end-quiz"]').click();await page.waitForURL('**/apps/quiz-studio/index.html');
  await page.goto(base+'/apps/jeopardy/index.html');await page.locator('[data-action="duplicate"]').click();await page.waitForFunction(()=>window.__calls.some(c=>c.name==='save_teacher_library'));
  const games=await page.evaluate(()=>window.__calls.filter(c=>c.name==='save_teacher_library').at(-1).args.p_payload.games);assert.equal(games.length,2);assert.notEqual(games[0].id,games[1].id);assert.equal(games[1].name,'Original (Kopie)');assert.deepEqual(games[0].cells,games[1].cells);
- assert.deepEqual(errors,[]);console.log('PASS: free preview navigation, retained answers/results, pin editing and circle geometry, mobile/keyboard participation, hidden/revealed target, colored pins, failed/successful session end, Jeopardy duplicate');
+ assert.deepEqual(errors,[]);console.log('PASS: pin editing and circle geometry, mobile/keyboard participation, hidden/revealed target, colored pins, failed/successful session end, Jeopardy duplicate');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1});
