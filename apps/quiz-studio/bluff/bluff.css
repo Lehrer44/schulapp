@@ -16,8 +16,8 @@ body[data-studio="quiz"][data-dashboard-view="bluff"] button.bluff-primary{backg
 @media(max-width:520px){.bluff-option.revealed{grid-template-columns:minmax(0,1fr) minmax(95px,.8fr);gap:12px;padding:14px}.bluff-option .bluff-voters{padding-left:12px}.bluff-voter{font-size:18px;padding:6px 8px}.bluff-authors{font-size:18px}}
 
 /* The board keeps the standings on the right, including in the lobby. */
-body[data-bluff-mode="host"] .bluff-host-main{display:flex;flex-direction:column;min-height:min(620px,calc(100dvh - 220px))}
-body[data-bluff-mode="host"] .bluff-controls{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-top:auto;padding-top:24px}
+body[data-bluff-mode="host"] .bluff-host-main{display:flex;flex-direction:column;min-height:0}
+body[data-bluff-mode="host"] .bluff-controls{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-top:0;padding-top:16px}
 body[data-bluff-mode="host"] .bluff-controls .bluff-actions{margin:0}
 body[data-bluff-mode="host"] .bluff-timer-area{display:flex;flex-direction:column;align-items:flex-end;gap:8px;margin-left:auto;max-width:100%}
 body[data-bluff-mode="host"] .bluff-counter{margin:0;text-align:right}
@@ -27,6 +27,12 @@ body[data-bluff-mode="host"] .bluff-timer select{min-height:44px}
 body[data-bluff-mode="host"] #app .bluff-clock-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:0 0 44px;padding:0}
 .bluff-clock-button svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .bluff-score-name{display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere}
-body[data-bluff-mode="host"] .bluff-score.has-answer{background:#e5f1e8;border-color:#8fbf9c}
+body[data-bluff-mode="host"] .bluff-score:is(.has-answer,.has-vote){background:#e5f1e8;border-color:#8fbf9c}
 .bluff-answer-mark{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#386449;color:#fff;font-size:15px;line-height:1}
-@media(max-width:850px){body[data-bluff-mode="host"] .bluff-host-main{min-height:320px}}
+body[data-bluff-mode="host"] .bluff-host-main .bluff-question{margin:16px 0 12px}
+body[data-bluff-mode="host"] .bluff-host-main .bluff-status{margin:0}
+/* Player cards follow the game flow; standings grow with every participant. */
+body[data-bluff-mode="player"] .bluff-player-grid{grid-template-columns:minmax(0,1fr)}
+body[data-bluff-mode="player"] .bluff-player-standings{position:static;max-height:none;overflow:visible}
+body[data-bluff-mode="player"] .bluff-player-standings>.panel{max-height:none;overflow:visible}
+body[data-bluff-mode="player"] #bluffForm #sendBluff{margin-top:16px}

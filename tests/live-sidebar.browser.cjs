@@ -8,7 +8,7 @@ const cases=[
  ['buzzer','apps/quiz-studio/live.html','layout','main-col','side-col','panel ranking-panel'],
  ['classic-student','apps/quiz-studio/student.html','layout','main','side','panel'],
  ['bluff','apps/quiz-studio/bluff/live.html','bluff-grid','panel','bluff-stack','panel'],
- ['bluff-student','apps/quiz-studio/bluff/student.html','bluff-grid','panel','bluff-stack','panel'],
+ ['bluff-student','apps/quiz-studio/bluff/student.html','bluff-grid bluff-player-grid','panel bluff-player-main','bluff-stack bluff-player-standings','panel'],
  ['yesno','apps/quiz-studio/yesno/live.html','yn-grid','panel','','panel'],
  ['yesno-student','apps/quiz-studio/yesno/student.html','yn-grid','panel','','panel'],
  ['survey','apps/umfrage/live.html','session','main','participants','']
@@ -19,8 +19,26 @@ const cases=[
   for(const count of [3,80]){
    const rows=Array.from({length:count},(_,i)=>'<div style="padding:12px;border-bottom:1px solid #ccc">Person '+(i+1)+'</div>').join('');
    const ranking=card?'<section class="'+card+'"><h2>Punktestand</h2>'+rows+'</section>':'<h2>Teilnehmer</h2><div class="participantList">'+rows+'</div>';
-   const extra=['bluff','bluff-student','classic-student','speed','buzzer'].includes(name)?'<section class="panel"><h2>Spielstatus</h2><p>Weitere Informationen</p></section>':'';
-   await page.setContent('<html><head><style>'+css+'</style></head><body '+body+'><div id="app" class="wrap yn-main"><header style="height:180px">Spiel</header><div class="'+grid+'"><section class="'+main+'" style="min-height:2400px">Frage</section><aside class="'+side+' live-sidebar" tabindex="0">'+ranking+extra+'</aside></div></div><footer style="height:200px"></footer></body></html>');
+   const extra=['bluff','classic-student','speed','buzzer'].includes(name)?'<section class="panel"><h2>Spielstatus</h2><p>Weitere Informationen</p></section>':'';
+   await page.setContent('<html><head><style>'+css+'</style></head><body '+body+'><div id="app" class="wrap yn-main"><header style="height:180px">Spiel</header><div class="'+grid+'"><section class="'+main+'" style="min-height:2400px">Frage</section><aside class="'+side+(name==='bluff-student'?'':' live-sidebar')+'" tabindex="0">'+ranking+extra+'</aside></div></div><footer style="height:200px"></footer></body></html>');
+
+   if(name==='bluff-student'){
+    const aside=page.locator('.bluff-player-standings'),card=aside.locator('section').first();
+    assert.equal(await aside.evaluate(el=>getComputedStyle(el).position),'static','Player list follows page scrolling');
+    assert(await card.evaluate(el=>el.scrollHeight<=el.clientHeight+1),'All player names fit naturally at '+width);
+    const order=await page.evaluate(()=>{
+     const question=document.querySelector('.bluff-player-main').getBoundingClientRect(),list=document.querySelector('.bluff-player-standings').getBoundingClientRect();
+     return list.top>=question.bottom;
+    });
+    assert(order,'Active player card comes before standings');
+    if(count===80){
+     await card.locator('div').last().scrollIntoViewIfNeeded();
+     assert(await card.locator('div').last().isVisible(),'Last of 80 names is reachable by scrolling the page');
+     assert.equal(await card.evaluate(el=>el.scrollTop),0,'No scrolling within the ranking card');
+    }
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Player list fits viewport');
+    continue;
+   }
    const aside=page.locator('.live-sidebar');await aside.evaluate(el=>scrollTo(0,el.getBoundingClientRect().top+scrollY+120));
    const box=await aside.boundingBox();assert(Math.abs(box.y-16)<2,name+' '+width+' sticky top: '+box.y);assert(box.height<=690,name+' sidebar fits viewport');
    const target=card?aside.locator('section').first():aside;
