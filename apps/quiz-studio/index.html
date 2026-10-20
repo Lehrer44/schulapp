@@ -1222,16 +1222,6 @@ document.addEventListener('click', async (e)=>{
       if(q){ state.draft = q; state.view = 'editor'; render(); }
       break;
     }
-    case 'quiz-up':
-    case 'quiz-down': {
-      const idx = db.quizzes.findIndex(x=>x.id === id);
-      if(idx >= 0 && moveInArray(db.quizzes, idx, action === 'quiz-up' ? -1 : 1)){
-        save();
-        render();
-        toast('Reihenfolge geändert');
-      }
-      break;
-    }
     case 'remove-question-media': {
       const q = findQ();
       if(q){
@@ -1249,27 +1239,6 @@ document.addEventListener('click', async (e)=>{
       startingLiveQuiz=true;el.disabled=true;
       try{if(await ensureCloudSaved())location.href='live.html?quiz='+encodeURIComponent(id);}
       finally{startingLiveQuiz=false;el.disabled=false;}
-      break;
-    }
-    case 'play-quiz': {
-      startPlay(id);
-      break;
-    }
-    case 'dup-quiz': {
-      const q = db.quizzes.find(x=>x.id === id);
-      if(!q) break;
-      const copy = deepCopy(q);
-      copy.id = uid();
-      copy.title = q.title + ' (Kopie)';
-      copy.questions.forEach(question=>{
-        question.id = uid();
-        if(question.options) question.options.forEach(o=>o.id = uid());
-        if(question.items)   question.items.forEach(i=>i.id = uid());
-      });
-      const idx = db.quizzes.findIndex(x=>x.id === id);
-      db.quizzes.splice(idx + 1, 0, copy);
-      save(); render();
-      toast('Quiz dupliziert');
       break;
     }
     case 'del-quiz': {
