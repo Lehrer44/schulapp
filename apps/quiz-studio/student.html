@@ -19,6 +19,7 @@
 <script src="pin.js"></script>
 <link rel="stylesheet" href="pin.css">
 <link rel="stylesheet" href="play-modes.css">
+<link rel="stylesheet" href="../../shared/live-sidebar.css">
 </head>
 <body>
 <div class="wrap">
@@ -134,7 +135,7 @@ function render(){
   main='<div class="panel"><div class="question-bar"><span>Frage '+(idx+1)+' von '+s.question_count+'</span><span>'+esc(q.points||0)+' Punkte</span>'+timer+'</div><h1>'+ (q.type==='pin'?(q.text?QuizRichText.render(q):'Setze deinen Pin auf die gesuchte Stelle.'):q.type==='ranking'?'Bringe die Elemente in die richtige Reihenfolge.':q.type==='truefalse'?'Wahr oder falsch?':q.type==='shortanswer'?'Trage deine Antwort ein.':'Wähle deine Antwort'+(q.type==='multiple'?'(n)':'')+'.')+'</h1>'+inputChoices(q,idx,locked,!!s.revealed,answer)+result+'<div class="row" style="margin-top:15px"><button id="submitAnswer" '+(locked||saveBusy?'disabled':'')+'>Antwort abgeben</button><span class="muted" style="font-size:.82rem">'+(s.round_open===false?'Warte auf die Freigabe.':s.revealed?'Antwortphase abgeschlossen.':mode==='speed'&&own?'Deine erste Abgabe zählt.':s.locked?'Antwortphase gesperrt.':own?'Du kannst deine Antwort noch ändern.':'Deine Antwort bleibt bis zur Abgabe auf diesem Gerät.')+'</span></div></div>';
   }
  }
- app.innerHTML='<div class="layout"><div class="main">'+main+'</div><aside class="side"><div class="panel"><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2><div class="muted" style="font-size:.82rem;margin-bottom:11px">Die Punkte werden erst nach der Lösungsanzeige aktualisiert.</div>'+renderRanking(s.leaderboard||[])+'</div><div class="panel"><h2>Dein Status</h2><div class="row"><span class="status '+(s.own_response?'green':'')+'">'+(s.own_response?'Antwort gespeichert':'Noch keine Antwort')+'</span></div><p class="muted" style="font-size:.86rem;margin-bottom:0">Teilnahmecode: <strong>'+esc(joinCode)+'</strong></p></div></aside></div>';
+ app.innerHTML='<div class="layout"><div class="main">'+main+'</div><aside class="side live-sidebar" tabindex="0" aria-label="Punktestand und dein Status"><div class="panel"><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2><div class="muted" style="font-size:.82rem;margin-bottom:11px">Die Punkte werden erst nach der Lösungsanzeige aktualisiert.</div>'+renderRanking(s.leaderboard||[])+'</div><div class="panel"><h2>Dein Status</h2><div class="row"><span class="status '+(s.own_response?'green':'')+'">'+(s.own_response?'Antwort gespeichert':'Noch keine Antwort')+'</span></div><p class="muted" style="font-size:.86rem;margin-bottom:0">Teilnahmecode: <strong>'+esc(joinCode)+'</strong></p></div></aside></div>';
  bindAnswerInputs(q,idx);
  const buzz=document.getElementById('buzzButton');if(buzz)buzz.onclick=submitBuzz;
  const submit=document.getElementById('submitAnswer');if(submit)submit.onclick=submitAnswer;
@@ -214,6 +215,7 @@ app.addEventListener('click',async e=>{
 </script>
 </body>
 </html>
+
 
 
 

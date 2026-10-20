@@ -71,7 +71,7 @@
  }
  function results(){
   const n=state.player_count,yes=state.yes_count,no=state.no_count,missing=n-yes-no;
-  return '<div class="yn-result-hero yn-pop"><span class="yn-total">'+yes+'</span><strong>von '+n+' sagen JA</strong><div class="yn-distribution yn-bar-enter" role="img" aria-label="'+yes+' Ja, '+no+' Nein, '+missing+' ohne Abgabe"><span class="yes" style="width:'+100*yes/n+'%"></span><span class="no" style="width:'+100*no/n+'%"></span><span class="missing" style="width:'+100*missing/n+'%"></span></div><div class="yn-legend"><span>● JA: '+yes+'</span><span>● NEIN: '+no+'</span>'+(missing?'<span>Ohne Abgabe: '+missing+'</span>':'')+'</div></div><h2>Die Schätzungen</h2>'+state.results.map(r=>'<div class="yn-result-row '+(r.exact?'exact yn-pop':'')+'"><strong>'+esc(r.name)+(r.exact?' · Volltreffer!':'')+'</strong><span>'+(r.estimate===null?'Keine Abgabe':'Tipp: '+r.estimate+(state.reveal_answers?' · Antwort: '+(r.answer?'JA':'NEIN'):''))+'</span><span class="yn-points">+'+r.points+'</span></div>').join('')+(state.reveal_answers?'':'<p class="muted">Persönliche Ja/Nein-Antworten werden nicht veröffentlicht.</p>');
+  return '<div class="yn-result-hero yn-pop"><span class="yn-total">'+yes+'</span><strong>von '+n+' sagen JA</strong><div class="yn-distribution yn-bar-enter" role="img" aria-label="'+yes+' Ja, '+no+' Nein, '+missing+' ohne Abgabe"><span class="yes" style="width:'+100*yes/n+'%"></span><span class="no" style="width:'+100*no/n+'%"></span><span class="missing" style="width:'+100*missing/n+'%"></span></div><div class="yn-legend"><span>● JA: '+yes+'</span><span>● NEIN: '+no+'</span>'+(missing?'<span>Ohne Abgabe: '+missing+'</span>':'')+'</div></div><h2>Die Schätzungen</h2>'+state.results.map(r=>'<div class="yn-result-row '+(r.exact?'exact yn-pop':'')+'"><strong>'+esc(r.name)+(state.reveal_answers&&typeof r.answer==='boolean'?' <span class="yn-revealed-answer '+(r.answer?'is-yes':'is-no')+'">('+(r.answer?'JA':'NEIN')+')</span>':'')+(r.exact?' · Volltreffer!':'')+'</strong><span>'+(r.estimate===null?'Keine Abgabe':'Tipp: '+r.estimate)+'</span><span class="yn-points">+'+r.points+'</span></div>').join('')+(state.reveal_answers?'':'<p class="muted">Persönliche Ja/Nein-Antworten werden nicht veröffentlicht.</p>');
  }
  function renderGame(){
   if(draftRound!==state.round_index){draftRound=state.round_index;draftAnswer=null;draftEstimate=null;}
@@ -99,7 +99,7 @@
    }
   }
   const showScores=isHost||['result','finished','ended'].includes(phase);
-  app.innerHTML=header(state.title,actions)+'<div class="yn-grid'+(showScores?'':' yn-solo')+'"><section class="panel">'+content+'</section>'+(showScores?'<aside>'+scoreboard()+'</aside>':'')+'</div>';
+  app.innerHTML=header(state.title,actions)+'<div class="yn-grid'+(showScores?'':' yn-solo')+'"><section class="panel">'+content+'</section>'+(showScores?'<aside class="live-sidebar" tabindex="0" aria-label="Punktestand">'+scoreboard()+'</aside>':'')+'</div>';
   if(isHost&&phase==='lobby')drawQr(app.querySelector('[data-lobby-qr]'),joinLink());
   app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));bindAnswers();updateClock();
  }

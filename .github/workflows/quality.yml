@@ -58,6 +58,7 @@ jobs:
           PGDATABASE=bluff_tests node tests/bluff.browser.cjs
           PGDATABASE=bluff_tests node tests/external-links.browser.cjs
           PGDATABASE=yesno_tests node tests/yesno.browser.cjs
+          node tests/live-sidebar.browser.cjs
           node tests/browser.test.cjs
           node tests/quiz-modes.browser.cjs
           node tests/pin.browser.cjs

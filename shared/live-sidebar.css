@@ -1,0 +1,29 @@
+/* Live lists stay in the viewport; cards scroll instead of extending below it. */
+body .live-sidebar{
+ position:sticky;
+ top:16px;
+ align-self:start;
+ min-width:0;
+ max-height:calc(100vh - 32px);
+ max-height:calc(100dvh - 32px);
+ display:flex;
+ flex-direction:column;
+ gap:16px;
+}
+body .live-sidebar > .panel{
+ flex:0 1 auto;
+ min-height:0;
+ overflow-y:auto;
+ overscroll-behavior-y:contain;
+ scrollbar-gutter:stable;
+}
+body .live-sidebar > .ranking-panel{flex:1 1 auto}
+/* The survey sidebar is itself the card. Use one scroll area for the whole list. */
+body .participants.live-sidebar{overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;display:block}
+body .participants.live-sidebar .participantList{max-height:none;overflow:visible}
+body .live-sidebar:focus-visible{outline:3px solid #145baa;outline-offset:3px}
+/* In a single column, pin a compact list above the question rather than below it. */
+@media(max-width:1000px){body .session > .live-sidebar{order:-1;max-height:40dvh;z-index:1}}
+@media(max-width:900px){body .layout > .side-col.live-sidebar{order:-1;max-height:40dvh;z-index:1}}
+@media(max-width:850px){body :is(.yn-grid,.bluff-grid) > .live-sidebar{order:-1;max-height:40dvh;z-index:1}}
+@media(max-width:740px){body .layout > .side.live-sidebar{order:-1;max-height:40dvh;z-index:1}}
