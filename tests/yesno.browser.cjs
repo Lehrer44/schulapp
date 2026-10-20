@@ -71,10 +71,11 @@ const server=http.createServer(async(req,res)=>{
   const players=[];
   for(const name of ['Ada','Ben','Cleo']){
    const c=await context(false,{width:390,height:844}),p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));
-   await p.goto(base+'/join.html?kind=yesno&code='+code);await p.waitForURL('**/yesno/student.html?code=*');await p.locator('[name="playerName"]').fill(name);await p.locator('#ynJoinForm button').click();await p.locator('[data-action="ready"]').waitFor();assert.equal(await p.locator('.app-nav,a[href]').count(),0);await p.locator('[data-action="ready"]').click();await p.getByRole('button',{name:'✓ Bereit – doch noch warten'}).waitFor();players.push(p);
+   await p.goto(base+'/join.html?kind=yesno&code='+code);await p.waitForURL('**/yesno/student.html?code=*');await p.locator('[name="playerName"]').fill(name);await p.locator('#ynJoinForm button').click();await p.getByText('✓ Du bist bereit. Warte auf den Spielstart.',{exact:true}).waitFor();assert.equal(await p.locator('.app-nav,a[href],[data-action="ready"],.yn-player').count(),0);players.push(p);
   }
   await host.locator('[data-action="start"]:enabled').waitFor();await host.locator('[data-action="start"]').click();await players[0].locator('#ynAnswerForm').waitFor();
   assert(await players[0].locator('#ynAnswerForm [type="submit"]').isDisabled());
+  assert.equal(await players[0].locator('.yn-player,input[type="range"],input[type="number"],#ynEstimateSlider,#ynEstimateNumber').count(),0);assert.equal(await players[0].locator('[data-estimate]').count(),4);
   await players[0].locator('[data-answer="yes"]').click();assert(await players[0].locator('#ynAnswerForm [type="submit"]').isDisabled());await players[0].locator('[data-estimate="1"]').click();await players[0].waitForFunction(()=>getComputedStyle(document.querySelector('[data-answer="yes"]')).backgroundColor==='rgb(56, 107, 100)');await screenshot(players[0],'question-mobile');await players[0].locator('#ynAnswerForm [type="submit"]').click();await players[0].getByText('✓ Deine Antwort wurde gespeichert',{exact:true}).waitFor();
   await players[0].reload();await players[0].getByText('✓ Deine Antwort wurde gespeichert',{exact:true}).waitFor();
   await host.waitForFunction(()=>window.__payloads.some(p=>p.name==='yesno_host_state'&&p.data.data.phase==='question'&&p.data.data.players.some(x=>x.submitted)));
@@ -83,11 +84,11 @@ const server=http.createServer(async(req,res)=>{
   for(let i=1;i<3;i++){await players[i].locator('[data-answer="no"]').click();await players[i].locator('[data-estimate="'+(i+1)+'"]').click();await players[i].locator('#ynAnswerForm [type="submit"]').click();}
   await host.locator('.yn-total').waitFor();assert.equal(await host.locator('.yn-total').innerText(),'1');await players[0].getByText('Ada · Volltreffer!',{exact:true}).waitFor();assert.equal(await players[0].locator('.yn-result-row.exact .yn-points').innerText(),'+5');await screenshot(host,'results-desktop');await screenshot(players[0],'results-mobile');
   await host.locator('[data-action="next"]').click();await players[0].locator('#ynAnswerForm').waitFor();
-  // Keyboard-only answer and numeric input; drafts survive other people's updates.
-  await players[0].locator('[data-answer="no"]').focus();await players[0].keyboard.press('Enter');await players[0].locator('#ynEstimateNumber').fill('0');
+  // Keyboard-only answer and number buttons; drafts survive other people's updates.
+  await players[0].locator('[data-answer="no"]').focus();await players[0].keyboard.press('Enter');await players[0].locator('[data-estimate="0"]').focus();await players[0].keyboard.press('Enter');
   await players[1].locator('[data-answer="yes"]').click();await players[1].locator('[data-estimate="2"]').click();await players[1].locator('#ynAnswerForm [type="submit"]').click();
-  await players[0].waitForFunction(()=>document.querySelector('.yn-player.done'));
-  assert.equal(await players[0].locator('[data-answer="no"]').getAttribute('aria-pressed'),'true');assert.equal(await players[0].locator('#ynEstimateNumber').inputValue(),'0');
+  await players[0].waitForFunction(()=>window.__payloads.filter(p=>p.name==='yesno_player_state').at(-1)?.data.data.players.some(p=>p.name==='Ben'&&p.submitted));
+  assert.equal(await players[0].locator('[data-answer="no"]').getAttribute('aria-pressed'),'true');assert.equal(await players[0].locator('[data-estimate="0"]').getAttribute('aria-pressed'),'true');assert.equal(await players[0].locator('.yn-player').count(),0);await host.locator('.yn-player.done').first().waitFor();
   await players[0].locator('#ynAnswerForm [type="submit"]').click();await players[0].getByText('✓ Deine Antwort wurde gespeichert',{exact:true}).waitFor();
   await sql('update private.yesno_sessions set deadline=clock_timestamp()-interval \'1 second\' where id='+quote(sid));
   await host.locator('.yn-podium').waitFor();await players[2].locator('.yn-podium').waitFor();assert(await host.getByText('Ohne Abgabe: 1',{exact:true}).isVisible());await screenshot(host,'final-desktop');await screenshot(players[2],'final-mobile');

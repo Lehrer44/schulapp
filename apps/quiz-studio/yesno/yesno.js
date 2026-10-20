@@ -63,8 +63,8 @@
   if(state.own_answer)return '<div class="yn-tag">✓ Deine Antwort wurde gespeichert</div><p>Nur für dich: <strong>'+ (state.own_answer.answer?'JA':'NEIN')+'</strong> · Schätzung: <strong>'+state.own_answer.estimate+'</strong></p><p class="muted">Warte auf die Auswertung. Die Abgabe ist verbindlich.</p>';
   const n=state.player_count;
   return '<form id="ynAnswerForm"><div class="yn-answer-buttons" role="group" aria-label="Deine geheime Antwort"><button type="button" class="yn-answer" data-answer="yes" aria-pressed="'+(draftAnswer===true)+'">JA</button><button type="button" class="yn-answer" data-answer="no" aria-pressed="'+(draftAnswer===false)+'">NEIN</button></div><fieldset class="yn-estimate"><legend>Wie viele sagen JA?</legend><p class="muted">0 bis '+n+' Personen – inklusive dir selbst.</p><output id="ynEstimateValue" aria-live="polite">'+(draftEstimate===null?'Bitte wählen':draftEstimate)+'</output>'+
-   (n<=30?'<div class="yn-numbers" role="group" aria-label="Geschätzte Anzahl der Ja-Stimmen">'+Array.from({length:n+1},(_,i)=>'<button type="button" data-estimate="'+i+'" aria-pressed="'+(draftEstimate===i)+'">'+i+'</button>').join('')+'</div>':'')+
-   '<label for="ynEstimateSlider">Schätzung mit Schieberegler</label><input id="ynEstimateSlider" type="range" min="0" max="'+n+'" step="1" value="'+(draftEstimate??Math.floor(n/2))+'"><label for="ynEstimateNumber">Schätzung als Zahl<input id="ynEstimateNumber" type="number" min="0" max="'+n+'" step="1" value="'+(draftEstimate??'')+'" inputmode="numeric" required></label></fieldset><button class="yn-primary yn-submit" type="submit" disabled>Geheim abgeben</button><p class="muted">Erst beide Eingaben auswählen. Nach dem Absenden kannst du sie nicht mehr ändern.</p></form>';
+   '<div class="yn-numbers" role="group" aria-label="Geschätzte Anzahl der Ja-Stimmen">'+Array.from({length:n+1},(_,i)=>'<button type="button" data-estimate="'+i+'" aria-pressed="'+(draftEstimate===i)+'">'+i+'</button>').join('')+'</div>'+
+   '</fieldset><button class="yn-primary yn-submit" type="submit" disabled>Geheim abgeben</button><p class="muted">Erst beide Eingaben auswählen. Nach dem Absenden kannst du sie nicht mehr ändern.</p></form>';
  }
  function results(){
   const n=state.player_count,yes=state.yes_count,no=state.no_count,missing=n-yes-no;
@@ -77,14 +77,14 @@
   let content='';
   if(phase==='lobby'){
    const allReady=state.players.length>=2&&state.players.every(p=>p.ready);
-   content='<h2>'+(isHost?'Gemeinsam starten':'Du bist dabei, '+esc(credentials?.name)+'!')+'</h2>'+(isHost?'<div class="yn-code">'+esc(state.join_code)+'</div>':'')+'<p>'+state.round_count+' Runden · '+state.seconds+' Sekunden pro Frage · '+state.players.length+' Personen</p>'+participants()+
-    (isHost?'<p class="muted">Alle bereit? Dann geht es los. Die Gruppengröße bleibt während des Spiels fest.</p><button class="yn-primary" data-action="start" '+(!allReady?'disabled':'')+'>Spiel starten</button>':'<button class="yn-primary yn-submit" data-action="ready" aria-pressed="'+!!me?.ready+'">'+(me?.ready?'✓ Bereit – doch noch warten':'Ich bin bereit')+'</button>')+rules();
+   content='<h2>'+(isHost?'Gemeinsam starten':'Du bist dabei, '+esc(credentials?.name)+'!')+'</h2>'+(isHost?'<div class="yn-code">'+esc(state.join_code)+'</div>':'')+'<p>'+state.round_count+' Runden · '+state.seconds+' Sekunden pro Frage · '+state.players.length+' Personen</p>'+(isHost?participants():'')+
+    (isHost?'<p class="muted">Alle bereit? Dann geht es los. Die Gruppengröße bleibt während des Spiels fest.</p><button class="yn-primary" data-action="start" '+(!allReady?'disabled':'')+'>Spiel starten</button>':'<p class="yn-tag" role="status">'+(me?.ready?'✓ Du bist bereit. Warte auf den Spielstart.':'Deine Teilnahme wird vorbereitet …')+'</p>')+rules();
   }else if(phase==='ended'){
    content='<h2>Spiel beendet</h2><p>Die bereits vergebenen Punkte bleiben erhalten. Eine abgebrochene Runde wird nicht gewertet.</p>';
   }else{
    const roundLabel='Runde '+(state.round_index+1)+'/'+state.round_count;
    content='<div class="yn-heading"><span class="yn-tag">'+roundLabel+'</span>'+(phase==='question'?'<span class="yn-clock" id="ynCountdown" role="timer" aria-label="Verbleibende Zeit"></span>':'<span class="yn-tag">Auswertung</span>')+'</div><h2 class="yn-question">'+esc(state.question)+'</h2>';
-   if(phase==='question')content+=participants()+(isHost?'<p class="muted">Die Antworten und Schätzungen bleiben bis zur Auswertung geheim. Die Runde endet automatisch nach Ablauf der Zeit oder sobald alle abgegeben haben.</p>':answerForm());
+   if(phase==='question')content+=(isHost?participants():'')+(isHost?'<p class="muted">Die Antworten und Schätzungen bleiben bis zur Auswertung geheim. Die Runde endet automatisch nach Ablauf der Zeit oder sobald alle abgegeben haben.</p>':answerForm());
    else{
     if(phase==='finished'){
      const top=state.players[0]?.score??0,winners=state.players.filter(p=>p.score===top);
@@ -95,22 +95,23 @@
     if(!isHost&&phase==='result')content+='<p class="muted">Die Spielleitung startet die nächste Runde.</p>';
    }
   }
-  app.innerHTML=header(state.title,actions)+'<div class="yn-grid"><section class="panel">'+content+'</section><aside>'+scoreboard()+'</aside></div>';
+  const showScores=isHost||['result','finished','ended'].includes(phase);
+  app.innerHTML=header(state.title,actions)+'<div class="yn-grid'+(showScores?'':' yn-solo')+'"><section class="panel">'+content+'</section>'+(showScores?'<aside>'+scoreboard()+'</aside>':'')+'</div>';
   app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));bindAnswers();updateClock();
  }
  function bindAnswers(){
   const form=app.querySelector('#ynAnswerForm');if(!form)return;
-  const slider=form.querySelector('#ynEstimateSlider'),number=form.querySelector('#ynEstimateNumber'),output=form.querySelector('output'),submit=form.querySelector('[type="submit"]');
+  const output=form.querySelector('output'),submit=form.querySelector('[type="submit"]');
   function update(){
    form.querySelectorAll('[data-answer]').forEach(b=>b.setAttribute('aria-pressed',String(draftAnswer===(b.dataset.answer==='yes'))));
    form.querySelectorAll('[data-estimate]').forEach(b=>b.setAttribute('aria-pressed',String(draftEstimate===Number(b.dataset.estimate))));
-   output.textContent=draftEstimate===null?'Bitte wählen':draftEstimate;number.value=draftEstimate??'';if(draftEstimate!==null)slider.value=draftEstimate;
+   output.textContent=draftEstimate===null?'Bitte wählen':draftEstimate;
    submit.disabled=actionBusy||draftAnswer===null||draftEstimate===null||secondsLeft()<=0;
   }
   const estimate=v=>{const n=Number(v);draftEstimate=v!==''&&Number.isInteger(n)&&n>=0&&n<=state.player_count?n:null;update();};
   form.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{draftAnswer=b.dataset.answer==='yes';update();});
   form.querySelectorAll('[data-estimate]').forEach(b=>b.onclick=()=>estimate(b.dataset.estimate));
-  slider.oninput=()=>estimate(slider.value);number.oninput=()=>estimate(number.value);update();
+  update();
   form.onsubmit=async e=>{
    e.preventDefault();if(actionBusy||draftAnswer===null||draftEstimate===null)return;
    actionBusy=true;submit.disabled=true;say('Antwort wird gespeichert …');
@@ -123,8 +124,7 @@
   if(action==='end'&&!confirm('Spiel beenden? Die laufende Runde erhält keine Punkte.'))return;
   actionBusy=true;app.querySelectorAll('button[data-action]').forEach(b=>b.disabled=true);say('');
   try{
-   if(action==='ready')await call('yesno_ready',{...playerArgs(),p_ready:!state.players.find(p=>p.id===credentials.player)?.ready});
-   else await call('yesno_host_action',{p_session_id:room,p_round:state.round_index,p_phase:state.phase,p_action:action});
+   await call('yesno_host_action',{p_session_id:room,p_round:state.round_index,p_phase:state.phase,p_action:action});
    signature='';
   }catch(err){say(error(err));}finally{actionBusy=false;signature='';await refresh();}
  }
@@ -136,7 +136,12 @@
  async function refresh(){
   if(!room)return;if(refreshBusy){refreshAgain=true;return;}refreshBusy=true;
   try{
-   const started=Date.now(),data=await call(isHost?'yesno_host_state':'yesno_player_state',isHost?{p_session_id:room}:playerArgs());
+   let started=Date.now(),data=await call(isHost?'yesno_host_state':'yesno_player_state',isHost?{p_session_id:room}:playerArgs());
+   if(!isHost&&data.phase==='lobby'&&data.players.some(p=>p.id===credentials.player&&!p.ready)){
+    try{await call('yesno_ready',{...playerArgs(),p_ready:true});}
+    catch(e){if(e.code!=='PHASE_CHANGED')throw e;}
+    started=Date.now();data=await call('yesno_player_state',playerArgs());
+   }
    serverOffset=Date.parse(data.server_now)-(started+Date.now())/2;state=data;
    const next=[data.session_id,data.revision,data.phase,data.round_index].join(':');if(next!==signature){signature=next;renderGame();}
    setConnectionStatus('ready','Verbunden · Spielstand aktualisiert.');
