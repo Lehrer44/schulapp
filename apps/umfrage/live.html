@@ -21,6 +21,7 @@ body{min-height:100vh}.wrap{max-width:1320px;margin:0 auto;padding:24px 18px 34p
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css">
 <link rel="stylesheet" href="../../shared/workspace.css">
+<link rel="stylesheet" href="../../shared/live-sidebar.css">
 </head>
 <body data-studio="survey" data-dashboard-view="live">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage Studio</a></nav>
@@ -41,7 +42,7 @@ body{min-height:100vh}.wrap{max-width:1320px;margin:0 auto;padding:24px 18px 34p
 <div id="questionMedia" class="questionMedia"></div><div class="options" id="liveOptions"></div>
 <div class="answers"><h2 id="answerTitle">Live-Antworten</h2><div class="subtle">Die Ansicht aktualisiert sich automatisch, sobald Schüler antworten.</div><div id="answers"></div></div>
 </section>
-<aside class="participants">
+<aside class="participants live-sidebar" tabindex="0" aria-label="Teilnehmerliste">
 <div class="partHead"><div><h2>Teilnehmer</h2><div class="partCount" id="participantSummary">0 von 0 beantwortet</div></div></div>
 <div class="participantList" id="participantList"></div>
 </aside>
@@ -131,5 +132,6 @@ load();
 </script>
 </body>
 </html>
+
 
 

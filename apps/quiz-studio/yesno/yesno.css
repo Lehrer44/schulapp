@@ -17,3 +17,5 @@ body.yn-student #app.yn-main{max-width:800px}
 .yn-grid.yn-solo{grid-template-columns:minmax(0,1fr)}
 
 .yn-lobby-join{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;margin:20px 0}.yn-lobby-join .yn-code{margin:0}.yn-lobby-join .yn-qr{margin:0}.yn-fields select{width:100%;padding:12px;border:1px solid #d9d2c2;border-radius:9px;background:white;color:inherit;font:inherit}
+
+.yn-revealed-answer.is-yes{color:#237344}.yn-revealed-answer.is-no{color:#b22c32}

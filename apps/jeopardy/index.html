@@ -164,6 +164,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .play-screen .cell.header{min-height:0;font-size:clamp(.95rem,1.55vw,1.35rem);line-height:1.18;padding:8px 5px;overflow-wrap:anywhere}
 .play-screen .cell.reduced::after{top:4px;right:4px}
 .play-screen .scorebar:empty{display:none}
+.play-screen .scorebar{min-height:0;max-height:35vh;max-height:35dvh;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable}
 .play-screen #app>.top .brand-lockup{gap:10px}
 .play-screen .modalbox{width:min(1040px,100%)}
 .play-screen .question-box{font-size:clamp(1.75rem,3.3vw,2.65rem)}
@@ -1042,7 +1043,7 @@ function renderBoard(){
       '<div class="brand-lockup"><div class="brand-symbol" aria-hidden="true">J</div><div><div class="brand">' + esc(current.name) + '</div><div class="brand-sub">' + (editMode ? 'Spielvorlage bearbeiten' : 'Moderation und Spielstand') + '</div></div></div>' +
       '<div class="row">' + topButtons + '</div>' +
     '</div>' ) +
-    (editMode ? '' : '<div id="scorebar" class="scorebar"></div>') +
+    (editMode ? '' : '<div id="scorebar" class="scorebar" tabindex="0" aria-label="Team-Punktestände"></div>') +
     '<div class="panel board-wrap ' + (editMode ? 'editor-board-wrap' : 'play-board-wrap') + '">' +
       '<div class="board ' + (editMode ? 'editor-board' : 'play-board') + '" id="board" style="grid-template-columns:' +
         (editMode ? 'minmax(78px,.62fr) ' : '') +
@@ -1824,6 +1825,7 @@ initializeJeopardy();
 </script>
 </body>
 </html>
+
 
 
 

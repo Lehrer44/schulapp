@@ -29,6 +29,7 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 <script src="pin.js"></script>
 <link rel="stylesheet" href="pin.css">
 <link rel="stylesheet" href="play-modes.css">
+<link rel="stylesheet" href="../../shared/live-sidebar.css">
 </head>
 <body data-studio="quiz" data-dashboard-view="live">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -134,7 +135,7 @@ function render(){
  if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
  const st=qstate();const q=activeQuestion();
  const phase=session.status==='lobby'?'Wartelobby':session.status==='ended'?'Beendet':'Live';
- app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div></div></div><div class="studio-actions"><span class="status-pill">'+participants.length+' Teilnehmende</span><button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div><div class="answer-count">Grün markiert bedeutet: Antwort abgegeben.</div></div></aside></div>';
+ app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div></div></div><div class="studio-actions"><span class="status-pill">'+participants.length+' Teilnehmende</span><button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col live-sidebar" tabindex="0" aria-label="Punktestand und Spielstatus">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div><div class="answer-count">Grün markiert bedeutet: Antwort abgegeben.</div></div></aside></div>';
  if(q?.type==='pin')QuizPin.mount(app.querySelector('[data-quiz-pin]'),q,{showTarget:!!st.revealed});
  updateTimer();
 }
@@ -205,6 +206,7 @@ document.body.addEventListener('click',async function(e){
 </script>
 </body>
 </html>
+
 
 
 
