@@ -15,6 +15,7 @@ create table public.sessions(join_code text,status text);
 create table public.quiz_live_sessions(join_code text,status text);
 create table private.bluff_sessions(join_code text,phase text);
 \ir ../supabase/yesno.sql
+\ir ../supabase/yesno_settings.sql
 
 do $$
 declare teacher uuid:=gen_random_uuid();other uuid:=gen_random_uuid();sid uuid;sid2 uuid;gid uuid;qid bigint;seed bigint;personal bigint;req uuid:=gen_random_uuid();a uuid;b uuid;c uuid;j jsonb;st jsonb;code text;rev bigint;
@@ -116,3 +117,5 @@ end;$$;
 set role anon;
 select public.yesno_player_state('00000000-0000-4000-8000-000000000000','00000000-0000-4000-8000-000000000000',repeat('a',64));
 reset role;
+
+\ir yesno-settings-fixture.sql
