@@ -52,15 +52,40 @@ async function fixtures(){
  async function checkStudio(name){
   const title=page.locator('.studio-title');await title.waitFor();
   assert.equal((await title.innerText()).replace(/\s+/g,' ').trim(),name+' Studio');
-  assert.equal(await page.locator(name==='Quiz'?'#classicLibrary .studio-primary':'.studio-header .studio-primary').count(),1);
+  assert.equal(await page.locator(name==='Quiz'?'#classicLibrary > .library-heading .studio-add':'.studio-header .studio-primary').count(),1);
   const style=await page.evaluate(()=>{
    const title=getComputedStyle(document.querySelector('.studio-title')),panel=getComputedStyle(document.querySelector('.panel')),button=getComputedStyle(document.querySelector('#classicLibrary .studio-primary, .studio-header .studio-primary'));
    return {headerY:document.querySelector('.studio-header').getBoundingClientRect().y,font:title.fontFamily,size:title.fontSize,weight:title.fontWeight,panelRadius:panel.borderRadius,panelBorder:panel.borderTopWidth,panelBackground:panel.backgroundColor,buttonRadius:button.borderRadius,buttonHeight:button.minHeight};
   });
   if(studioStyle)assert.deepEqual(style,studioStyle);else studioStyle=style;
+  async function checkLibraryControls(){
+   if(name!=='Quiz')return;
+   await page.locator('#bluffLibrary .empty').waitFor();
+   await page.locator('#yesnoLibrary .empty').waitFor();
+   const layout=await page.evaluate(()=>{
+    const rect=el=>el.getBoundingClientRect();
+    const libraries=[...document.querySelectorAll('#classicLibrary,#bluffLibrary,#yesnoLibrary')];
+    const buttons=libraries.flatMap(el=>[...el.querySelectorAll('button,.btn')]);
+    return {
+     heights:buttons.map(el=>rect(el).height),
+     plusOffsets:libraries.map(el=>{
+      const button=rect(el.querySelector('.studio-add')),icon=rect(el.querySelector('.studio-add svg'));
+      return {x:Math.abs(button.x+button.width/2-icon.x-icon.width/2),y:Math.abs(button.y+button.height/2-icon.y-icon.height/2)};
+     }),
+     bluffHeight:rect(document.querySelector('#bluffLibrary')).height,
+     yesnoHeight:rect(document.querySelector('#yesnoLibrary')).height
+    };
+   });
+   assert(layout.heights.every(height=>Math.abs(height-44)<1),'Every library button has the same 44px height');
+   assert(layout.plusOffsets.every(offset=>offset.x<1&&offset.y<1),'Add icons are centered on both axes');
+   assert(Math.abs(layout.bluffHeight-layout.yesnoHeight)<1,'Empty Bluff and Yes/No libraries have equal heights');
+  }
+
+  await checkLibraryControls();
   const file=name.toLowerCase();await page.screenshot({path:path.join(outputRoot,'studio-'+file+'-desktop.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),name+' mobile overflow');
+  await checkLibraryControls();
   await page.screenshot({path:path.join(outputRoot,'studio-'+file+'-mobile.png'),fullPage:true});
   await page.setViewportSize({width:1280,height:900});
  }
