@@ -4,7 +4,8 @@ body[data-studio="quiz"][data-dashboard-view="bluff"] button.bluff-primary{backg
 @keyframes bluff-reveal{from{opacity:.3;transform:translateY(8px) rotateX(12deg)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.bluff-option.new-reveal{animation:none}}@media(max-width:850px){.bluff-grid{grid-template-columns:1fr}.bluff-fields{grid-template-columns:1fr}.collection-row{grid-template-columns:1fr}.studio-actions{justify-content:flex-start}.bluff-banner{padding:20px}.bluff-code{font-size:32px}.bluff-question{font-size:25px}}
 .bluff-message.is-success{color:#386449}body[data-studio="quiz"][data-dashboard-view="bluff"] .panel .bluff-question{font-size:clamp(23px,3.2vw,38px);line-height:1.25;letter-spacing:-.035em}
 
-.bluff-grid.bluff-lobby{display:block}.bluff-lobby>aside.bluff-stack{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:22px}
+.bluff-grid.bluff-lobby>aside{grid-column:2}
+@media(max-width:850px){.bluff-grid.bluff-lobby>aside{grid-column:1}}
 
 .bluff-option.revealed{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,.8fr);gap:24px;align-items:center}
 .bluff-option-answer{min-width:0}.bluff-authors{font-size:20px;font-weight:750;line-height:1.4;overflow-wrap:anywhere}
@@ -13,3 +14,19 @@ body[data-studio="quiz"][data-dashboard-view="bluff"] button.bluff-primary{backg
 .bluff-voter{display:inline-block;box-sizing:border-box;max-width:100%;padding:7px 11px;border:1px solid #c6bea9;border-radius:9px;background:#fffefa;color:#34382f;font-size:22px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
 .bluff-no-votes{font-size:16px;color:#686456}
 @media(max-width:520px){.bluff-option.revealed{grid-template-columns:minmax(0,1fr) minmax(95px,.8fr);gap:12px;padding:14px}.bluff-option .bluff-voters{padding-left:12px}.bluff-voter{font-size:18px;padding:6px 8px}.bluff-authors{font-size:18px}}
+
+/* The board keeps the standings on the right, including in the lobby. */
+body[data-bluff-mode="host"] .bluff-host-main{display:flex;flex-direction:column;min-height:min(620px,calc(100dvh - 220px))}
+body[data-bluff-mode="host"] .bluff-controls{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-top:auto;padding-top:24px}
+body[data-bluff-mode="host"] .bluff-controls .bluff-actions{margin:0}
+body[data-bluff-mode="host"] .bluff-timer-area{display:flex;flex-direction:column;align-items:flex-end;gap:8px;margin-left:auto;max-width:100%}
+body[data-bluff-mode="host"] .bluff-counter{margin:0;text-align:right}
+body[data-bluff-mode="host"] .bluff-counter:empty{display:none}
+body[data-bluff-mode="host"] .bluff-timer{justify-content:flex-end;flex-wrap:nowrap}
+body[data-bluff-mode="host"] .bluff-timer select{min-height:44px}
+body[data-bluff-mode="host"] #app .bluff-clock-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:0 0 44px;padding:0}
+.bluff-clock-button svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.bluff-score-name{display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere}
+body[data-bluff-mode="host"] .bluff-score.has-answer{background:#e5f1e8;border-color:#8fbf9c}
+.bluff-answer-mark{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#386449;color:#fff;font-size:15px;line-height:1}
+@media(max-width:850px){body[data-bluff-mode="host"] .bluff-host-main{min-height:320px}}

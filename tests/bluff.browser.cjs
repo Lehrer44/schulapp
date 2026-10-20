@@ -53,11 +53,45 @@ server.on('request',async(req,res)=>{
  await host.locator('[data-action="end"]').click();await host.waitForURL('**/quiz-studio/index.html');
  await host.setViewportSize({width:1280,height:900});await host.locator('[data-bluff-action="start"]').click();await host.waitForURL('**/bluff/live.html?session=*');const sid=new URL(host.url()).searchParams.get('session');await host.locator('[data-action="participation"]').waitFor();assert.equal(await host.locator('#app .bluff-code').count(),0);assert.equal(await host.getByText('Alle bereit für den Bluff?',{exact:true}).count(),0);await host.screenshot({path:path.join(output,'bluff-lobby-desktop.png'),fullPage:true});await host.locator('[data-action="participation"]').click();const code=await host.locator('.bluff-join-code').innerText();await host.keyboard.press('Escape');
  assert.equal(sql('select count(*) from private.bluff_rounds where session_id='+sqlLiteral(sid)),'2');
+
+ async function checkBoard(phase){
+  await host.locator('.live-sidebar .ranking-panel').waitFor();
+  assert.deepEqual(await host.locator('.live-sidebar h2').allTextContents(),['Punktestand']);
+  assert.equal(await host.getByRole('heading',{name:'Teilnehmende',exact:true}).count(),0);
+  assert.equal(await host.getByRole('heading',{name:'Punkte sammeln',exact:true}).count(),0);
+  assert.equal(await host.locator('.bluff-phase,.bluff-source,[data-action="stop_timer"]').count(),0);
+  for(const text of ['Antworten eingeben','Anonyme Antworten','Wahrheit finden','Die Antworten bleiben verborgen, bis alle abgegeben haben und du „Antworten anzeigen“ klickst.','Alle Antworten sind anonym. Die Abstimmung beginnt, sobald die Spielleitung sie startet.','Eine Antwort ist wahr. Welche?']){
+   assert.equal(await host.getByText(text,{exact:true}).count(),0,'Board omits: '+text);
+  }
+  const layout=await host.evaluate(()=>{
+   const grid=document.querySelector('.bluff-grid').getBoundingClientRect(),side=document.querySelector('.live-sidebar').getBoundingClientRect(),main=document.querySelector('.bluff-host-main')?.getBoundingClientRect();
+   return {right:side.x>=grid.x+grid.width/2,beside:!main||side.x>=main.right};
+  });
+  assert(layout.right&&layout.beside,'Standings remain on the right in '+phase);
+  if(['bluff','vote'].includes(phase)){
+   assert.equal(await host.locator('.bluff-timer label').count(),0);
+   assert.equal(await host.locator('[data-action="timer"] svg').count(),1);
+   assert.equal((await host.locator('[data-action="timer"]').innerText()).trim(),'');
+   assert.equal(await host.locator('[data-action="timer"]').getAttribute('aria-label'),'Timer starten oder neu setzen');
+   const position=await host.locator('.bluff-timer').evaluate(el=>{
+    const timer=el.getBoundingClientRect(),panel=el.closest('.panel').getBoundingClientRect();
+    return {right:panel.right-timer.right,bottom:panel.bottom-timer.bottom};
+   });
+   assert(position.right>=0&&position.right<=28&&position.bottom>=0&&position.bottom<=28,'Clock sits at the lower right of the question card');
+  }
+ }
+ await checkBoard('lobby');
  const players=[];
  for(const name of ['Ada','Ben','Cleo']){const c=await context(false,{width:390,height:844}),page=await c.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/join.html?code='+code+'&kind=bluff');await page.waitForURL('**/bluff/student.html?code=*');assert.equal(await page.locator('.app-nav').count(),0);assert.equal(await page.locator('a[href]').count(),0);await page.locator('#playerName').fill(name);await page.locator('#joinForm button').click();await page.getByText('Du bist dabei, '+name+'!',{exact:true}).waitFor();players.push(page);}
  // Anonymous players cannot open the dashboard application list even by URL.
  const anonymousHub=await players[0].context().newPage();await anonymousHub.goto(base+'/index.html');await anonymousHub.getByText('Bitte melde dich mit deinem Lehrkraftkonto an, um die Anwendungen zu öffnen.',{exact:true}).waitFor();assert(await anonymousHub.locator('#teacherApps').isHidden());assert.equal(await anonymousHub.locator('.app-card:visible').count(),0);assert(await anonymousHub.locator('#loginLink').isVisible());await anonymousHub.close();
  await host.locator('[data-action="start"]').click();await players[0].locator('#bluffAnswer').waitFor();assert.equal(await host.locator('[data-action="open_bluff"]').count(),0);assert(await host.locator('[data-action="show_answers"]').isDisabled());
+ await host.locator('.bluff-host-main').waitFor();await checkBoard('bluff');
+ await host.getByText('0 von 3 haben eine Antwort eingegeben.',{exact:true}).waitFor();
+ assert.equal(await host.locator('.bluff-score.has-answer').count(),0);
+ const activeCategory=sql('select category from private.bluff_rounds where session_id='+sqlLiteral(sid)+' and round_index=0');
+ if(activeCategory)assert.equal(await host.getByText(activeCategory,{exact:true}).count(),0);
+
  // Typing and paste change the actual value, including umlauts and sharp-S.
  await players[0].locator('#bluffAnswer').fill('straße, öl & grüße 42!');
  assert.equal(await players[0].locator('#bluffAnswer').inputValue(),'STRASSE, ÖL & GRÜSSE 42!');
@@ -71,23 +105,37 @@ server.on('request',async(req,res)=>{
  assert.equal(await players[0].locator('.bluff-option').count(),0);const own=await players[0].evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_player_state').at(-1).data.data);assert.deepEqual(own.entries,[]);assert.equal(own.correct_answer,null);
  await host.waitForFunction(()=>window.__payloads.filter(p=>p.name==='bluff_host_state').at(-1)?.data.data.players.every(p=>p.submitted));
  const hidden=await host.evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_host_state').at(-1).data.data);assert.deepEqual(hidden.entries,[]);assert.deepEqual(hidden.options,[]);assert.equal(hidden.correct_answer,null);assert.equal(await host.locator('.bluff-option').count(),0);assert.equal(await host.getByText('EIN GEMEINSAMER BLUFF',{exact:true}).count(),0);
- await host.screenshot({path:path.join(output,'bluff-hidden-host.png'),fullPage:true});
+ 
+ await host.locator('.bluff-score.has-answer').nth(2).waitFor();
+ assert.equal(await host.locator('.bluff-score.has-answer .bluff-answer-mark').count(),3);
+ await host.getByText('3 von 3 haben eine Antwort eingegeben.',{exact:true}).waitFor();
+ await checkBoard('bluff');
+await host.screenshot({path:path.join(output,'bluff-hidden-host.png'),fullPage:true});
  await host.locator('[data-action="show_answers"]').click();for(const page of players)await page.locator('.bluff-option').first().waitFor();
  assert.equal(await host.locator('.bluff-option').count(),3);assert((await host.locator('.bluff-option h3').allTextContents()).every(t=>t===t.toUpperCase()));
  for(const page of players){assert.equal(await page.locator('[data-action="vote"]').count(),0);assert.equal(await page.locator('#bluffForm').count(),0);const preview=await page.evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_player_state').at(-1).data.data);assert.equal(preview.phase,'answers');assert(preview.options.every(o=>!('authors' in o)&&!('is_truth' in o)&&!('voters' in o)));}
  const anonymous=await host.evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_host_state').at(-1).data.data);assert(anonymous.options.every(o=>!('authors' in o)&&!('is_truth' in o)&&!('voters' in o)));assert.deepEqual(anonymous.entries,[]);
- await host.screenshot({path:path.join(output,'bluff-anonymous-host.png'),fullPage:true});await players[0].screenshot({path:path.join(output,'bluff-anonymous-mobile.png'),fullPage:true});
+ await checkBoard('answers');await host.screenshot({path:path.join(output,'bluff-anonymous-host.png'),fullPage:true});await players[0].screenshot({path:path.join(output,'bluff-anonymous-mobile.png'),fullPage:true});
  await host.locator('[data-action="start_vote"]').click();for(const page of players)await page.locator('[data-action="vote"]').first().waitFor();
+ await checkBoard('vote');assert.equal(await host.locator('.bluff-score.has-answer').count(),0);
+
  const truth=sql('select id from private.bluff_options where session_id='+sqlLiteral(sid)+' and round_index=0 and is_truth');const fake=sql('select id from private.bluff_options where session_id='+sqlLiteral(sid)+' and round_index=0 and cardinality(author_ids)=2');
  assert(await players[0].locator('[data-option-id="'+fake+'"] button').isDisabled());const votePayload=await players[2].evaluate(()=>window.__payloads.filter(p=>p.name==='bluff_player_state').at(-1).data.data);assert(votePayload.options.every(o=>!('authors' in o)&&!('is_truth' in o)&&!('voters' in o)));
  await players[0].locator('[data-action="vote"][data-id="'+truth+'"]').click();await players[1].locator('[data-action="vote"][data-id="'+truth+'"]').click();await players[2].locator('[data-action="vote"][data-id="'+fake+'"]').click();
  await players[2].getByText('✓ Deine Stimme ist gespeichert.',{exact:true}).waitFor();await players[2].screenshot({path:path.join(output,'bluff-vote-mobile.png'),fullPage:true});assert(await players[2].evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await host.locator('[data-action="reveal"]').click();await host.waitForFunction(()=>document.querySelectorAll('.bluff-option.revealed').length===3);assert.equal(await host.locator('[data-action="reveal_next"]').count(),0);
- await host.getByText(/Punkte vergeben · echte Antwort:/).waitFor();
+ await host.getByText(/Punkte vergeben · echte Antwort:/).waitFor();await checkBoard('leaderboard');
  const fakeCard=host.locator('[data-option-id="'+fake+'"]');assert.equal(await fakeCard.locator('.bluff-authors').innerText(),'Ada, Ben');assert.equal(await fakeCard.locator('.bluff-voter').innerText(),'Cleo');assert.equal(await host.getByText(/hat geblufft|haben geblufft/).count(),0);
  const geometry=await fakeCard.evaluate(el=>{const a=el.querySelector('.bluff-option-answer').getBoundingClientRect(),v=el.querySelector('.bluff-voters').getBoundingClientRect();return {right:v.x>=a.right,font:parseFloat(getComputedStyle(el.querySelector('.bluff-voter')).fontSize)}});assert(geometry.right);assert(geometry.font>=22);
  await players[0].locator('.bluff-option.revealed').first().waitFor();assert.equal(await players[0].locator('.bluff-option.revealed').count(),3);assert.equal(await players[0].locator('.app-nav').count(),0);assert.equal(await players[0].locator('a[href]').count(),0);assert(await players[0].evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert(await players[0].locator('.bluff-voter').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=18));await players[0].screenshot({path:path.join(output,'bluff-reveal-mobile.png'),fullPage:true});assert.equal(sql('select sum(score) from private.bluff_players where session_id='+sqlLiteral(sid)),'6');await host.waitForFunction(()=>document.getAnimations().every(a=>a.playState==='finished'));await host.screenshot({path:path.join(output,'bluff-reveal-desktop.png'),fullPage:true});
  await host.locator('[data-action="next"]').click();await players[0].locator('#bluffAnswer').waitFor();assert.equal(await host.locator('[data-action="open_bluff"]').count(),0);await host.locator('[data-action="timer"]').click();await host.locator('#countdown').getByText(/Noch/).waitFor();
+ await checkBoard('bluff');assert.equal(await host.locator('.bluff-score.has-answer').count(),0);
+ await host.setViewportSize({width:390,height:844});
+ assert(await host.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Compact board has no horizontal overflow');
+ assert(await host.locator('[data-action="timer"]').isVisible());
+ await host.screenshot({path:path.join(output,'bluff-timer-mobile.png'),fullPage:true});
+ await host.setViewportSize({width:1280,height:900});
+
  // Host can end early; already awarded points persist and mobile clients see final results.
  await host.locator('[data-action="end"]').click();await host.waitForURL('**/quiz-studio/index.html');await players[0].getByText('Die besten Bluffs sind enttarnt.',{exact:true}).waitFor();assert.equal(sql('select sum(score) from private.bluff_players where session_id='+sqlLiteral(sid)),'6');
  assert.deepEqual(errors,[]);console.log('PASS: real PostgreSQL-backed editor, manual round selection, shared join routing, 3 mobile players, resume, hidden bluffs, own-vote block, anonymous choices, simultaneous reveal, readable author/voter columns, no player dashboard links, 1/2-point scoring, timer and ending');
