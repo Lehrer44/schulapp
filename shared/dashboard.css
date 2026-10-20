@@ -16,7 +16,7 @@ body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.app-nav{
 }
 body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.app-nav a{border:0;background:transparent;padding:0 4px;color:var(--studio-muted);border-radius:5px}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.app-nav a:first-child{color:var(--studio-text)}
-body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.app-nav a:hover{color:var(--studio-accent);text-decoration:underline}
+body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.app-nav a:hover{color:var(--studio-accent)}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.wrap,body[data-dashboard-view]:not([data-dashboard-view="workspace"])>#app{
   order:1;box-sizing:border-box;width:min(1280px,100%);max-width:none;margin:0 auto;padding:18px 28px 44px;min-height:0;
 }
