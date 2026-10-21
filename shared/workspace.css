@@ -5,8 +5,8 @@ body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(input,texta
 body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),textarea,select){box-sizing:border-box;max-width:100%;border:1px solid var(--studio-line);border-radius:10px;background:var(--studio-surface);padding:10px 12px;line-height:1.5;box-shadow:none}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(input,textarea,select):focus-visible{outline:3px solid var(--studio-tint);outline-offset:2px;border-color:var(--studio-accent)}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.field label,.points,.check){font-size:13px;font-weight:600;color:var(--studio-muted)}
-body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.modalbox,.settingsDialog){background:var(--studio-surface);border:1px solid var(--studio-line);border-radius:18px;box-shadow:0 22px 80px #25251c22;color:var(--studio-text);padding:var(--dialog-padding);}
-body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.modalbox h2,.settingsHeader h2){font:650 22px/1.3 Inter,"Avenir Next",system-ui,sans-serif;letter-spacing:-.025em;color:var(--studio-text);margin:0 0 12px}
+body[data-dashboard-view]:not([data-dashboard-view="workspace"]) .modalbox{background:var(--studio-surface);border:1px solid var(--studio-line);border-radius:18px;box-shadow:0 22px 80px #25251c22;color:var(--studio-text);padding:var(--dialog-padding);}
+body[data-dashboard-view]:not([data-dashboard-view="workspace"]) .modalbox h2{font:650 22px/1.3 Inter,"Avenir Next",system-ui,sans-serif;letter-spacing:-.025em;color:var(--studio-text);margin:0 0 12px}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.hint,.settingsHint,.subtle,.mediaHint,.media-paste-hint,.saveHint){color:var(--studio-muted);font-size:12px;line-height:1.6}
 body[data-dashboard-view="editor"] :is(.layout,.editorGrid){gap:var(--space-4);min-width:0}
 body[data-dashboard-view="editor"] :is(.editorPanel,.slidesPanel,.editorGrid>section){min-width:0}
