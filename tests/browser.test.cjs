@@ -76,12 +76,14 @@ async function fixtures(){
       return {x:Math.abs(button.x+button.width/2-icon.x-icon.width/2),y:Math.abs(button.y+button.height/2-icon.y-icon.height/2)};
      }),
      bluffHeight:rect(document.querySelector('#bluffLibrary')).height,
-     yesnoHeight:rect(document.querySelector('#yesnoLibrary')).height
+     yesnoHeight:rect(document.querySelector('#yesnoLibrary')).height,
+     emptyCards:[...document.querySelectorAll('#bluffLibrary .empty,#yesnoLibrary .empty')].map(el=>({padding:getComputedStyle(el).padding,contentFits:el.scrollHeight<=el.clientHeight+1}))
     };
    });
    assert(layout.heights.every(height=>Math.abs(height-44)<1),'Every library button has the same 44px height');
    assert(layout.plusOffsets.every(offset=>offset.x<1&&offset.y<1),'Add icons are centered on both axes');
-   assert(Math.abs(layout.bluffHeight-layout.yesnoHeight)<1,'Empty Bluff and Yes/No libraries have equal heights');
+   assert.equal(layout.emptyCards[0].padding,layout.emptyCards[1].padding,'Empty libraries use the same spacing');
+   assert(layout.emptyCards.every(card=>card.contentFits),'Different-length empty messages remain fully readable without forced equal heights');
   }
 
   await checkLibraryControls();
