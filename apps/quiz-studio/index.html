@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quiz Studio · SchulApp</title>
+<link rel="stylesheet" href="../../shared/tokens.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -56,8 +57,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .btn.primary{background:var(--accent-dark);border-color:var(--accent-dark);color:#fffdf7}
 .btn.primary:hover:not(:disabled){background:#554a32;border-color:#554a32}
-.btn.secondary,.btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--text);box-shadow:none}
-.btn.secondary:hover:not(:disabled),.btn.ghost:hover:not(:disabled){background:var(--surface-muted);border-color:var(--line-strong);color:var(--text);box-shadow:none}
+.btn.secondary{background:var(--surface);border:1px solid var(--line);color:var(--text);box-shadow:none}
+.btn.secondary:hover:not(:disabled){background:var(--surface-muted);border-color:var(--line-strong);color:var(--text);box-shadow:none}
 .btn.danger{background:var(--danger);border-color:var(--danger);color:#fffdf7}
 .btn.danger:hover:not(:disabled){background:#9f3e3d;border-color:#9f3e3d}
 .btn.gold{background:var(--accent);border-color:var(--accent);color:#fffdf7}
@@ -101,8 +102,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .brand span{color:var(--accent);font-weight:700}
 .brand-sub{font-size:.82rem;color:var(--muted);margin-top:4px}
 
-.hero-actions{display:flex;gap:8px;flex-wrap:wrap}
-
 /* ---------- Panels ---------- */
 .panel{
   background:rgba(255,254,250,.91);
@@ -113,7 +112,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   box-shadow:var(--shadow);
 }
 .panel h2{font-size:1.32rem;letter-spacing:-.025em;margin:0 0 8px;font-weight:800}
-.panel-lead{margin:0;color:var(--muted);max-width:58ch;font-size:.94rem;line-height:1.55}
 .eyebrow{font-size:.72rem;letter-spacing:.14em;font-weight:850;color:var(--accent);margin:0 0 7px;text-transform:uppercase}
 .library-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .library-count{
@@ -153,9 +151,6 @@ video.media-preview-editor{width:auto;max-width:100%;max-height:220px}
 .question-media-play{display:block;max-width:100%;max-height:320px;margin:0 auto 18px;border-radius:12px;object-fit:contain}
 audio.question-media-play{width:min(100%,560px);height:42px}
 video.question-media-play{width:auto;max-width:100%;max-height:320px}
-
-/* ---------- Editor ---------- */
-.topbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 
 .title-input{
   width:100%;border:none;background:transparent;color:var(--text);
@@ -295,8 +290,6 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 
 @media(max-width:760px){
   .top{flex-direction:column;align-items:flex-start;padding:17px}
-  .hero-actions{width:100%}
-  .hero-actions .btn{flex:1}
   .grid{display:flex;flex-direction:column}
   .qzcard{grid-template-columns:1fr;align-items:stretch}
   .qzcard .card-actions{grid-column:1;grid-row:auto;justify-content:flex-start;flex-wrap:wrap;padding-top:10px}
@@ -514,15 +507,6 @@ function setCloudStatus(message){
   if(el) el.textContent = 'Quiz Studio · ' + message;
   setConnectionStatus(/fehlgeschlagen|Nicht gespeichert|konflikt|Fehler/i.test(message)?'error':/Verbinde|Lade|Speichere|Ungespeicherte|Übernehme|Nicht gespeichert/i.test(message)?'waiting':'ready',message);
 }
-function isMissingCloudFile(error){
-  const status = String(error && (error.statusCode || error.status) || '');
-  const message = String(error && error.message || '');
-  return status === '404' || /not found|does not exist|no such object|object not found/i.test(message);
-}
-function cloudFilePath(){
-  if(!cloudUser) throw new Error('Du bist nicht angemeldet.');
-  return cloudUser.id + '/Quiz-Studio.json';
-}
 function openLegacyDatabase(){
   if(!('indexedDB' in window)) return Promise.reject(new Error('Keine alte lokale Datenbank vorhanden.'));
   if(!indexedDbPromise){
@@ -590,7 +574,6 @@ async function load(){
     return false;
   }
   cloudUser = authData.user;
-  const path = cloudFilePath();
   setCloudStatus('Lade Quizbibliothek aus der Cloud …');
 
   const parsed=await libraryStore.load(cloudUser);
@@ -1803,6 +1786,7 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 
 
