@@ -26,7 +26,7 @@ function fixtures(){
  }
  const result=data=>Promise.resolve({data,error:null});
  const client={
-  auth:{getUser:()=>result({user:location.pathname.endsWith('/login.html')?null:{id:owner}}),getSession:()=>result({session:null}),signOut:()=>result({})},
+  auth:{getUser:async()=>({data:{user:{id:owner}},error:null}),getSession:()=>result({session:null}),signOut:()=>result({})},
   channel(){return {on(){return this},subscribe(cb){cb?.('SUBSCRIBED');return this}}},removeChannel(){},
   storage:{from(){return {download:async()=>({error:{statusCode:'404',message:'Object not found'}})}}},
   from(table){let kind;const data=()=>table==='teacher_libraries'?{revision:1,payload:kind==='quiz'?{quizzes:[quiz]}:{games:[game]}}:table==='surveys'?survey:table==='sessions'?survey:table==='quiz_live_sessions'?qs:table==='jeopardy_catalog'?{payload:{games:[game]}}:[];
@@ -45,7 +45,7 @@ function fixtures(){
    return result({ok:true,revision:2});
   }
  };
- window.supabase={createClient:()=>client};
+ window.__layoutClient=client;window.supabase={createClient:()=>client};
  window.__layout={quiz,game,survey};
 }
 const views=[
@@ -81,7 +81,7 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
   for(const width of [360,390,768,1280]){
    const context=await browser.newContext({viewport:{width,height:844},reducedMotion:'reduce'});
    await context.addInitScript(fixtures);
-   await context.route('https://**',r=>r.fulfill({contentType:'text/javascript',body:''}));
+   await context.route('https://**',r=>r.fulfill({contentType:'text/javascript',body:r.request().url().includes('supabase')?'window.supabase={createClient:()=>window.__layoutClient};':''}));
    const page=await context.newPage();let errors=[];page.on('pageerror',e=>errors.push(e.message));
    for(const [name,url,ready,setup] of views){
     errors=[];
@@ -104,7 +104,7 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
      for(const btn of await page.locator('.studio-actions button:visible,.yn-answer:visible,.yn-submit:visible,.rank-choice button:visible').all())assert((await btn.boundingBox()).height>=43,`${name}: touch control shrank`);
      assert.deepEqual(errors,[],name+' script errors');
      if(width===390||width===1280)await page.screenshot({path:path.join(output,`layout-${name}-${width}.png`),fullPage:!name.startsWith('jeopardy-')});
-    }catch(e){console.error('VIEW FAILURE',name,width,'script errors:',errors,'page:',await page.locator('body').innerText());await page.screenshot({path:path.join(output,`layout-FAILED-${name}-${width}.png`),fullPage:true});throw e;}
+    }catch(e){console.error('VIEW FAILURE',name,width,'script errors:',errors,'auth:',await page.evaluate(async()=>({url:location.href,auth:await window.__layoutClient?.auth.getUser()})),'page:',await page.locator('body').innerText());await page.screenshot({path:path.join(output,`layout-FAILED-${name}-${width}.png`),fullPage:true});throw e;}
    }
    await context.close();console.log(`PASS: ${views.length} real application views at ${width}px`);
   }
