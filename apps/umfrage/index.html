@@ -169,7 +169,7 @@ async function loadEndedSessions(){
 async function fetchAllSessionRows(table,columns,sessionId){
   const rows=[];
   const pageSize=1000;
-  for(let offset=0;offset+=pageSize){
+  for(let offset=0;;offset+=pageSize){
     let query=db.from(table).select(columns).eq('session_id',sessionId);
     if(table==='participants'){
       query=query.order('joined_at',{ascending:true});
