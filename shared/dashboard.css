@@ -18,16 +18,16 @@ body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.app-nav a{bord
 body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.app-nav a:first-child{color:var(--studio-text)}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.app-nav a:hover{color:var(--studio-accent)}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.wrap,body[data-dashboard-view]:not([data-dashboard-view="workspace"])>#app{
-  order:1;box-sizing:border-box;width:min(1280px,100%);max-width:none;margin:0 auto;padding:var(--space-3) var(--page-gutter) var(--space-5);min-height:0;
+  order:1;box-sizing:border-box;width:min(1280px,100%);max-width:none;margin:0 auto;padding:var(--space-2) var(--page-gutter) var(--space-4);min-height:0;
 }
-.studio-header{display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);flex-wrap:wrap;padding:0 0 var(--space-3);margin:0 0 var(--space-4);border-bottom:1px solid var(--studio-line)}
+.studio-header{display:flex;justify-content:space-between;align-items:center;gap:var(--header-gap);flex-wrap:wrap;padding:0 0 var(--space-2);margin:0 0 var(--space-3);border-bottom:1px solid var(--studio-line)}
 .studio-identity{display:flex;align-items:center;gap:var(--space-3);min-width:0}
 .studio-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:var(--studio-tint);color:var(--studio-accent)}
 .studio-icon svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .studio-title{font:750 var(--title-size)/1.15 Inter,"Avenir Next",system-ui,sans-serif;letter-spacing:-.045em;color:var(--studio-text);margin:0}
 .studio-title span{color:var(--studio-accent);font-weight:500}
 .studio-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
-body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button,.btn){box-sizing:border-box;min-height:var(--control-size);border:1px solid var(--studio-line);border-radius:10px;padding:10px 14px;background:var(--studio-surface);color:var(--studio-text);font:600 14px/1.4 Inter,"Avenir Next",system-ui,sans-serif;box-shadow:none;transition:background .15s,border-color .15s;cursor:pointer}
+body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button,.btn){box-sizing:border-box;min-height:var(--control-size);border:1px solid var(--studio-line);border-radius:10px;padding:8px 12px;background:var(--studio-surface);color:var(--studio-text);font:600 14px/1.4 Inter,"Avenir Next",system-ui,sans-serif;box-shadow:none;transition:background .15s,border-color .15s;cursor:pointer}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button,.btn):hover:not(:disabled){background:var(--studio-soft);border-color:#b6ae9c;transform:none;box-shadow:none;color:var(--studio-text)}
 body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.studio-primary,.btn.primary,.btn.accent,.btn.gold,.game-actions>button:not(.secondary):not(.danger)){
   color:#fff;background:var(--studio-accent);border-color:var(--studio-accent);
@@ -58,17 +58,20 @@ body[data-dashboard-view]:not([data-dashboard-view="workspace"]) #retryCloudSave
 body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.connection-status{order:2;box-sizing:border-box;width:calc(100% - 2 * var(--page-gutter));max-width:1224px;margin:0 auto 24px;font:500 12px/1.5 Inter,"Avenir Next",system-ui,sans-serif;border-radius:10px}
 @media(max-width:800px){
   .studio-header{align-items:flex-start}
-  .studio-actions{width:100%;justify-content:flex-start}
+  .studio-actions{justify-content:flex-start}
   body[data-dashboard-view]:not([data-dashboard-view="workspace"]) .columns{grid-template-columns:minmax(0,1fr);grid-template-areas:"surveys" "sessions" "ended"}
   body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.item,.qzcard,.game-card){grid-template-columns:minmax(0,1fr)}
   body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.qzcard .card-actions,.game-card .game-actions,.item .actions){grid-column:1;grid-row:auto;justify-content:flex-start}
 }
 @media(max-width:480px){
   .studio-identity{gap:var(--space-2)}
-  .studio-actions .studio-primary{width:100%;order:2}
   body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.library-heading,.panelHeader){flex-direction:row;align-items:center;gap:10px}
   body[data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.game-card .game-actions,.game-card .order-actions){margin:0}
   body[data-dashboard-view]:not([data-dashboard-view="workspace"]) .game-card .game-actions>button{flex:0 1 auto}
 }
 
 
+
+.studio-identity>div{min-width:0}
+.studio-title{overflow-wrap:anywhere}
+.studio-actions:empty{display:none}

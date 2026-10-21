@@ -55,6 +55,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Unterrichtsabläufe im Browser prüfen
         run: |
+          node tests/all-views.browser.cjs
           PGDATABASE=bluff_tests node tests/bluff.browser.cjs
           PGDATABASE=bluff_tests node tests/external-links.browser.cjs
           PGDATABASE=yesno_tests node tests/yesno.browser.cjs
@@ -75,6 +76,7 @@ jobs:
             test-results/pin-*.png
             test-results/pin-desktop.png
             test-results/join-mobile.png
+            test-results/layout-*.png
             test-results/hub-compact-*.png
             test-results/hub-studio-compact-*.png
             test-results/hub-desktop.png

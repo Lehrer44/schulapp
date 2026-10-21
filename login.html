@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SchulApp – Lehrerbereich</title>
-<link rel="stylesheet" href="shared/tokens.css">
+<link rel="stylesheet" href="shared/tokens.css?v=compact-2">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#f1efe6;--line:#93856a;--text:#5c5547;--muted:#90836b;--danger:#ef726b}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:"Avenir Next",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{min-height:100vh}.wrap{min-height:100vh;display:grid;place-items:center;padding:24px}.login{width:min(520px,100%);border:2px solid var(--line);border-radius:26px;padding:30px;background:rgba(246,244,236,.25)}
+body{min-height:100vh}.wrap{min-height:100vh;display:grid;place-items:start center;padding:var(--space-4) var(--page-gutter);}.login{width:min(520px,100%);border:2px solid var(--line);border-radius:16px;padding:var(--dialog-padding);background:rgba(246,244,236,.25)}
 .badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#ddd6c4;color:var(--muted);font-size:11px;font-weight:700}
-h1{font-size:34px;font-weight:500;margin:13px 0 8px;color:var(--muted)}.muted{color:var(--muted)}
-.field{display:grid;gap:7px;margin:15px 0}.field input{width:100%;border:2px solid var(--line);background:rgba(246,244,236,.56);color:var(--text);border-radius:8px;padding:13px;font:inherit}
-.btn{width:100%;border:2px solid var(--line);border-radius:8px;background:rgba(246,244,236,.56);color:var(--muted);font:inherit;font-weight:600;padding:13px 16px;cursor:pointer}.btn:hover{background:#e9e5d8;color:#6e624e}
+h1{font-size:var(--title-size);font-weight:500;margin:var(--space-3) 0 var(--space-2);color:var(--muted)}.muted{color:var(--muted)}
+.field{display:grid;gap:7px;margin:var(--space-3) 0;}.field input{width:100%;border:2px solid var(--line);background:rgba(246,244,236,.56);color:var(--text);border-radius:8px;padding:13px;font:inherit}
+.btn{width:100%;border:2px solid var(--line);border-radius:8px;background:rgba(246,244,236,.56);color:var(--muted);font:inherit;font-weight:600;padding:13px 16px;cursor:pointer;min-height:var(--control-size);}.btn:hover{background:#e9e5d8;color:#6e624e}
 .msg{min-height:24px;color:var(--danger)}
 </style>
 <link rel="stylesheet" href="shared/accessibility.css">

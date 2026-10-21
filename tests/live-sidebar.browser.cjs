@@ -1,7 +1,7 @@
 // Layout regression using the actual page styles, without live accounts or data.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{chromium}=require('playwright');
 const root=path.resolve(__dirname,'..');
-function styles(file){const html=fs.readFileSync(path.join(root,file),'utf8');return {body:html.match(/<body([^>]*)>/)?.[1]||'',css:[...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m=>m[1]).join('\n')+'\n'+[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map(m=>fs.readFileSync(path.resolve(root,path.dirname(file),m[1]),'utf8')).join('\n')};}
+function styles(file){const html=fs.readFileSync(path.join(root,file),'utf8');return {body:html.match(/<body([^>]*)>/)?.[1]||'',css:[...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m=>m[1]).join('\n')+'\n'+[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map(m=>fs.readFileSync(path.resolve(root,path.dirname(file),m[1].split(/[?#]/)[0]),'utf8')).join('\n')};}
 const cases=[
  ['classic','apps/quiz-studio/live.html','layout','main-col','side-col','panel ranking-panel'],
  ['speed','apps/quiz-studio/live.html','layout','main-col','side-col','panel ranking-panel'],

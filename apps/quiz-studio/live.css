@@ -1,7 +1,6 @@
 /* Compact teacher controls; game state and scoring remain server-driven. */
-body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar{
- display:grid;grid-template-columns:auto minmax(100px,1fr) auto auto;align-items:center;gap:10px;margin:0 0 24px;padding-bottom:18px;border-bottom:1px solid var(--studio-line);
-}
+body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar{display:grid;grid-template-columns:auto minmax(100px,1fr) auto auto;align-items:center;gap:10px;margin:0 0 var(--space-3);padding-bottom:var(--space-3);border-bottom:1px solid var(--studio-line);
+margin-bottom:var(--space-3);}
 .question-progress{display:flex;align-items:center;gap:9px;white-space:nowrap;font-size:13px;font-weight:650;color:var(--studio-muted)}
 body[data-studio="quiz"][data-dashboard-view="live"] .icon-button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;min-width:44px;height:44px;padding:0;font-size:22px;line-height:1}
 .icon-button svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -11,21 +10,21 @@ body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar .timer-bo
 body[data-studio="quiz"][data-dashboard-view="live"] #timerSeconds{width:76px;min-width:76px;min-height:44px;padding:9px 7px;font-size:13px}
 .question-toolbar .timer{font-size:13px;line-height:1;white-space:nowrap;min-width:0}
 body[data-studio="quiz"][data-dashboard-view="live"] .next-question{justify-self:end;white-space:nowrap;font-size:13px}
-.ranking-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.ranking-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:var(--space-3);}
 body[data-studio="quiz"][data-dashboard-view="live"] .ranking-heading h2{margin:0}
 body[data-studio="quiz"][data-dashboard-view="live"] .lock-button{color:var(--danger);border-color:#e7c8c1;background:#fff5f2}
 body[data-studio="quiz"][data-dashboard-view="live"] .ranking-panel{margin-bottom:0}
-.quiz-access-dialog{box-sizing:border-box;width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid var(--studio-line);border-radius:20px;background:var(--studio-surface);color:var(--studio-text);padding:24px;box-shadow:0 24px 90px #191c2340;text-align:center}
+.quiz-access-dialog{box-sizing:border-box;width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid var(--studio-line);border-radius:20px;background:var(--studio-surface);color:var(--studio-text);padding:var(--dialog-padding);box-shadow:0 24px 90px #191c2340;text-align:center}
 .quiz-access-dialog::backdrop{background:#23251d99;backdrop-filter:blur(3px)}
 .access-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left}
 .access-heading h2{margin:0;font-size:21px;line-height:1.3;letter-spacing:-.025em}
 .quiz-access-dialog>p.muted{font-size:14px;margin:14px 0 20px}
-.access-qr{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:fit-content;max-width:100%;padding:18px;margin:0 auto;background:#fff;border-radius:12px}
+.access-qr{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:fit-content;max-width:100%;padding:var(--space-3);margin:0 auto;background:#fff;border-radius:12px}
 .access-qr :is(canvas,img){max-width:100%;height:auto}
 .access-code-label{font-size:12px;color:var(--studio-muted);margin:20px 0 5px}
 .access-code{font-size:clamp(28px,7vw,42px);font-weight:800;letter-spacing:.15em;color:var(--studio-accent);font-variant-numeric:tabular-nums;margin-left:.15em}
 @media(max-width:650px),(min-width:901px) and (max-width:1100px){
- body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"progress next" "reveal timer";gap:12px 8px;margin-bottom:20px}
+ body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"progress next" "reveal timer";gap:12px 8px;margin-bottom:var(--space-3);margin:0 0 var(--space-3);padding-bottom:var(--space-3);}
  .question-progress{grid-area:progress}.next-question{grid-area:next}
  body[data-studio="quiz"][data-dashboard-view="live"] .question-toolbar .reveal-button{grid-area:reveal;justify-self:start}
  .question-toolbar .timer-box{grid-area:timer}
