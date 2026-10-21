@@ -15,7 +15,7 @@
     const actions=document.createElement('div');actions.className='external-link-actions';
     const href=webUrl(link.url);
     if(href){const open=document.createElement('a');open.className='account-action external-link-open';open.href=href;open.target='_blank';open.rel='noopener noreferrer';open.textContent='Öffnen ↗';open.setAttribute('aria-label',link.name+' öffnen (neuer Tab)');actions.append(open);}
-    const remove=document.createElement('button');remove.type='button';remove.className='account-action external-link-remove';remove.textContent='×';remove.setAttribute('aria-label',link.name+' löschen');remove.title='Link löschen';remove.onclick=async()=>{
+    const remove=document.createElement('button');remove.type='button';remove.className='account-action external-link-remove';remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>';remove.setAttribute('aria-label',link.name+' löschen');remove.title='Link löschen';remove.onclick=async()=>{
      if(busy||!confirm('Link „'+link.name+'“ löschen?'))return;busy=true;remove.disabled=true;say('');
      try{const {error}=await client.from('teacher_external_links').delete().eq('owner_id',user.id).eq('id',link.id);if(error)throw error;if(!active)return;links=links.filter(x=>x.id!==link.id);draw();say('Link gelöscht.');}
      catch{say('Der Link konnte nicht gelöscht werden. Bitte erneut versuchen.');}finally{busy=false;remove.disabled=false;}

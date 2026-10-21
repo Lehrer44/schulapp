@@ -65,7 +65,7 @@ Die Bluff-Spieleransicht enthält keine Dashboard- oder Editor-Navigation. Das D
 
 ## Externe Links
 
-Die Dashboard-Kachel „Externe Links“ speichert persönliche Links über „Link hinzufügen“ mit Name und HTTP-/HTTPS-Adresse. Jede Zeile enthält den Namen, einen „Öffnen“-Button für einen neuen Tab und ein × zum Löschen. Die Links werden in Supabase im jeweiligen Lehrkraftkonto gespeichert. `supabase/external_links.sql` legt die Tabelle und RLS-Regeln für eigene Einträge an. Anonyme Spieler erhalten keinen Lese- oder Schreibzugriff. Beim Abmelden werden die angezeigten Zeilen entfernt.
+Die Dashboard-Kachel „Externe Links“ speichert persönliche Links über „Link hinzufügen“ mit Name und HTTP-/HTTPS-Adresse. Jede Zeile enthält den Namen, einen „Öffnen“-Button für einen neuen Tab und ein Papierkorb-Symbol zum Löschen. Die Links werden in Supabase im jeweiligen Lehrkraftkonto gespeichert. `supabase/external_links.sql` legt die Tabelle und RLS-Regeln für eigene Einträge an. Anonyme Spieler erhalten keinen Lese- oder Schreibzugriff. Beim Abmelden werden die angezeigten Zeilen entfernt.
 
 ## Ja/Nein-Schätzspiel
 

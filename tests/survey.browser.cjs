@@ -49,6 +49,7 @@ function fixture(){
    return {select(){return this},eq(key,value){filters.push(row=>row[key]===value);return this},in(key,values){filters.push(row=>values.includes(row[key]));return this},order(){return this},range(a,b){start=a;end=b;return this},delete(){operation='delete';return this},update(value){operation='update';payload=value;return this},single(){return execute(true)},maybeSingle(){return execute(true)},then(resolve,reject){return execute().then(resolve,reject)}};
   },
   async rpc(name,args){
+   if(name==='classroom_resolve_code')return {data:{ok:true,kinds:['survey']},error:null};
    if(name!=='restart_owned_session')throw Error('Unexpected RPC '+name);
    const session=state.sessions.find(row=>row.id===args.p_session_id);
    session.current_slide=0;session.status='running';state.responses=state.responses.filter(row=>row.session_id!==session.id);persist();
@@ -70,7 +71,7 @@ function fixture(){
    await page.locator('#endedSessionList .exportCsvBtn').waitFor();
    assert.equal(await page.locator('#settingsBtn,#settingsModal,#refreshSessionsBtn,#refreshEndedBtn').count(),0);
    assert.equal(await page.locator('#surveyPanel > .panelHeader #newSurveyBtn').count(),1);
-   for(const button of await page.locator('#newSurveyBtn,.deleteSessionBtn').all()){
+   for(const button of await page.locator('#newSurveyBtn,.deleteSessionBtn,#surveyList .del').all()){
     assert.equal((await button.innerText()).trim(),'');assert(await button.getAttribute('aria-label'));
     const box=await button.boundingBox();assert(box.width>=44&&box.height>=44,'Icon controls remain touch-friendly');
    }
@@ -95,6 +96,7 @@ function fixture(){
    await page.waitForFunction(()=>document.querySelectorAll('#activeSessionList .item').length===1);
    page.once('dialog',dialog=>dialog.accept());await page.locator('#endedSessionList .deleteSessionBtn').click();
    await page.locator('#endedSessionList .empty').waitFor();
+   assert.equal(await page.locator('#endedSessionList .empty').innerText(),'Noch keine durchgeführten Umfragen.');
    assert.equal(await page.locator('#surveyList .item').count(),1);
    assert.deepEqual(await page.evaluate(()=>window.__surveyState.sessions.map(row=>row.id)),['running']);
    assert.deepEqual(await page.evaluate(()=>window.__surveyState.participants.map(row=>row.session_id)),['running']);
@@ -105,6 +107,20 @@ function fixture(){
    await page.locator('#startBtn').waitFor({state:'visible'});
    assert.equal(await page.locator('.metricRow,#participantMetric,#rateMetric,#slideMetric,.studio-subtitle').count(),0);
    assert.equal(await page.locator('.main #slideInfo').innerText(),'Folie 0 / 2');
+   assert.equal(await page.locator('.studio-header #startBtn').count(),0);
+   assert.equal(await page.locator('.questionHead .questionSlot #startBtn').innerText(),'Umfrage starten');
+   assert(await page.locator('#liveQuestion').isHidden());
+   await page.locator('#accessBtn').click();
+   const joinLink=page.getByRole('link',{name:'Teilnahmeseite öffnen',exact:true});
+   assert.equal(await joinLink.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+   const target=new URL(await joinLink.getAttribute('href'));
+   assert.equal(target.pathname,'/join.html');assert.equal(target.searchParams.get('code'),'ABCD0');assert.equal(target.searchParams.get('kind'),'survey');
+   const popupPromise=page.waitForEvent('popup');await joinLink.click();const popup=await popupPromise;
+   await popup.waitForURL('**/apps/umfrage/student.html?code=ABCD0');
+   assert.equal(await popup.locator('#code').inputValue(),'ABCD0');await popup.close();
+   assert(page.url().includes('/live.html?id=lobby'));
+   await page.locator('#closeAccess').click();
+   await page.screenshot({path:path.join(root,`test-results/survey-lobby-${width}.png`),fullPage:true});
    await page.locator('#startBtn').click();
    await page.waitForFunction(()=>document.querySelector('#startBtn').classList.contains('hidden')&&!document.querySelector('#stopBtn').disabled);
    assert.equal(await page.locator('#slideInfo').innerText(),'Folie 1 / 2');
