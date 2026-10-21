@@ -5,7 +5,7 @@ const root=path.resolve(__dirname,'..'),output=path.join(root,'test-results');
 const server=http.createServer((req,res)=>{
  const file=path.resolve(root,'.'+new URL(req.url,'http://local').pathname);
  if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}
- try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}
+ try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');let body=fs.readFileSync(file,'utf8');if(file.endsWith('.html'))body=body.replace(/<script[^>]+src="https:\/\/[^"]*supabase[^"]*"[^>]*><\/script>/gi,'<script>window.supabase={createClient:()=>window.__layoutClient};</script>');res.end(body);}catch{res.writeHead(404);res.end();}
 });
 function fixtures(){
  sessionStorage.clear();
@@ -81,7 +81,7 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
   for(const width of [360,390,768,1280]){
    const context=await browser.newContext({viewport:{width,height:844},reducedMotion:'reduce'});
    await context.addInitScript(fixtures);
-   await context.route('https://**',r=>r.fulfill({contentType:'text/javascript',body:r.request().url().includes('supabase')?'window.supabase={createClient:()=>window.__layoutClient};':''}));
+   await context.route('**/*',r=>r.request().url().startsWith('http://127.0.0.1:')?r.continue():r.fulfill({contentType:'text/javascript',body:''}));
    const page=await context.newPage();let errors=[];page.on('pageerror',e=>errors.push(e.message));
    for(const [name,url,ready,setup] of views){
     errors=[];
