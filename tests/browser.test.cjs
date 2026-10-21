@@ -55,12 +55,14 @@ async function fixtures(){
  async function checkStudio(name){
   const title=page.locator('.studio-title');await title.waitFor();
   assert.equal((await title.innerText()).replace(/\s+/g,' ').trim(),name+' Studio');
-  assert.equal(await page.locator(name==='Quiz'?'#classicLibrary > .library-heading .studio-add':'.studio-header .studio-primary').count(),1);
+  assert.equal(await page.locator(name==='Quiz'?'#classicLibrary > .library-heading .studio-add':name==='Umfrage'?'#surveyPanel > .panelHeader .studio-primary':'.studio-header .studio-primary').count(),1);
   const style=await page.evaluate(()=>{
-   const title=getComputedStyle(document.querySelector('.studio-title')),panel=getComputedStyle(document.querySelector('.panel')),button=getComputedStyle(document.querySelector('#classicLibrary .studio-primary, .studio-header .studio-primary'));
+   const title=getComputedStyle(document.querySelector('.studio-title')),panel=getComputedStyle(document.querySelector('.panel')),button=getComputedStyle(document.querySelector('#classicLibrary .studio-primary, #surveyPanel .studio-primary, .studio-header .studio-primary'));
    return {headerY:document.querySelector('.studio-header').getBoundingClientRect().y,font:title.fontFamily,size:title.fontSize,weight:title.fontWeight,panelRadius:panel.borderRadius,panelBorder:panel.borderTopWidth,panelBackground:panel.backgroundColor,buttonRadius:button.borderRadius,buttonHeight:button.minHeight};
   });
-  if(studioStyle)assert.deepEqual(style,studioStyle);else studioStyle=style;
+  const {size,...sharedStyle}=style;
+  assert.equal(size,name==='Umfrage'?'24px':'30px');
+  if(studioStyle)assert.deepEqual(sharedStyle,studioStyle);else studioStyle=sharedStyle;
   async function checkLibraryControls(){
    if(name!=='Quiz')return;
    await page.locator('#bluffLibrary .empty').waitFor();

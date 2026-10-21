@@ -39,6 +39,8 @@ jobs:
           node tests/pin.test.cjs
       - name: Gemischte Quiz-Regeln in PostgreSQL prüfen
         run: |
+          createdb survey_tests
+          PGDATABASE=survey_tests psql -v ON_ERROR_STOP=1 -f tests/survey-session-db.sql
           psql -f tests/quiz-modes-db.sql
           node tests/quiz-modes-concurrency.cjs
           psql -v ON_ERROR_STOP=1 -f supabase/quiz_pin.sql
@@ -55,6 +57,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Unterrichtsabläufe im Browser prüfen
         run: |
+          node tests/survey.browser.cjs
           node tests/all-views.browser.cjs
           PGDATABASE=bluff_tests node tests/bluff.browser.cjs
           PGDATABASE=bluff_tests node tests/external-links.browser.cjs
@@ -77,6 +80,7 @@ jobs:
             test-results/pin-desktop.png
             test-results/join-mobile.png
             test-results/layout-*.png
+            test-results/survey-*.png
             test-results/hub-compact-*.png
             test-results/hub-studio-compact-*.png
             test-results/hub-desktop.png

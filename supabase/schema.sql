@@ -137,6 +137,8 @@ drop policy if exists surveys_delete on public.surveys; create policy surveys_de
 drop policy if exists sessions_teacher_select on public.sessions; create policy sessions_teacher_select on public.sessions for select to authenticated using ((select auth.uid())=owner_id);
 drop policy if exists sessions_teacher_insert on public.sessions; create policy sessions_teacher_insert on public.sessions for insert to authenticated with check ((select auth.uid())=owner_id);
 drop policy if exists sessions_teacher_update on public.sessions; create policy sessions_teacher_update on public.sessions for update to authenticated using ((select auth.uid())=owner_id) with check ((select auth.uid())=owner_id);
+drop policy if exists sessions_teacher_delete on public.sessions; create policy sessions_teacher_delete on public.sessions for delete to authenticated using ((select auth.uid())=owner_id);
+grant delete on public.sessions to authenticated;
 drop policy if exists sessions_anon_select on public.sessions;
 drop policy if exists participants_teacher_select on public.participants; create policy participants_teacher_select on public.participants for select to authenticated using (exists(select 1 from public.sessions s where s.id=session_id and s.owner_id=(select auth.uid())));
 drop policy if exists participants_anon_insert on public.participants;
