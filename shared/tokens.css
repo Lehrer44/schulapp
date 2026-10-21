@@ -8,7 +8,11 @@
   --page-gutter:24px;
   --panel-padding:16px;
   --card-padding:12px;
+  --dialog-padding:20px;
+  --section-gap:12px;
+  --header-gap:8px;
+  --question-gap:12px;
   --control-size:44px;
   --title-size:clamp(24px,3vw,30px);
 }
-@media(max-width:600px){:root{--page-gutter:12px;--panel-padding:12px}}
+@media(max-width:600px){:root{--page-gutter:12px;--panel-padding:12px;--dialog-padding:16px}}

@@ -60,6 +60,7 @@ jobs:
           PGDATABASE=yesno_tests node tests/yesno.browser.cjs
           node tests/live-sidebar.browser.cjs
           node tests/layout.browser.cjs
+          node tests/all-views.browser.cjs
           node tests/browser.test.cjs
           node tests/quiz-modes.browser.cjs
           node tests/pin.browser.cjs
@@ -75,6 +76,7 @@ jobs:
             test-results/pin-*.png
             test-results/pin-desktop.png
             test-results/join-mobile.png
+            test-results/layout-*.png
             test-results/hub-compact-*.png
             test-results/hub-studio-compact-*.png
             test-results/hub-desktop.png

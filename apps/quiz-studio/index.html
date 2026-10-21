@@ -139,7 +139,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .qzcard .order-button:hover:not(:disabled){background:var(--surface-muted);border-color:var(--line-strong)}
 .card-actions{display:flex;gap:6px;align-items:center;margin-top:auto;padding-top:10px;flex-wrap:wrap}
 .card-actions .btn.small{padding:.42rem .75rem;font-size:.82rem}
-.empty{text-align:center;padding:48px 20px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:14px;background:rgba(250,248,241,.6)}
+.empty{text-align:center;padding:var(--panel-padding);color:var(--muted);border:1px dashed var(--line-strong);border-radius:14px;background:rgba(250,248,241,.6)}
 .question-media-editor{margin:10px 0 2px;padding:12px;background:var(--surface-soft);border:1px solid var(--line);border-radius:12px}
 .media-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .media-upload-label{position:relative;overflow:hidden;cursor:pointer}
@@ -168,7 +168,7 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 .check input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
 .meta{margin-top:12px;font-size:.84rem;color:var(--muted);font-weight:600}
 
-.qcard{margin:0 0 14px;padding:18px 20px}
+.qcard{margin:0 0 var(--section-gap);padding:var(--panel-padding);}
 .qhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .badge{
   background:var(--accent-soft);color:var(--accent-dark);
@@ -224,12 +224,11 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 .play-score{font-size:.94rem;font-weight:800;color:var(--accent-dark);padding:6px 12px;background:var(--accent-soft);border-radius:999px}
 .play-panel{padding:clamp(22px,3vw,32px)}
 .play-meta{font-size:.78rem;color:var(--muted);font-weight:800;margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase}
-.play-question{font-size:clamp(1.35rem,2.6vw,1.85rem);margin:0 0 22px;line-height:1.35;letter-spacing:-.02em;font-weight:800}
+.play-question{font-size:clamp(1.35rem,2.6vw,1.85rem);margin:0 0 var(--question-gap);line-height:1.35;letter-spacing:-.02em;font-weight:800}
 .play-options{display:flex;flex-direction:column;gap:10px}
-.play-opt{
-  display:flex;align-items:center;gap:12px;padding:15px 17px;border:1.5px solid var(--line);
+.play-opt{display:flex;align-items:center;gap:12px;padding:var(--card-padding);border:1.5px solid var(--line);
   border-radius:13px;cursor:pointer;background:#fffefa;transition:.15s;font-size:.98rem;font-weight:600;
-}
+min-height:var(--control-size);}
 .play-opt:hover{border-color:var(--line-strong);background:var(--surface-soft)}
 .play-opt input{width:18px;height:18px;accent-color:var(--accent);flex:none;cursor:pointer}
 .play-opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
@@ -258,7 +257,7 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 .fb-correct strong{font-weight:800}
 
 /* ---------- Result ---------- */
-.result-hero{text-align:center;padding:38px 22px}
+.result-hero{text-align:center;padding:var(--panel-padding);}
 .result-pct{font-size:clamp(3rem,8vw,4.2rem);font-weight:900;letter-spacing:-.045em;line-height:1;color:var(--accent-dark)}
 .result-msg{font-size:1.25rem;font-weight:800;margin-top:12px;letter-spacing:-.02em}
 .result-sub{color:var(--muted);margin-top:8px;font-size:.94rem}
@@ -329,19 +328,11 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 
 <style>
 /* One control and spacing system for all three Quiz Studio libraries. */
-body[data-studio="quiz"][data-dashboard-view="library"] #app{
-  --library-control-height:44px;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary){
-  padding:24px;margin:0 0 20px;min-width:0;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
-  display:grid;grid-template-columns:minmax(0,1fr) 110px auto;
-  align-items:center;gap:16px;margin:0 0 20px;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{
-  margin:0;font-size:18px;line-height:1.35;min-width:0;
-}
+body[data-studio="quiz"][data-dashboard-view="library"] #app{--library-control-height:var(--control-size);}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary){padding:var(--panel-padding);margin:0 0 var(--section-gap);min-width:0;}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;
+  align-items:center;gap:var(--space-2);margin:0 0 var(--space-3);}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{margin:0;font-size:18px;line-height:1.35;min-width:0;}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-count{
   width:110px;text-align:center;justify-self:center;
 }
@@ -363,16 +354,12 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-add svg{
   display:block;width:20px;height:20px;fill:none;stroke:currentColor;
   stroke-width:2;stroke-linecap:round;pointer-events:none;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{
-  padding:12px 16px;margin:0;gap:16px;
-}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{padding:var(--card-padding);margin:0;gap:var(--space-3);}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .card-actions{
   display:flex;align-items:center;gap:6px;margin:0;padding:0;flex-wrap:wrap;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#bluffLibrary,#yesnoLibrary) .empty{
-  display:flex;align-items:center;justify-content:center;min-height:128px;
-  margin:0;padding:24px;text-wrap:balance;
-}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#bluffLibrary,#yesnoLibrary) .empty{display:flex;align-items:center;justify-content:center;min-height:0;
+  margin:0;padding:var(--panel-padding);text-wrap:balance;}
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status]){
   margin:12px 0 0;color:#a23628;font-size:14px;overflow-wrap:anywhere;
 }
@@ -380,26 +367,21 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-sta
   display:none;
 }
 @media(max-width:960px){
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
-    grid-template-columns:minmax(0,1fr) 110px;gap:12px;
-  }
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{grid-template-columns:minmax(0,1fr) 110px;gap:var(--space-2);
+  ;margin:0 0 var(--space-3);}
   body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions{
     grid-column:1/-1;justify-self:start;justify-content:flex-start;
   }
 }
 @media(max-width:480px){
-  body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary){
-    padding:18px;
-  }
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
-    grid-template-columns:minmax(0,1fr) auto;
-  }
+  body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary){padding:var(--panel-padding);
+  ;margin:0 0 var(--section-gap);}
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{grid-template-columns:minmax(0,1fr) auto;
+  ;gap:var(--space-2);margin:0 0 var(--space-3);}
   body[data-studio="quiz"][data-dashboard-view="library"] #app .library-count{
     width:auto;min-width:76px;
   }
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{
-    display:flex;align-items:center;min-height:2.7em;
-  }
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{display:flex;align-items:center;}
   body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-actions{
     gap:6px;
   }
@@ -409,9 +391,8 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-sta
   body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-add{
     padding:0;
   }
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{
-    padding:12px;
-  }
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{padding:var(--card-padding);
+  ;gap:var(--space-3);}
 }
 </style>
 </head>

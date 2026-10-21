@@ -13,13 +13,13 @@ body{min-height:100vh}.wrap{max-width:1200px;margin:0 auto;padding:28px 22px 40p
 .columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"surveys sessions" "ended ended";gap:22px}#surveyPanel{grid-area:surveys}#sessionsPanel{grid-area:sessions}#endedPanel{grid-area:ended}.sessionCode{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--accent-dark)}.panel{border:2px solid var(--line);border-radius:20px;padding:20px;background:rgba(246,244,236,.18)}.panelHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.panel h2{margin:0;color:var(--muted);font-size:27px;font-weight:500}.list{display:grid;gap:10px}.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border:2px solid var(--line);border-radius:11px;padding:12px;background:rgba(247,244,234,.55)}.itemName{font-weight:600;color:var(--text);overflow-wrap:anywhere}.itemMeta{font-size:13px;color:var(--muted);margin-top:3px}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.actions .btn{padding:7px 10px;font-size:13px}.actions a.btn{text-decoration:none;display:inline-flex;align-items:center}.empty{border:2px dashed var(--line);border-radius:11px;padding:28px 16px;text-align:center;color:var(--muted)}.toast{position:fixed;right:18px;bottom:18px;background:#efebe0;border:2px solid var(--line);border-radius:10px;padding:12px 15px;max-width:420px;z-index:30}
 .hidden{display:none!important}
 .modalBackdrop{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(36,32,25,.48)}
-.settingsDialog{width:min(100%,680px);max-height:min(88vh,820px);overflow:auto;background:var(--bg);border:2px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.22)}
-.settingsHeader{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:22px}
+.settingsDialog{width:min(100%,680px);max-height:min(88vh,820px);overflow:auto;background:var(--bg);border:2px solid var(--line);border-radius:20px;padding:var(--dialog-padding);box-shadow:0 24px 80px rgba(0,0,0,.22)}
+.settingsHeader{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:var(--space-3);}
 .settingsHeader h2{margin:0;color:var(--text);font-size:25px;font-weight:600}
 .settingsHeader p{margin:5px 0 0;color:var(--muted);font-size:14px}
 .iconBtn{width:40px;height:40px;flex:0 0 40px;border:2px solid var(--line);border-radius:10px;background:transparent;color:var(--text);font-size:25px;line-height:1;cursor:pointer}
-.statsGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
-.statCard{border:2px solid var(--line);border-radius:13px;padding:16px;background:rgba(246,244,236,.56)}
+.statsGrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin-bottom:var(--space-3);}
+.statCard{border:2px solid var(--line);border-radius:13px;padding:var(--card-padding);background:rgba(246,244,236,.56)}
 .statLabel{font-size:14px;color:var(--muted)}
 .statValue{display:block;margin:6px 0;font-size:36px;line-height:1.1;font-weight:650;color:var(--text);font-variant-numeric:tabular-nums}
 .statHint{font-size:12px;color:var(--muted)}
@@ -30,7 +30,7 @@ body{min-height:100vh}.wrap{max-width:1200px;margin:0 auto;padding:28px 22px 40p
 .settingsNote{margin-top:18px;padding-top:14px;border-top:1px solid rgba(147,133,106,.55);font-size:12px;line-height:1.5;color:var(--muted)}
 .settingsStatus{min-height:20px;margin-top:10px;font-size:13px;color:var(--muted)}
 .btn:disabled{opacity:.55;cursor:wait}
-@media(max-width:520px){.modalBackdrop{padding:10px}.settingsDialog{padding:17px;border-radius:15px}.statsGrid{gap:8px}.statCard{padding:12px}.statValue{font-size:30px}}
+@media(max-width:520px){.modalBackdrop{padding:10px}.settingsDialog{padding:var(--dialog-padding);border-radius:15px}.statsGrid{gap:var(--space-2);margin-bottom:var(--space-3);}.statCard{padding:var(--card-padding);}.statValue{font-size:30px}}
 @media(max-width:800px){.columns{grid-template-columns:1fr;grid-template-areas:"surveys" "sessions" "ended"}.wrap{padding:20px 16px 30px}.top{align-items:flex-start}.item{grid-template-columns:1fr}.actions{justify-content:flex-start}}
 </style>
 <link rel="stylesheet" href="../../shared/accessibility.css">
@@ -169,7 +169,7 @@ async function loadEndedSessions(){
 async function fetchAllSessionRows(table,columns,sessionId){
   const rows=[];
   const pageSize=1000;
-  for(let offset=0;;offset+=pageSize){
+  for(let offset=0;offset+=pageSize){
     let query=db.from(table).select(columns).eq('session_id',sessionId);
     if(table==='participants'){
       query=query.order('joined_at',{ascending:true});

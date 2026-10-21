@@ -30,7 +30,7 @@ const server=http.createServer((req,res)=>{
    });
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Studio fits '+width);
    const sizes=await page.locator('.studio-header').evaluate(el=>{const s=getComputedStyle(el);return [parseFloat(s.paddingBottom),parseFloat(s.marginBottom)];});
-   assert.deepEqual(sizes,[12,16]);
+   assert.deepEqual(sizes,[8,12]);
    assert(await page.locator('.item').first().evaluate(el=>getComputedStyle(el).padding==='12px'));
    for(const btn of await page.locator('.item button').all())assert((await btn.boundingBox()).height>=44);
    if(width===390||width===1280)await page.screenshot({path:path.join(root,`test-results/hub-studio-compact-${width}.png`),fullPage:true});
