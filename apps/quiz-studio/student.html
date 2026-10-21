@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Quiz beitreten · Quiz Studio · SchulApp</title>
+<link rel="stylesheet" href="../../shared/tokens.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{color-scheme:light;--bg:#f3f1e9;--surface:#fffefa;--soft:#faf8f1;--line:#d9d2c2;--line-strong:#b9ad93;--text:#34352e;--muted:#777668;--accent:#88784f;--dark:#665a3d;--accent-soft:#eee7d5;--danger:#b9504e;--danger-soft:#f8e8e5;--ok:#36795d;--ok-soft:#e5f1e8;--shadow:0 14px 36px rgba(69,59,37,.07)}
@@ -61,14 +62,6 @@ async function join(code,name,existingId){
  let polledAt=0;pollTimer=setInterval(()=>{const interval=studentState?.play_mode&&studentState.play_mode!=='classic'?500:1600;if(Date.now()-polledAt>=interval){polledAt=Date.now();refreshState(false);}},250);
  if(timerTimer)clearInterval(timerTimer);
  timerTimer=setInterval(updateTimerDisplay,500);
-}
-function displayAnswer(q,a){
- if(a===null||a===undefined)return 'Keine Antwort';
- if(q.type==='single'){const o=(q.options||[]).find(x=>x.id===a);return o?o.text:'Antwort';}
- if(q.type==='multiple')return Array.isArray(a)?a.map(id=>{const o=(q.options||[]).find(x=>x.id===id);return o?o.text:id;}).join(' · '):String(a);
- if(q.type==='truefalse')return a===true?'Wahr':a===false?'Falsch':'Keine Antwort';
- if(q.type==='ranking')return Array.isArray(a)?a.map((id,i)=>{const o=(q.items||[]).find(x=>x.id===id);return (i+1)+'. '+(o?o.text:id);}).join(' → '):String(a);
- return String(a);
 }
 function getAnswerDraft(q,idx){
  const current=studentState;
@@ -215,6 +208,7 @@ app.addEventListener('click',async e=>{
 </script>
 </body>
 </html>
+
 
 
 
