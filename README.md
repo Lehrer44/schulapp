@@ -83,3 +83,9 @@ Die neue Funktion verwendet ausschließlich den öffentlichen Publishable-Key. S
 
 Tests: `tests/yesno-db.sql` darf nur in einer eigenen **leeren Testdatenbank** laufen. Es prüft Geheimhaltung, Besitz, Token, Punkte, Fristende, Wiederholungen und Fragekopien. `tests/yesno-concurrency.cjs` prüft parallele Abgaben auf getrennten PostgreSQL-Verbindungen. `tests/yesno.browser.cjs` verbindet die tatsächlichen Datenbank-RPCs über eine lokale Testbrücke mit Desktop- und mobilen Teilnehmeransichten. Alle drei Prüfungen laufen in der GitHub-Action; Screenshots werden als Artefakte abgelegt. Die Testbrücke ist ausschließlich Testcode und wird von keiner Anwendungsseite geladen.
 
+
+## Umfrage: einzelne Sitzungen löschen
+
+`supabase/survey_session_delete.sql` ergänzt für bestehende Installationen die Löschberechtigung für eigene Sitzungen. Neue Installationen erhalten diese Regel bereits durch `schema.sql`. Die Papierkorb-Symbole in „Offene Sitzungen“ und „Durchgeführte Umfragen“ löschen nach Bestätigung die ausgewählte Sitzung samt Teilnehmern und Antworten; die Umfragevorlage bleibt erhalten. Die Anwendung prüft die zurückgegebenen IDs, damit eine verweigerte Löschung nicht als Erfolg erscheint.
+
+`tests/survey-session-db.sql` prüft in einer eigenen leeren Testdatenbank die tatsächlichen RLS-Regeln und das kaskadierende Löschen. `tests/survey.browser.cjs` prüft die Oberfläche, CSV-Export, einzelne Löschungen sowie Start, Folienwechsel, Neustart und Beenden einschließlich Abbruch und Fehlerbehandlung auf Desktop und Handy.
