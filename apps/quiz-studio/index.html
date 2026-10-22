@@ -114,11 +114,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .panel h2{font-size:1.32rem;letter-spacing:-.025em;margin:0 0 8px;font-weight:800}
 .eyebrow{font-size:.72rem;letter-spacing:.14em;font-weight:850;color:var(--accent);margin:0 0 7px;text-transform:uppercase}
 .library-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
-.library-count{
-  padding:8px 14px;border:1px solid var(--line);border-radius:999px;
-  background:var(--surface-soft);color:var(--muted);
-  font-size:.8rem;font-weight:750;
-}
+
 
  /* ---------- Quiz cards ---------- */
 .grid{display:flex;flex-direction:column;gap:7px}
@@ -306,8 +302,6 @@ min-height:var(--control-size);}
 }
 </style>
 <script src="../../shared/cloud-library.js"></script>
-<link rel="stylesheet" href="../../shared/app-status.css">
-<script src="../../shared/connection-status.js"></script>
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
@@ -319,23 +313,24 @@ min-height:var(--control-size);}
 <script src="play-modes.js"></script>
 <script src="pin.js"></script>
 <link rel="stylesheet" href="bluff/library.css?v=compact-2">
-<script src="bluff/library.js"></script>
+<script src="bluff/library.js?v=controls-3"></script>
 <link rel="stylesheet" href="yesno/yesno.css?v=compact-2">
 <script src="yesno/common.js"></script>
-<script src="yesno/library.js"></script>
+<script src="yesno/library.js?v=controls-3"></script>
 <link rel="stylesheet" href="pin.css">
 <link rel="stylesheet" href="play-modes.css">
 
 <style>
+body[data-studio="quiz"] .studio-title{font-size:clamp(20px,2.5vw,24px)}
+body[data-studio="quiz"] .icon-btn svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#cloudStatus[data-state="error"]{color:#a23628;font-weight:600}
 /* One control and spacing system for all three Quiz Studio libraries. */
 body[data-studio="quiz"][data-dashboard-view="library"] #app{--library-control-height:var(--control-size);}
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary){padding:var(--panel-padding);margin:0 0 var(--section-gap);min-width:0;}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;
   align-items:center;gap:var(--space-2);margin:0 0 var(--space-3);}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{margin:0;font-size:18px;line-height:1.35;min-width:0;}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-count{
-  width:110px;text-align:center;justify-self:center;
-}
+
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-actions{
   width:auto;display:flex;align-items:center;justify-content:flex-end;
   gap:8px;flex-wrap:wrap;justify-self:end;
@@ -367,7 +362,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-sta
   display:none;
 }
 @media(max-width:960px){
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{grid-template-columns:minmax(0,1fr) 110px;gap:var(--space-2);
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{grid-template-columns:minmax(0,1fr) auto;gap:var(--space-2);
   ;margin:0 0 var(--space-3);}
   body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions{
     grid-column:1/-1;justify-self:start;justify-content:flex-start;
@@ -378,9 +373,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-sta
   ;margin:0 0 var(--section-gap);}
   body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{grid-template-columns:minmax(0,1fr) auto;
   ;gap:var(--space-2);margin:0 0 var(--space-3);}
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-count{
-    width:auto;min-width:76px;
-  }
+
   body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{display:flex;align-items:center;}
   body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-actions{
     gap:6px;
@@ -400,7 +393,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-sta
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
 <div class="wrap">
   <div id="app"></div>
-  <div class="footer-note" role="status" aria-live="polite" id="cloudStatus">Quiz Studio · Quizze und Medien werden in deinem Supabase-Konto gespeichert.</div>
+  <div class="footer-note" role="status" aria-live="polite" id="cloudStatus">Quiz Studio · Verbinde mit Supabase …</div>
 </div>
 <div id="toast"></div>
 
@@ -462,9 +455,6 @@ function fmt(n){
   if(Number.isInteger(x)) return String(x);
   return x.toFixed(2).replace(/0+$/,'').replace(/\.$/,'').replace('.',',');
 }
-function slug(s){
-  return String(s||'quiz').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'quiz';
-}
 function moveInArray(arr, idx, dir){
   const j = idx + dir;
   if(j < 0 || j >= arr.length) return false;
@@ -483,11 +473,29 @@ function toast(msg){
 }
 
 /* ---------- Cloud-Persistenz ---------- */
-function setCloudStatus(message){
-  const el = document.getElementById('cloudStatus');
-  if(el) el.textContent = 'Quiz Studio · ' + message;
-  setConnectionStatus(/fehlgeschlagen|Nicht gespeichert|konflikt|Fehler/i.test(message)?'error':/Verbinde|Lade|Speichere|Ungespeicherte|Übernehme|Nicht gespeichert/i.test(message)?'waiting':'ready',message);
+// One footer reports the state of all three libraries; errors stay visible until confirmed recovery.
+const quizSyncStates=new Map();
+function drawQuizSyncStatus(){
+ const el=document.getElementById('cloudStatus');
+ if(!el)return;
+ const states=[...quizSyncStates.values()];
+ const status=states.find(s=>s.mode==='error')||states.find(s=>s.mode==='waiting')||{mode:'ready'};
+ el.dataset.state=status.mode;
+ el.textContent=status.mode==='ready'?'Quiz Studio · Mit Supabase synchronisiert':status.mode==='error'?'Synchronisation fehlgeschlagen: '+status.message:'Quiz Studio · '+status.message;
 }
+function setQuizSyncStatus(kind,mode,message){
+ quizSyncStates.set(kind,{mode,message});
+ if(mode==='ready'&&navigator.onLine)quizSyncStates.delete('network');
+ if(!navigator.onLine)quizSyncStates.set('network',{mode:'error',message:'Offline. Änderungen sind noch nicht mit Supabase synchronisiert.'});
+ drawQuizSyncStatus();
+}
+function setCloudStatus(message){
+ const mode=/fehlgeschlagen|Nicht gespeichert|konflikt|Fehler/i.test(message)?'error':/Verbinde|Lade|Speichere|Ungespeicherte|Übernehme/i.test(message)?'waiting':'ready';
+ setQuizSyncStatus('quiz',mode,message);
+}
+window.addEventListener('offline',()=>setQuizSyncStatus('network','error','Offline. Änderungen sind noch nicht mit Supabase synchronisiert.'));
+window.addEventListener('online',()=>setQuizSyncStatus('network','error','Verbindung wieder verfügbar. Bitte erneut speichern oder die Seite neu laden, um die Synchronisation zu bestätigen.'));
+
 function openLegacyDatabase(){
   if(!('indexedDB' in window)) return Promise.reject(new Error('Keine alte lokale Datenbank vorhanden.'));
   if(!indexedDbPromise){
@@ -605,7 +613,7 @@ function save(){
   }).catch(error=>{
     console.error('Cloud-Speicherung fehlgeschlagen',error);
     setCloudStatus(error.code==='LIBRARY_CONFLICT'?'Speicherkonflikt: Änderungen sichern, dann neu laden.':'Nicht gespeichert – bitte Verbindung prüfen und erneut speichern.');
-    toast(error.code==='LIBRARY_CONFLICT'?'Ein anderer Tab hat die Bibliothek geändert. Deine Änderungen bleiben hier erhalten. Exportiere eine Sicherung und lade dann neu.':'Nicht gespeichert. Deine Änderungen bleiben hier erhalten. Bitte erneut speichern.');
+    toast(error.code==='LIBRARY_CONFLICT'?'Ein anderer Tab hat die Bibliothek geändert. Deine Änderungen bleiben hier erhalten. Bitte lasse diesen Tab mit deinen Änderungen geöffnet.':'Nicht gespeichert. Deine Änderungen bleiben hier erhalten. Bitte erneut speichern.');
     return false;
   });
   return cloudSaveQueue;
@@ -701,10 +709,7 @@ function viewList(){
   <section class="panel" id="classicLibrary">
     <div class="library-heading">
       <h2>Deine Quizze</h2>
-      <div class="library-count">${quizzes.length} ${quizzes.length === 1 ? 'Quiz' : 'Quizze'}</div>
       <div class="studio-actions">
-        <button type="button" data-action="import">Importieren</button>
-        <button type="button" data-action="export-all">Exportieren</button>
         <button class="studio-primary studio-add" type="button" data-action="new-quiz" title="Neues Quiz" aria-label="Neues Quiz"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>
@@ -717,7 +722,7 @@ function viewList(){
   </section>
   <section class="panel" id="bluffLibrary">
     <div class="library-heading">
-      <h2>Bluff-Quiz</h2><div class="library-count" data-bluff-count>0 Quizze</div>
+      <h2>Bluff-Quiz</h2>
       <div class="studio-actions">
         <button data-bluff-action="random">Zufälliges Spiel</button>
         <a class="btn" href="bluff/index.html">Fragenkatalog</a>
@@ -728,7 +733,7 @@ function viewList(){
   </section>
   <section class="panel" id="yesnoLibrary">
     <div class="library-heading">
-      <h2>Ja/Nein-Schätzspiel</h2><div class="library-count" data-yn-count>0 Spiele</div>
+      <h2>Ja/Nein-Schätzspiel</h2>
       <div class="studio-actions">
         <button data-yn-action="random">Zufälliges Spiel</button>
         <a class="btn" href="yesno/index.html">Fragenkatalog</a>
@@ -749,9 +754,9 @@ function quizCard(q){
       <div class="muted">${q.questions.length} ${q.questions.length === 1 ? 'Frage' : 'Fragen'} · ${fmt(pts)} Punkte</div>
     </div>
     <div class="card-actions">
-      <button class="studio-primary" data-action="live-quiz" data-id="${q.id}">Spiel starten</button>
-      <button class="icon-btn" data-action="open-quiz" data-id="${q.id}" title="Bearbeiten" aria-label="Quiz bearbeiten">✎</button>
-      <button class="icon-btn danger" data-action="del-quiz" data-id="${q.id}" title="Löschen" aria-label="Quiz löschen">×</button>
+      <button data-action="live-quiz" data-id="${q.id}">Starten</button>
+      <button class="icon-btn" data-action="open-quiz" data-id="${q.id}" title="Bearbeiten" aria-label="Quiz bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2 2 0 0 1 5 5L9 20l-6 1 1-6Z"/></svg></button>
+      <button class="icon-btn danger" data-action="del-quiz" data-id="${q.id}" title="Löschen" aria-label="Quiz löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
     </div>
   </div>`;
 }
@@ -766,7 +771,6 @@ function viewEditor(){
     <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">${esc(q.title) || 'Quiz bearbeiten'}</div></div></div>
     <div class="studio-actions">
       <button class="btn secondary" data-action="back-to-list">← Meine Quizze</button>
-      <button class="btn secondary" data-action="export-quiz" data-id="${q.id}">⭳ Export</button>
       <button class="studio-primary" data-action="retry-cloud-save" id="retryCloudSave">Erneut speichern</button>
     </div>
   </header>
@@ -1293,22 +1297,6 @@ document.addEventListener('click', async (e)=>{
       }
       break;
     }
-    case 'export-quiz': {
-      const q = db.quizzes.find(x=>x.id === id);
-      if(!q) break;
-      download(slug(q.title) + '.json', JSON.stringify(q, null, 2));
-      break;
-    }
-    case 'export-all': {
-      if(db.quizzes.length === 0){ toast('Keine Quizze zum Exportieren.'); break; }
-      download('quizstudio-backup.json', JSON.stringify(db, null, 2));
-      break;
-    }
-    case 'import': {
-      importData();
-      break;
-    }
-
     case 'back-to-list': {
       save();
       state.view = 'list';
@@ -1652,59 +1640,6 @@ function updatePrimaryBtn(){
   btn.disabled = !s.checked && !isAnswered(q, s.answers[s.index]);
 }
 
-/* ---------- Import / Export ---------- */
-function download(filename, text){
-  const blob = new Blob([text], { type:'application/json;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url), 1000);
-}
-
-function importData(){
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json,application/json';
-  input.addEventListener('change', ()=>{
-    const file = input.files && input.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      try{
-        const data = JSON.parse(reader.result);
-        const list = Array.isArray(data) ? data
-                   : (data && Array.isArray(data.quizzes)) ? data.quizzes
-                   : [data];
-        let n = 0;
-        list.forEach(q=>{
-          if(!q || !Array.isArray(q.questions)) return;
-          q.id = uid();
-          q.questions.forEach(question=>{
-            question.id = uid();
-            if(Array.isArray(question.options)) question.options.forEach(o=>o.id = uid());
-            if(Array.isArray(question.items))   question.items.forEach(i=>i.id = uid());
-          });
-          if(typeof q.title !== 'string') q.title = 'Importiertes Quiz';
-          if(typeof q.description !== 'string') q.description = '';
-          if(q.immediateFeedback === undefined) q.immediateFeedback = true;
-          db.quizzes.unshift(q);
-          n++;
-        });
-        save(); render();
-        toast(n > 0 ? `${n} Quiz importiert` : 'Keine gültigen Quizze gefunden');
-      }catch(err){
-        toast('Import fehlgeschlagen: ' + err.message);
-      }
-    };
-    reader.readAsText(file);
-  });
-  input.click();
-}
-
 /* =========================================================
    Start
    ========================================================= */
@@ -1767,6 +1702,7 @@ function importData(){
 </script>
 </body>
 </html>
+
 
 
 
