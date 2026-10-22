@@ -1,0 +1,38 @@
+/* Questions and their live results share one surface. */
+.session>.main{min-width:0}
+.questionMedia:empty{display:none}
+.liveResults{margin-top:var(--space-3);min-width:0}
+.integratedResults{width:min(100%,760px);margin:var(--space-3) auto 0}
+.resultActions{display:flex;justify-content:flex-end;margin-top:var(--space-2)}
+.lobbyHint{text-align:center;color:var(--muted);font-size:14px;margin:var(--space-4) 0}
+.choiceResults{display:grid;gap:12px}
+.choiceResult{display:grid;grid-template-columns:minmax(0,1fr) 2.5em;gap:12px;align-items:center}
+.choiceBar{position:relative;isolation:isolate;overflow:hidden;border:1px solid #cbded1;border-radius:14px;background:#f2f7f3;min-width:0;box-shadow:0 2px 6px #294c3410}
+.choiceFill{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(110deg,#c8e6d3,#8fc5a3);z-index:-1;transition:width .45s ease}
+.choiceContent{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px;padding:14px 18px;color:#244831}
+.choiceLabel{min-width:0;flex:1;font-weight:650;overflow-wrap:anywhere}
+.choiceNames{min-width:0;max-width:55%;text-align:right;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.choiceCount{text-align:right;font-size:20px;font-weight:750;font-variant-numeric:tabular-nums;color:var(--studio-accent)}
+.liveResults .rankRow{grid-template-columns:36px minmax(0,1fr) auto;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--studio-soft);margin-bottom:8px;overflow-wrap:anywhere}
+.liveResults .rankRow>b{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--studio-tint);color:var(--studio-accent)}
+.liveResults .scaleLiveItem{padding:18px;border-width:1px;background:var(--studio-soft)}
+.liveResults .scaleLiveTrack{margin:18px 10px 12px;background:linear-gradient(90deg,#e1ebe3,#a9cfb5)}
+.liveResults .scaleLiveMarker{width:24px;height:24px;transition:left .45s ease;background:#386449}
+.liveResults .scaleLiveMarker.noResponses{background:#a1aaa3}
+.liveResults .scaleAverage{color:var(--studio-accent);font-size:14px;font-variant-numeric:tabular-nums}
+.liveResults .chipCloud{gap:12px 16px;padding:24px 16px;border:0;background:radial-gradient(ellipse at top,#f1f6ff,#fffefa 70%);box-shadow:none}
+.liveResults .chip{background:hsl(var(--word-hue) 70% 93%);border:1px solid hsl(var(--word-hue) 45% 82%);color:hsl(var(--word-hue) 55% 28%);border-radius:999px;padding:10px 16px;box-shadow:0 3px 10px #293e4a0b}
+.liveResults .pin{display:grid;place-items:center;width:30px;height:30px;aspect-ratio:auto;border:2px solid white;color:white;font-size:12px;font-weight:800;line-height:1;text-shadow:0 1px 2px #000,0 0 3px #000;box-shadow:0 2px 6px #0004}
+.liveResults .pinLegendDot{display:grid;place-items:center;width:27px;height:27px;color:white;font-size:12px;font-weight:800;line-height:1;text-shadow:0 1px 2px #000,0 0 3px #000}
+/* Keep labels inside the map even at its edges. Coordinates retain their true position. */
+.liveResults .pinBoard{overflow:visible}
+.liveResults .pinMapImage{border-radius:12px}
+@media(max-width:650px){
+ .choiceResult{gap:8px;grid-template-columns:minmax(0,1fr) 2em}
+ .choiceContent{padding:12px;gap:8px;flex-wrap:wrap}
+ .choiceNames{flex:1 1 100%;max-width:100%}
+ .choiceCount{font-size:18px}
+ .liveResults .chip{padding:8px 13px}
+ .liveResults .pin{width:26px;height:26px;font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.choiceFill,.liveResults .scaleLiveMarker{transition:none}}

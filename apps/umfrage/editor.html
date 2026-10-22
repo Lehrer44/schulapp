@@ -82,7 +82,6 @@ const types=[
  {id:'Offene Frage',title:'Offene Frage',desc:'Freie Texteingabe'},
  {id:'Skala',title:'Skala',desc:'Bewerten auf einer Skala'},
  {id:'Ranking',title:'Ranking',desc:'Reihenfolge festlegen'},
- {id:'Q&A',title:'Q&A',desc:'Frage oder kurzer Beitrag'},
  {id:'Pin setzen',title:'Pin setzen',desc:'Punkt auf einer Fläche'}
 ];
 let currentSurvey=null;
@@ -94,7 +93,7 @@ function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidd
 function setSaveState(text){$('saveState').textContent=text;setConnectionStatus(text==='Gespeichert'?'ready':/erforderlich|fehlgeschlagen/i.test(text)?'error':'waiting',text)}
 function typeMeta(type){return types.find(x=>x.id===type)||types[0]}
 function newSlide(){return {type:'Multiple-Choice',question:'Neue Frage',options:['Option 1','Option 2'],scaleMax:5,scaleItems:[{statement:'Neue Aussage',min:0,max:10}],media:null}}
-function ensureSlideData(s){const base=newSlide();const merged=Object.assign(base,s||{});merged.options=Array.isArray(s?.options)?s.options.slice():base.options;merged.scaleItems=Array.isArray(s?.scaleItems)&&s.scaleItems.length?s.scaleItems.map(x=>({statement:x?.statement||'Aussage',min:Number.isFinite(Number(x?.min))?Number(x.min):0,max:Number.isFinite(Number(x?.max))?Number(x.max):10})):base.scaleItems;return merged}
+function ensureSlideData(s){const base=newSlide();const merged=Object.assign(base,s||{});if(merged.type==='Q&A')merged.type='Offene Frage';merged.options=Array.isArray(s?.options)?s.options.slice():base.options;merged.scaleItems=Array.isArray(s?.scaleItems)&&s.scaleItems.length?s.scaleItems.map(x=>({statement:x?.statement||'Aussage',min:Number.isFinite(Number(x?.min))?Number(x.min):0,max:Number.isFinite(Number(x?.max))?Number(x.max):10})):base.scaleItems;return merged}
 
 async function requireUser(){
  const {data,error}=await db.auth.getUser();
@@ -365,6 +364,7 @@ load();
 </script>
 </body>
 </html>
+
 
 
 
