@@ -4,7 +4,14 @@
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const errors={INVALID_NAME:'Bitte gib einen Namen mit höchstens 120 Zeichen ein.',INVALID_SELECTION:'Wähle 1 bis 50 unterschiedliche Fragen aus.',INVALID_ROUND_COUNT:'Wähle zwischen 1 und 50 Runden.',NOT_ENOUGH_QUESTIONS:'Dafür sind nicht genügend unterschiedliche Fragen in deiner Sammlung.',NOT_OWNER:'Dieses Quiz ist nicht mehr verfügbar.',NOT_AUTHENTICATED:'Bitte melde dich erneut an.'};
  let dialog=null;
- async function rpc(client,name,args={}){const {data,error}=await client.rpc(name,args);if(error)throw Error(error.message);if(data?.ok===false)throw Error(errors[data.error]||data.error);return data;}
+ async function rpc(client,name,args={}){
+  let result;
+  try{result=await client.rpc(name,args);if(result.error)throw Error(result.error.message);}
+  catch(e){window.setQuizSyncStatus?.('bluff','error','Bluff-Quiz: '+(e.message||'Verbindung fehlgeschlagen.'));throw e;}
+  const {data}=result;
+  if(data?.ok===false){const message=errors[data.error]||data.error;if(data.error==='NOT_AUTHENTICATED')window.setQuizSyncStatus?.('bluff','error','Bluff-Quiz: '+message);throw Error(message);}
+  window.setQuizSyncStatus?.('bluff','ready');return data;
+ }
  function openDialog(title,content){
   if(dialog){dialog.close();dialog.remove();}
   const opener=document.activeElement,d=document.createElement('dialog');dialog=d;d.className='bluff-dialog';d.setAttribute('aria-labelledby','bluffDialogTitle');
@@ -17,8 +24,9 @@
   let quizzes=[],busy=false;
   const list=root.querySelector('[data-bluff-list]'),status=root.querySelector('[data-bluff-status]');
   function report(e){status.textContent=e.message||'Verbindung fehlgeschlagen. Bitte erneut versuchen.';}
-  function draw(){root.querySelector('[data-bluff-count]').textContent=quizzes.length+' '+(quizzes.length===1?'Quiz':'Quizze');list.innerHTML=quizzes.length?'<div class="grid">'+quizzes.map(q=>'<div class="panel qzcard" data-bluff-quiz-id="'+esc(q.id)+'"><div class="quiz-info"><h3>'+esc(q.name)+'</h3><div class="muted">'+q.questions.length+' '+(q.questions.length===1?'Frage':'Fragen')+'</div></div><div class="card-actions"><button class="studio-primary" data-bluff-action="start" data-id="'+esc(q.id)+'">Spiel starten</button><button class="icon-btn" data-bluff-action="edit" data-id="'+esc(q.id)+'" title="Bearbeiten" aria-label="Bluff-Quiz bearbeiten">✎</button><button class="icon-btn danger" data-bluff-action="delete" data-id="'+esc(q.id)+'" aria-label="'+esc(q.name)+' löschen" title="Löschen">×</button></div></div>').join('')+'</div>':'<div class="empty">Noch keine Bluff-Quizze vorhanden.</div>';}
-  async function reload(){const data=await rpc(client,'bluff_quiz_list');if(!root.isConnected)return;quizzes=data?.quizzes||[];draw();}
+  function draw(){list.innerHTML=quizzes.length?'<div class="grid">'+quizzes.map(q=>'<div class="panel qzcard" data-bluff-quiz-id="'+esc(q.id)+'"><div class="quiz-info"><h3>'+esc(q.name)+'</h3><div class="muted">'+q.questions.length+' '+(q.questions.length===1?'Frage':'Fragen')+'</div></div><div class="card-actions"><button data-bluff-action="start" data-id="'+esc(q.id)+'">Starten</button><button class="icon-btn" data-bluff-action="edit" data-id="'+esc(q.id)+'" title="Bearbeiten" aria-label="Bluff-Quiz bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2 2 0 0 1 5 5L9 20l-6 1 1-6Z"/></svg></button><button class="icon-btn danger" data-bluff-action="delete" data-id="'+esc(q.id)+'" aria-label="'+esc(q.name)+' löschen" title="Löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button></div></div>').join('')+'</div>':'<div class="empty">Noch keine Bluff-Quizze vorhanden.</div>';}
+  async function reload(){
+   window.setQuizSyncStatus?.('bluff','waiting','Lade Bluff-Quizze …');const data=await rpc(client,'bluff_quiz_list');if(!root.isConnected)return;quizzes=data?.quizzes||[];draw();}
   async function start(name,args){const s=await rpc(client,name,args);location.href='bluff/live.html?session='+encodeURIComponent(s.session_id);}
   async function configure(quiz,random=false){
    const data=await rpc(client,'bluff_question_list'),questions=[...(data?.questions||[])];
@@ -45,3 +53,4 @@
  }
  window.BluffLibrary={mount};
 })();
+

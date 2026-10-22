@@ -51,6 +51,76 @@ async function fixtures(){
   const result=await start.evaluate(()=>JSON.parse(sessionStorage.getItem('start-check')));assert.equal(result.writes,dirty?1:0);assert.equal(result.title,dirty?'Aktuell gespeichert':null);
   await start.close();
  }
+ // The three library cards share controls and report synchronization only in the footer.
+ for(const width of [390,1280]){
+  const controls=await context.newPage();controls.on('pageerror',e=>errors.push(e.message));
+  await controls.setViewportSize({width,height:900});
+  await controls.goto(base+'/apps/quiz-studio/index.html');
+  await controls.waitForFunction(()=>document.querySelector('#cloudStatus').dataset.state==='ready');
+  await controls.evaluate(()=>{
+   const original=window.__testClient.rpc;
+   window.__testClient.rpc=async(name,args)=>{
+    if(name==='save_teacher_library'&&window.__failSave)return {error:{message:'Speicherverbindung unterbrochen'}};
+    if(name==='bluff_quiz_list')return window.__failLibrary==='bluff'?{error:{message:'Bluff nicht erreichbar'}}:{data:{ok:true,quizzes:[{id:'b1',name:'Bluff-Test',questions:[{id:1,question:'Test?'}]}]}};
+    if(name==='yesno_game_list')return window.__failLibrary==='yesno'?{error:{message:'Ja/Nein nicht erreichbar'}}:{data:{ok:true,games:[{id:'y1',name:'Ja/Nein-Test',questions:[{id:1,question:'Test?',pack:'Test'}]}],sessions:[]}};
+    return original(name,args);
+   };
+   render();
+  });
+  await controls.locator('[data-bluff-quiz-id]').waitFor();await controls.locator('[data-yn-game-id]').waitFor();
+  assert.equal(await controls.locator('.library-count,[data-bluff-count],[data-yn-count],#connectionStatus,[data-action="import"],[data-action^="export"]').count(),0);
+  assert.equal(await controls.evaluate(()=>typeof importData),'undefined');
+  const cards=controls.locator('#classicLibrary .qzcard,#bluffLibrary .qzcard,#yesnoLibrary .qzcard');
+  assert.equal(await cards.count(),3);
+  for(const card of await cards.all()){
+   const buttons=card.locator('.card-actions button');
+   assert.equal(await buttons.nth(0).innerText(),'Starten');
+   assert.equal(await buttons.nth(1).innerText(),'');assert.equal(await buttons.nth(2).innerText(),'');
+   assert.equal(await buttons.nth(1).locator('svg path').count(),1);assert.equal(await buttons.nth(2).locator('svg path').count(),1);
+   assert(await buttons.nth(1).getAttribute('aria-label'));assert(await buttons.nth(2).getAttribute('aria-label'));
+   const colours=await buttons.evaluateAll(els=>els.slice(0,2).map(el=>[getComputedStyle(el).color,getComputedStyle(el).backgroundColor]));
+   assert.deepEqual(colours[0],colours[1]);
+  }
+  assert.equal(await controls.locator('.studio-title').evaluate(el=>getComputedStyle(el).fontSize),width===390?'20px':'24px');
+  assert(await controls.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await controls.screenshot({path:path.join(outputRoot,'studio-controls-'+width+'.png'),fullPage:true});
+  await context.setOffline(true);
+  await controls.waitForFunction(()=>document.querySelector('#cloudStatus').dataset.state==='error');
+  assert((await controls.locator('#cloudStatus').innerText()).includes('Offline'));
+  assert.equal(await controls.locator('#cloudStatus').evaluate(el=>getComputedStyle(el).color),'rgb(162, 54, 40)');
+  assert.equal(await controls.locator('#connectionStatus').count(),0);
+  await context.setOffline(false);
+  // Coming online alone must not claim synchronization succeeded.
+  await controls.waitForFunction(()=>document.querySelector('#cloudStatus').textContent.includes('Verbindung wieder verfügbar'));
+  assert.equal(await controls.locator('#cloudStatus').getAttribute('data-state'),'error');
+  await controls.locator('[data-action="open-quiz"] svg').click();
+  assert.equal(await controls.locator('[data-action^="export"]').count(),0);
+  await controls.evaluate(()=>window.__failSave=true);
+  await controls.locator('[data-bind="title"]').fill('Ungespeicherter Stand');
+  await controls.waitForFunction(()=>document.querySelector('#cloudStatus').textContent.includes('Nicht gespeichert'));
+  assert.equal(await controls.locator('#cloudStatus').getAttribute('data-state'),'error');
+  await controls.screenshot({path:path.join(outputRoot,'studio-sync-error-'+width+'.png'),fullPage:true});
+  await controls.evaluate(()=>window.__failSave=false);
+  await controls.locator('#retryCloudSave').click();
+  await controls.waitForFunction(()=>document.querySelector('#cloudStatus').textContent==='Quiz Studio · Mit Supabase synchronisiert');
+  assert.equal(await controls.locator('#cloudStatus').getAttribute('data-state'),'ready');
+  await controls.locator('[data-action="back-to-list"]').click();
+  // A successful classic save cannot hide an error in another library.
+  for(const kind of ['bluff','yesno']){
+   await controls.evaluate(kind=>{window.__failLibrary=kind;render();},kind);
+   const retry=controls.locator(kind==='bluff'?'[data-bluff-action="retry"]':'[data-yn-action="retry"]');
+   await retry.waitFor();
+   await controls.waitForFunction(()=>document.querySelector('#cloudStatus').dataset.state==='error');
+   assert((await controls.locator('#cloudStatus').innerText()).includes(kind==='bluff'?'Bluff':'Ja/Nein'));
+   await controls.evaluate(()=>save());
+   assert.equal(await controls.locator('#cloudStatus').getAttribute('data-state'),'error');
+   await controls.evaluate(()=>window.__failLibrary=null);
+   await retry.click();
+   await controls.waitForFunction(()=>document.querySelector('#cloudStatus').dataset.state==='ready');
+  }
+  await controls.close();
+ }
+ console.log('PASS: consistent quiz/bluff/yesno controls, removed import/export and counts, compact titles, footer-only errors, offline/save failures and confirmed recovery on desktop/mobile');
  let studioStyle;
  async function checkStudio(name){
   const title=page.locator('.studio-title');await title.waitFor();
@@ -61,7 +131,7 @@ async function fixtures(){
    return {headerY:document.querySelector('.studio-header').getBoundingClientRect().y,font:title.fontFamily,size:title.fontSize,weight:title.fontWeight,panelRadius:panel.borderRadius,panelBorder:panel.borderTopWidth,panelBackground:panel.backgroundColor,buttonRadius:button.borderRadius,buttonHeight:button.minHeight};
   });
   const {size,...sharedStyle}=style;
-  assert.equal(size,name==='Umfrage'?'24px':'30px');
+  assert.equal(size,name==='Jeopardy'?'30px':'24px');
   if(studioStyle)assert.deepEqual(sharedStyle,studioStyle);else studioStyle=sharedStyle;
   async function checkLibraryControls(){
    if(name!=='Quiz')return;
@@ -289,6 +359,7 @@ async function fixtures(){
  await page.setViewportSize({width:390,height:844});await page.goto(base+'/index.html');await page.screenshot({path:path.join(outputRoot,'hub-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));await page.goto(base+'/join.html');await page.screenshot({path:path.join(outputRoot,'join-mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));assert.equal(errors.length,0,errors.join('\n'));
  await browser.close();server.close();console.log('PASS: native image clipboard, nested formatted paste targets, files-only/embedded HTML images, safe persisted media and unchanged formatting/scroll, stable editor scroll on desktop/mobile for question/option add/delete, delayed media upload/paste/removal, view navigation, decoded local QR code, access dialog, compact teacher controls, timer selection, ranking lock, top navigation, studio editors and live views, requested dashboard cleanup, editor-only retry persistence, shared studio typography/panels/buttons, mobile dashboards, hub, app dashboards, back navigation, login destinations, legacy QR links, project hosting prefix, survey/quiz routing, keyboard pins, saved answers, offline drafts, timer, double navigation, mobile layout, no browser exceptions');
 })().catch(e=>{console.error(e);server.close();process.exit(1)});
+
 
 
 

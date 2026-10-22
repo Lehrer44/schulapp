@@ -24,8 +24,8 @@ server.on('request',async(req,res)=>{
  await host.goto(base+'/apps/quiz-studio/index.html');await host.locator('#bluffLibrary .empty').waitFor();
  assert(await host.locator('#classicLibrary').evaluate(el=>el.nextElementSibling.id==='bluffLibrary'));
  assert.equal(await host.locator('.studio-header button').count(),0);
- assert.equal(await host.locator('#classicLibrary [data-action="import"]').count(),1);
- assert.equal(await host.locator('#classicLibrary [data-action="export-all"]').count(),1);
+ assert.equal(await host.locator('#classicLibrary [data-action="import"]').count(),0);
+ assert.equal(await host.locator('#classicLibrary [data-action="export-all"]').count(),0);
  assert.equal(await host.locator('#classicLibrary [data-action="new-quiz"]').count(),1);
  assert.deepEqual(await host.locator('#classicLibrary,#bluffLibrary').evaluateAll(els=>els.map(el=>[getComputedStyle(el).backgroundColor,getComputedStyle(el).borderRadius])),[['rgb(255, 254, 250)','18px'],['rgb(255, 254, 250)','18px']]);
  await host.locator('#bluffLibrary a').click();await host.waitForURL('**/bluff/index.html');
@@ -180,3 +180,4 @@ await players[2].screenshot({path:path.join(output,'bluff-vote-mobile.png'),full
  assert.deepEqual(errors,[]);console.log('PASS: real PostgreSQL-backed editor, manual round selection, shared join routing, 3 mobile players, resume, hidden bluffs, own-vote block, anonymous choices, simultaneous reveal, readable author/voter columns, no player dashboard links, 1/2-point scoring, timer and ending');
  }finally{for(const c of contexts)await c.close();await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1});
+

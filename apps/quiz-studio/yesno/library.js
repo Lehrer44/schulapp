@@ -5,12 +5,15 @@
   if(!root)return;
   let games=[],sessions=[],busy=false;
   const list=root.querySelector('[data-yn-list]'),status=root.querySelector('[data-yn-status]');
-  const call=(name,args)=>rpc(client,name,args);
+  const call=async(name,args)=>{
+   try{const data=await rpc(client,name,args);window.setQuizSyncStatus?.('yesno','ready');return data;}
+   catch(e){if(!e.code||e.code==='NOT_AUTHENTICATED')window.setQuizSyncStatus?.('yesno','error','Ja/Nein-Schätzspiel: '+error(e));throw e;}
+  };
   async function reload(){
+   window.setQuizSyncStatus?.('yesno','waiting','Lade Ja/Nein-Spiele …');
    const data=await call('yesno_game_list');if(!root.isConnected)return;
    games=data.games||[];sessions=data.sessions||[];
-   root.querySelector('[data-yn-count]').textContent=games.length+' '+(games.length===1?'Spiel':'Spiele');
-   list.innerHTML=(sessions.length?'<div class="yn-resume"><h3>Offene Spiele</h3>'+sessions.map(s=>'<a class="btn" href="yesno/live.html?session='+esc(s.id)+'">'+esc(s.title)+' · '+esc(s.join_code)+' · Fortsetzen</a>').join('')+'</div>':'')+(games.length?'<div class="grid">'+games.map(g=>'<div class="panel qzcard" data-yn-game-id="'+esc(g.id)+'"><div class="quiz-info"><h3>'+esc(g.name)+'</h3><div class="muted">'+g.questions.length+' Fragen</div></div><div class="card-actions"><button class="studio-primary" data-yn-action="start" data-id="'+esc(g.id)+'">Spiel starten</button><button class="icon-btn" data-yn-action="edit" data-id="'+esc(g.id)+'" title="Bearbeiten" aria-label="Ja/Nein-Spiel bearbeiten">✎</button><button class="icon-btn danger" data-yn-action="delete" data-id="'+esc(g.id)+'" aria-label="'+esc(g.name)+' löschen">×</button></div></div>').join('')+'</div>':'<div class="empty">Noch keine Ja/Nein-Spiele vorhanden. Starte zufällig oder stelle eigene Fragen zusammen.</div>');
+   list.innerHTML=(sessions.length?'<div class="yn-resume"><h3>Offene Spiele</h3>'+sessions.map(s=>'<a class="btn" href="yesno/live.html?session='+esc(s.id)+'">'+esc(s.title)+' · '+esc(s.join_code)+' · Fortsetzen</a>').join('')+'</div>':'')+(games.length?'<div class="grid">'+games.map(g=>'<div class="panel qzcard" data-yn-game-id="'+esc(g.id)+'"><div class="quiz-info"><h3>'+esc(g.name)+'</h3><div class="muted">'+g.questions.length+' Fragen</div></div><div class="card-actions"><button data-yn-action="start" data-id="'+esc(g.id)+'">Starten</button><button class="icon-btn" data-yn-action="edit" data-id="'+esc(g.id)+'" title="Bearbeiten" aria-label="Ja/Nein-Spiel bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2 2 0 0 1 5 5L9 20l-6 1 1-6Z"/></svg></button><button class="icon-btn danger" data-yn-action="delete" data-id="'+esc(g.id)+'" aria-label="'+esc(g.name)+' löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button></div></div>').join('')+'</div>':'<div class="empty">Noch keine Ja/Nein-Spiele vorhanden. Starte zufällig oder stelle eigene Fragen zusammen.</div>');
   }
   async function configure(game,start){
    const data=await call('yesno_question_list'),questions=[...(data.questions||[])];
@@ -58,3 +61,4 @@
  }
  window.YesNoLibrary={mount};
 })();
+
