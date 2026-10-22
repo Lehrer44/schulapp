@@ -23,12 +23,12 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css?v=compact-2">
 <link rel="stylesheet" href="../../shared/workspace.css?v=compact-2">
-<link rel="stylesheet" href="live.css?v=compact-2">
+<link rel="stylesheet" href="live.css?v=integrated-3">
 <link rel="stylesheet" href="rich-text.css">
 <script src="rich-text.js"></script>
 <script src="play-modes.js"></script>
-<script src="pin.js"></script>
-<link rel="stylesheet" href="pin.css">
+<script src="pin.js?v=editor-live-2"></script>
+<link rel="stylesheet" href="pin.css?v=editor-live-2">
 <link rel="stylesheet" href="play-modes.css">
 <link rel="stylesheet" href="../../shared/live-sidebar.css">
 </head>
@@ -114,29 +114,36 @@ function questionToolbar(q,idx,count,st){
 }
 function renderQuestion(){
  const q=activeQuestion();const idx=session.current_index;const st=qstate();const revealed=!!st.revealed;const count=session.quiz_snapshot.questions.length;
- if(session.status==='lobby')return '<div class="panel"><div class="eyebrow">Wartelobby</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Die erste Frage ist noch verborgen. Warte, bis alle bereit sind, und starte dann das Quiz.</p><div class="board-status">Teilnehmende: '+participants.length+' · Alle Antworten und Punkte werden erst nach „Lösung einblenden“ ausgewertet.</div><div class="controls"><button data-action="start">▶ Quiz starten</button></div></div>';
+ if(session.status==='lobby')return '<div class="panel lobby-panel"><button class="studio-primary" data-action="start">Quiz starten</button></div>' ;
  if(session.status==='ended'||idx>=count)return '<div class="panel"><div class="eyebrow">Quiz beendet</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Das Quiz ist abgeschlossen. Die Rangliste enthält die endgültigen Punktstände.</p>'+leaderboardMarkup()+'<div class="controls"><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></div>';
  if(!q)return '<div class="panel"><div class="board-status">Frage wird geladen …</div></div>';
  const options=choices(q);
  let body='';
  if(options.length){
-  body='<div class="answers-board">'+options.map(o=>'<div class="answer-board '+(revealed&&o.correct?'correct':'')+'">'+QuizRichText.render(o)+(revealed&&o.correct?' ✓':'')+'</div>').join('')+'</div>';
-  if(revealed&&q.type==='ranking')body='<div class="answers-board">'+(q.items||[]).map((o,i)=>'<div class="answer-board">'+(i+1)+'. '+QuizRichText.render(o)+'</div>').join('')+'</div>';
+  const ordered= q.type==='ranking'&&revealed;
+  const classes='answers-board'+(q.type==='single'?' single-answers':q.type==='ranking'?(ordered?' ranking-revealed':' ranking-unrevealed'):'');
+  body='<div class="'+classes+'">'+options.map((o,i)=>{
+   const names=revealed&&q.type==='single'?responses.filter(r=>r.question_index===idx&&r.answer===o.id).map(r=>{
+    const person=participants.find(p=>p.id===r.participant_id);
+    return '<span class="answer-name '+(r.is_correct?'correct':'wrong')+'">'+esc(person?.name||'Teilnehmende Person')+'</span>';
+   }).join(''):'';
+   return '<div class="answer-board '+(revealed&&o.correct?'correct':'')+'" data-option-id="'+esc(o.id)+'"><span class="answer-label">'+(ordered?(i+1)+'. ':'')+esc(o.text)+(revealed&&o.correct?' ✓':'')+'</span>'+(names?'<span class="answer-names">'+names+'</span>':'')+'</div>';
+  }).join('')+'</div>';
   if(revealed&&q.type==='truefalse')body='<div class="correct-note">Lösung: '+(q.correct?'Wahr':'Falsch')+'</div>';
  }else if(q.type==='shortanswer'&&revealed){body='<div class="correct-note">Akzeptierte Antworten: '+esc((q.answers||[]).join(' · '))+'</div>';}
- if(q.type==='pin')body=QuizPin.markup(q,{showTarget:revealed,markers:revealed?responses.filter(r=>r.question_index===idx).map(r=>({id:r.participant_id,name:participants.find(p=>p.id===r.participant_id)?.name||'Teilnehmende Person',answer:r.answer})):[]});
+ if(q.type==='pin')body=QuizPin.markup(q,{showTarget:revealed,markers:revealed?responses.filter(r=>r.question_index===idx).map(r=>({id:r.participant_id,name:participants.find(p=>p.id===r.participant_id)?.name||'Teilnehmende Person',answer:r.answer,correct:r.is_correct})):[]});
  const media=q.type==='pin'?'':displayMedia(q.media);
  const answerRows=revealed&&(!st.mode||st.mode==='classic')?responses.filter(r=>r.question_index===idx).map(r=>{
    const person=participants.find(p=>p.id===r.participant_id);const ok=!!r.is_correct;
    return '<div class="response-row '+(ok?'correct':'wrong')+'"><span class="response-name">'+esc(person?person.name:'Teilnehmende Person')+'</span><span class="response-answer">'+esc(responseText(q,r.answer))+'</span><span class="response-points">'+(ok?'+'+(Number(r.awarded_points)||0):'0')+' P</span></div>';
  }).join(''):'';
- return '<div class="panel question-panel">'+questionToolbar(q,idx,count,st)+'<div class="question-text">'+QuizRichText.render(q)+'</div>'+media+body+(st.mode&&st.mode!=='classic'?raceMarkup(st):'')+'<div class="answer-count">'+responses.filter(r=>r.question_index===idx).length+' von '+participants.length+' haben geantwortet</div>'+(revealed&&(!st.mode||st.mode==='classic')?'<h2 style="margin-top:22px">Antworten der Schülerinnen und Schüler</h2><div class="responses">'+(answerRows||'<div class="board-status">Noch keine Antworten eingegangen.</div>')+'</div>':'')+'</div>';
+ return '<div class="panel question-panel">'+questionToolbar(q,idx,count,st)+'<div class="question-text">'+QuizRichText.render(q)+'</div>'+media+body+(st.mode&&st.mode!=='classic'?raceMarkup(st):'')+'<div class="answer-count">'+responses.filter(r=>r.question_index===idx).length+' von '+participants.length+' haben geantwortet</div>'+(revealed&&!['single','pin'].includes(q.type)&&(!st.mode||st.mode==='classic')?'<div class="responses">'+(answerRows||'<div class="board-status">Noch keine Antworten eingegangen.</div>')+'</div>':'')+'</div>';
 }
 function render(){
  if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
  const st=qstate();const q=activeQuestion();
- const phase=session.status==='lobby'?'Wartelobby':session.status==='ended'?'Beendet':'Live';
- app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div></div></div><div class="studio-actions"><span class="status-pill">'+participants.length+' Teilnehmende</span><button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col live-sidebar" tabindex="0" aria-label="Punktestand und Spielstatus">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><div class="eyebrow">Live-Ranking</div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div><div class="answer-count">Grün markiert bedeutet: Antwort abgegeben.</div></div></aside></div>';
+ const phase=session.status==='ended'?'Beendet':'Live';
+ app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1>'+(session.status==='lobby'?'':'<div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div>')+'</div></div><div class="studio-actions">'+(session.status==='lobby'?'':'<span class="status-pill">'+participants.length+' Teilnehmende</span>')+'<button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col live-sidebar" tabindex="0" aria-label="Punktestand und Spielstatus">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div></div></aside></div>';
  if(q?.type==='pin')QuizPin.mount(app.querySelector('[data-quiz-pin]'),q,{showTarget:!!st.revealed});
  updateTimer();
 }
@@ -207,6 +214,7 @@ document.body.addEventListener('click',async function(e){
 </script>
 </body>
 </html>
+
 
 
 
