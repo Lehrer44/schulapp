@@ -31,6 +31,7 @@ body[data-studio="survey"] #joinPageLink:hover{background:transparent}
 <link rel="stylesheet" href="../../shared/dashboard.css?v=compact-2">
 <link rel="stylesheet" href="../../shared/workspace.css?v=compact-2">
 <link rel="stylesheet" href="../../shared/live-sidebar.css">
+<link rel="stylesheet" href="live-results.css?v=integrated-1">
 </head>
 <body data-studio="survey" data-dashboard-view="live">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Umfrage Studio</a></nav>
@@ -44,8 +45,9 @@ body[data-studio="survey"] #joinPageLink:hover{background:transparent}
 <div class="questionSlot"><button class="btn" id="startBtn" type="button" disabled>Umfrage starten</button><div class="question hidden" id="liveQuestion"></div></div>
 <button class="btn" id="nextBtn">weiter →</button>
 </div>
-<div id="questionMedia" class="questionMedia"></div><div class="options" id="liveOptions"></div>
-<div class="answers"><h2 id="answerTitle">Live-Antworten</h2><div id="answers"></div></div>
+<div id="questionMedia" class="questionMedia"></div>
+<div class="resultActions hidden" id="resultActions"><button class="btn" id="showNamesBtn" type="button" aria-pressed="false" aria-controls="answers">Namen zeigen</button></div>
+<div class="liveResults" id="answers" role="region" aria-label="Antworten zur aktuellen Frage"></div>
 </section>
 <aside class="participants live-sidebar" tabindex="0" aria-label="Teilnehmerliste">
 <div class="partHead"><div><h2>Teilnehmer</h2><div class="partCount" id="participantSummary">0 von 0 beantwortet</div></div></div>
@@ -68,6 +70,7 @@ const SUPABASE_KEY='sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let currentSession=null,realtimeChannel=null,participantMap=new Map(),currentRows=[],syncTimer=null,syncing=false,liveFetchBusy=false,liveFetchAgain=false,liveRefreshTimer=null;
+let showChoiceNames=false,renderedSlideKey=null,rowsSlideKey=null;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function requireUser(){const {data,error}=await db.auth.getUser();if(error||!data.user){location.href='../../login.html?next=apps%2Fumfrage%2Findex.html';return null}return data.user}
 function setConnection(text){setConnectionStatus(/unterbrochen|nicht geladen|fehlgeschlagen|konnte nicht/i.test(text)?'error':'ready',text)}
@@ -89,8 +92,9 @@ async function refreshLiveData(){
  currentSession.status==='running'?fetchAllRows(()=>db.from('responses').select('id,participant_id,slide_index,answer,created_at').eq('session_id',sid).eq('slide_index',idx).order('created_at',{ascending:true}).order('id',{ascending:true})):Promise.resolve([])
  ]);
  if(!currentSession||currentSession.id!==sid||Number(currentSession.current_slide)!==idx){liveFetchAgain=true;return false;}
- currentRows=rows;const answered=new Set(rows.map(x=>x.participant_id));
+ currentRows=rows;rowsSlideKey=sid+':'+idx;const answered=new Set(rows.map(x=>x.participant_id));
  participantMap=new Map(participants.map(x=>[x.id,x.name||'Schüler']));
+ participantNumberMap=new Map(participants.map((p,i)=>[p.id,i+1]));
  participantColorMap=new Map(participants.map((p,i)=>[p.id,'hsl('+Math.round(i/Math.max(1,participants.length)*360)+',68%,48%)']));
  $('participantSummary').textContent=answered.size+' von '+participants.length+' beantwortet';
  renderParticipants(participants,rows);renderAnswers(rows,(currentSession.survey_snapshot||[])[idx]||{});return true;
@@ -98,16 +102,103 @@ async function refreshLiveData(){
  finally{liveFetchBusy=false;if(liveFetchAgain){liveFetchAgain=false;scheduleLiveRefresh();}}
 }
 function renderParticipants(participants,rows){const root=$('participantList');if(!participants.length){root.innerHTML='<div class="empty">Noch keine Teilnehmer.</div>';return}const byParticipant=new Map(rows.map(r=>[r.participant_id,r]));const running=currentSession?.status==='running';root.innerHTML=participants.map(p=>{const r=byParticipant.get(p.id),marked=isTeacherMarked(r),answered=!!r,action=!running?'':(marked?'Markierung aufheben':answered?'Antwort zurücksetzen':'Als beantwortet markieren');return '<div class="participant '+(answered?'answered ':'')+(!running?'disabled':'')+'" data-participant-id="'+p.id+'" role="button" tabindex="'+(running?'0':'-1')+'" title="'+esc(action||'')+'"><span class="participantDot"></span><span>'+esc(p.name||'Schüler')+'</span><span class="participantAction">'+(running?action:'')+'</span></div>'}).join('')}
-function renderSession(){const slides=currentSession.survey_snapshot||[],i=Number(currentSession.current_slide)||0,f=slides[i]||{},running=currentSession.status==='running';renderQuestionMedia(running&&f.type!=='Pin setzen'?f.media:null);$('slideInfo').textContent='Folie '+(running&&slides.length?i+1:0)+' / '+slides.length;$('prevBtn').disabled=sessionActionBusy||!running||i<=0;$('nextBtn').disabled=sessionActionBusy||!running||i>=slides.length-1;$('startBtn').disabled=sessionActionBusy||running;$('stopBtn').disabled=sessionActionBusy;$('startBtn').classList.toggle('hidden',running);$('restartBtn').disabled=sessionActionBusy||!running;$('liveQuestion').classList.toggle('hidden',!running);$('liveQuestion').textContent=running?(f.question||'Keine Frage'):'';$('liveOptions').innerHTML=running&&f.type==='Skala'?'<div class="scaleLive">'+(f.scaleItems||[]).map(item=>'<div class="scaleLiveItem"><div class="scaleLiveStatement">'+esc(item.statement||'Aussage')+'</div><div class="scaleLiveMeta"><span>'+esc(item.min)+'</span><span>Schieberegler</span><span>'+esc(item.max)+'</span></div></div>').join('')+'</div>':running&&['Multiple-Choice','Ranking'].includes(f.type||'')?(f.options||[]).map(o=>'<div class="option">'+esc(o)+'</div>').join(''):'<div class="empty">'+(running?'':'Die Schüler können jetzt beitreten. Die erste Frage wird erst nach dem Start angezeigt.')+'</div>';$('answerTitle').textContent=running?'Live-Antworten':'Noch keine Live-Antworten';if(running&&f.type==='Pin setzen')renderAnswers([],f);}
+function renderSession(){
+ const slides=currentSession.survey_snapshot||[],i=Number(currentSession.current_slide)||0,f=slides[i]||{},running=currentSession.status==='running';
+ const key=currentSession.id+':'+i+':'+currentSession.status;
+ if(key!==renderedSlideKey){showChoiceNames=false;renderedSlideKey=key;}
+ renderQuestionMedia(running&&f.type!=='Pin setzen'?f.media:null);
+ $('slideInfo').textContent='Folie '+(running&&slides.length?i+1:0)+' / '+slides.length;
+ $('prevBtn').disabled=sessionActionBusy||!running||i<=0;
+ $('nextBtn').disabled=sessionActionBusy||!running||i>=slides.length-1;
+ $('startBtn').disabled=sessionActionBusy||running;
+ $('stopBtn').disabled=sessionActionBusy;
+ $('startBtn').classList.toggle('hidden',running);
+ $('restartBtn').disabled=sessionActionBusy||!running;
+ $('liveQuestion').classList.toggle('hidden',!running);
+ $('liveQuestion').textContent=running?(f.question||'Keine Frage'):'';
+ $('resultActions').classList.toggle('hidden',!running||f.type!=='Multiple-Choice');
+ updateNamesButton();
+ renderAnswers(rowsSlideKey===currentSession.id+':'+i?currentRows:[],f);
+}
+function updateNamesButton(){
+ $('showNamesBtn').textContent=showChoiceNames?'Namen ausblenden':'Namen zeigen';
+ $('showNamesBtn').setAttribute('aria-pressed',String(showChoiceNames));
+}
 function renderQuestionMedia(media){const root=$('questionMedia');if(!root)return;root.innerHTML='';if(!media||!media.url)return;const mime=media.mime||'';if(mime.startsWith('image/')){const img=document.createElement('img');img.src=media.url;img.alt=media.name||'';root.appendChild(img)}else if(mime.startsWith('video/')){const v=document.createElement('video');v.src=media.url;v.controls=true;v.playsInline=true;root.appendChild(v)}else if(mime.startsWith('audio/')){const a=document.createElement('audio');a.src=media.url;a.controls=true;root.appendChild(a)}}
-function renderAnswers(rows,f){const root=$('answers');root.innerHTML='';const t=f.type||'Offene Frage';const displayRows=rows.filter(r=>!isTeacherMarked(r));if(t==='Pin setzen')return renderPins(root,displayRows,f);if(!displayRows.length){root.innerHTML='<div class="empty">Noch keine Antworten auf dieser Folie.</div>';return}if(t==='Multiple-Choice')return renderChoices(root,displayRows,f.options||[]);if(t==='Skala')return renderScale(root,displayRows,f.scaleItems||[]);if(t==='Wortwolke')return renderWords(root,displayRows);if(t==='Ranking')return renderRanking(root,displayRows,f.options||[]);renderTexts(root,displayRows)}
-function renderChoices(root,rows,options){const counts=new Map(options.map(o=>[o,0]));rows.forEach(r=>{const v=String(responseValue(r));counts.set(v,(counts.get(v)||0)+1)});const max=Math.max(1,rows.length);root.innerHTML=options.map(o=>{const c=counts.get(o)||0;return '<div class="barRow"><div>'+esc(o)+'</div><div class="barTrack"><div class="barFill" style="width:'+Math.round(c/max*100)+'%"></div></div><div><b>'+c+'</b></div></div>'}).join('')}
-function renderScale(root,rows,items){if(!items.length){root.innerHTML='<div class="empty">Keine Skalen-Aussagen definiert.</div>';return}root.innerHTML='<div class="scaleLive">'+items.map((item,index)=>{const min=Number(item.min),max=Number(item.max),range=max-min||1;const values=rows.map(r=>Number(r?.answer?.value?.values?.[index]?.value)).filter(v=>Number.isFinite(v));const avg=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;const pct=avg===null?50:Math.max(0,Math.min(100,(avg-min)/range*100));return '<div class="scaleLiveItem"><div class="scaleLiveStatement">'+esc(item.statement||'Aussage')+'</div><div class="scaleLiveTrack"><div class="scaleLiveMarker" style="left:'+pct+'%"></div></div><div class="scaleLiveMeta"><span>'+min+'</span><strong>'+(avg===null?'–':avg.toFixed(1))+'</strong><span>'+max+'</span></div></div>'}).join('')+'</div>'}
-function renderWords(root,rows){const words=new Map();rows.forEach(r=>{const v=String(responseValue(r)||'').trim().toLocaleLowerCase('de-DE');v.split(/[^\p{L}\p{N}äöüÄÖÜß'-]+/u).filter(w=>w.length>2).forEach(w=>words.set(w,(words.get(w)||0)+1))});const stop=new Set('und oder der die das ein eine einer eines einem einen ich wir ihr sie er es ist sind war für von mit auf im in zu den dem des dass auch als sich nicht sehr aber wie'.split(' '));const arr=[...words.entries()].filter(([w])=>!stop.has(w)).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'de')).slice(0,40);if(!arr.length){root.innerHTML='<div class="empty">Noch keine auswertbaren Wörter.</div>';return}const max=arr[0][1],allEqual=arr.every(([,count])=>count===max);root.innerHTML='<div class="chipCloud" aria-label="Wortwolke">'+arr.map(([w,c])=>{const ratio=c/max;const size=allEqual?23:Math.round(16+30*Math.pow(ratio,.6));const level=ratio>=.7?'high':ratio>=.35?'mid':'low';return '<span class="chip '+level+'" style="--word-size:'+size+'px" title="'+esc(c+' '+(c===1?'Nennung':'Nennungen'))+'">'+esc(w)+' <small>'+c+'</small></span>'}).join('')+'</div>'}
+function renderAnswers(rows,f){
+ const root=$('answers');
+ if(currentSession.status!=='running'){
+  root.replaceChildren();
+  root.className='liveResults';
+  if(!root.querySelector('.lobbyHint'))root.innerHTML='<p class="lobbyHint">Die Schüler können jetzt beitreten. Die erste Frage wird erst nach dem Start angezeigt.</p>';
+  return;
+ }
+ const t=f.type||'Offene Frage',displayRows=rows.filter(r=>!isTeacherMarked(r));
+ root.dataset.type=t;
+ root.className='liveResults'+(['Multiple-Choice','Ranking','Skala'].includes(t)?' integratedResults':'');
+ // Keep existing bars and markers so realtime updates animate in place.
+ if(t==='Multiple-Choice')return renderChoices(root,displayRows,f.options||[]);
+ if(t==='Skala')return renderScale(root,displayRows,f.scaleItems||[]);
+ root.replaceChildren();
+ if(t==='Ranking')return renderRanking(root,displayRows,f.options||[]);
+ if(t==='Pin setzen')return renderPins(root,displayRows,f);
+ if(!displayRows.length){root.innerHTML='<div class="empty">Noch keine Antworten auf dieser Folie.</div>';return;}
+ if(t==='Wortwolke')return renderWords(root,displayRows);
+ renderTexts(root,displayRows);
+}
+function renderChoices(root,rows,options){
+ const signature=JSON.stringify(options);
+ if(root.dataset.choices!==signature||!root.querySelector('.choiceResults')){
+  root.dataset.choices=signature;
+  root.innerHTML='<div class="choiceResults">'+options.map((o,i)=>'<div class="choiceResult"><div class="choiceBar"><div class="choiceFill" aria-hidden="true"></div><div class="choiceContent"><span class="choiceLabel">'+esc(o)+'</span><span class="choiceNames hidden"></span></div></div><span class="choiceCount" aria-label="Anzahl Antworten für '+esc(o)+'">0</span></div>').join('')+'</div>';
+ }
+ const groups=new Map(options.map(o=>[o,[]]));
+ rows.forEach(r=>{const group=groups.get(String(responseValue(r)));if(group)group.push(participantMap.get(r.participant_id)||'Schüler');});
+ root.querySelectorAll('.choiceResult').forEach((el,i)=>{
+  const names=groups.get(options[i])||[],pct=rows.length?names.length/rows.length*100:0;
+  el.querySelector('.choiceFill').style.width=pct+'%';
+  el.querySelector('.choiceCount').textContent=names.length;
+  const label=el.querySelector('.choiceNames');
+  label.textContent=showChoiceNames?names.join(', '):'';
+  label.classList.toggle('hidden',!showChoiceNames||!names.length);
+ });
+}
+function renderScale(root,rows,items){
+ if(!items.length){root.innerHTML='<div class="empty">Keine Skalen-Aussagen definiert.</div>';return;}
+ const signature=JSON.stringify(items);
+ if(root.dataset.scales!==signature||!root.querySelector('.scaleLive')){
+  root.dataset.scales=signature;
+  root.innerHTML='<div class="scaleLive">'+items.map(item=>'<div class="scaleLiveItem"><div class="scaleLiveStatement">'+esc(item.statement||'Aussage')+'</div><div class="scaleLiveTrack"><div class="scaleLiveMarker" style="left:50%"></div></div><div class="scaleLiveMeta"><span>'+esc(item.min)+'</span><strong class="scaleAverage">–</strong><span>'+esc(item.max)+'</span></div></div>').join('')+'</div>';
+ }
+ root.querySelectorAll('.scaleLiveItem').forEach((el,index)=>{
+  const item=items[index],min=Number(item.min),max=Number(item.max),range=max-min||1;
+  const values=rows.map(r=>r?.answer?.value?.values?.[index]?.value).filter(v=>typeof v==='number'&&Number.isFinite(v));
+  const avg=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
+  const pct=avg===null?50:Math.max(0,Math.min(100,(avg-min)/range*100));
+  el.querySelector('.scaleLiveMarker').style.left=pct+'%';
+  el.querySelector('.scaleLiveMarker').classList.toggle('noResponses',avg===null);
+  el.querySelector('.scaleAverage').textContent=avg===null?'Noch keine Antworten':'Ø '+avg.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1});
+ });
+}
+function renderWords(root,rows){const words=new Map();rows.forEach(r=>{const v=String(responseValue(r)||'').trim().toLocaleLowerCase('de-DE');v.split(/[^\p{L}\p{N}äöüÄÖÜß'-]+/u).filter(w=>w.length>2).forEach(w=>words.set(w,(words.get(w)||0)+1))});const stop=new Set('und oder der die das ein eine einer eines einem einen ich wir ihr sie er es ist sind war für von mit auf im in zu den dem des dass auch als sich nicht sehr aber wie'.split(' '));const arr=[...words.entries()].filter(([w])=>!stop.has(w)).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'de')).slice(0,40);if(!arr.length){root.innerHTML='<div class="empty">Noch keine auswertbaren Wörter.</div>';return}const max=arr[0][1],allEqual=arr.every(([,count])=>count===max);root.innerHTML='<div class="chipCloud" aria-label="Wortwolke">'+arr.map(([w,c])=>{const ratio=c/max;const size=allEqual?23:Math.round(16+30*Math.pow(ratio,.6));const hue=[...w].reduce((hash,char)=>(hash*31+char.codePointAt(0))%360,0);return '<span class="chip" style="--word-size:'+size+'px;--word-hue:'+hue+'" title="'+esc(c+' '+(c===1?'Nennung':'Nennungen'))+'">'+esc(w)+' <small>'+c+'</small></span>'}).join('')+'</div>'}
 function renderTexts(root,rows){root.innerHTML=rows.map(r=>'<div class="textAnswer"><div><span class="name">'+esc(participantMap.get(r.participant_id)||'Schüler')+'</span> <span class="time">'+new Date(r.created_at).toLocaleTimeString('de-DE')+'</span></div><div style="margin-top:7px;white-space:pre-wrap;overflow-wrap:anywhere">'+esc(String(responseValue(r)??''))+'</div></div>').join('')}
-let participantColorMap=new Map();
+let participantColorMap=new Map(),participantNumberMap=new Map();
 function participantColor(id){return participantColorMap.get(id)||'#918469'}
-function renderPins(root,rows,f){const valid=rows.filter(r=>{const v=responseValue(r);return v&&typeof v.x==='number'&&typeof v.y==='number'});const image=f?.pinImage?.url?'<img class="pinMapImage" src="'+esc(f.pinImage.url)+'" alt="">':'';const pins=valid.map(r=>{const v=responseValue(r),name=participantMap.get(r.participant_id)||'Schüler',color=participantColor(r.participant_id);return '<div class="pin" title="'+esc(name)+'" style="left:'+Math.max(0,Math.min(100,v.x))+'%;top:'+Math.max(0,Math.min(100,v.y))+'%;background:'+color+'"></div>'}).join('');const legend=[...new Map(valid.map(r=>[r.participant_id,r])).values()].map(r=>{const name=participantMap.get(r.participant_id)||'Schüler',color=participantColor(r.participant_id);return '<div class="pinLegendItem"><span class="pinLegendDot" style="background:'+color+'"></span><span>'+esc(name)+'</span></div>'}).join('');root.innerHTML='<div class="pinBoard">'+image+pins+'</div><div class="pinLegend">'+(legend||'<div class="subtle">Noch keine gesetzten Pins.</div>')+'</div>';const img=root.querySelector('.pinMapImage');const board=root.querySelector('.pinBoard');if(img&&board){const sync=()=>{if(img.naturalWidth&&img.naturalHeight)board.style.aspectRatio=img.naturalWidth+' / '+img.naturalHeight};if(img.complete)sync();else img.addEventListener('load',sync,{once:true})}}
+function renderPins(root,rows,f){
+ const valid=rows.filter(r=>{const v=responseValue(r);return v&&typeof v.x==='number'&&typeof v.y==='number';});
+ const image=f?.pinImage?.url?'<img class="pinMapImage" src="'+esc(f.pinImage.url)+'" alt="">':'';
+ const pins=valid.map(r=>{
+  const v=responseValue(r),name=participantMap.get(r.participant_id)||'Schüler',color=participantColor(r.participant_id),number=participantNumberMap.get(r.participant_id);
+  return '<div class="pin" title="'+esc(number+' · '+name)+'" aria-label="'+esc('Pin '+number+': '+name)+'" style="left:'+Math.max(0,Math.min(100,v.x))+'%;top:'+Math.max(0,Math.min(100,v.y))+'%;background:'+color+'">'+number+'</div>';
+ }).join('');
+ const legend=[...new Map(valid.map(r=>[r.participant_id,r])).values()].sort((a,b)=>participantNumberMap.get(a.participant_id)-participantNumberMap.get(b.participant_id)).map(r=>{
+  const name=participantMap.get(r.participant_id)||'Schüler',color=participantColor(r.participant_id),number=participantNumberMap.get(r.participant_id);
+  return '<div class="pinLegendItem"><span class="pinLegendDot" style="background:'+color+'">'+number+'</span><span>'+esc(name)+'</span></div>';
+ }).join('');
+ root.innerHTML='<div class="pinBoard">'+image+pins+'</div><div class="pinLegend">'+(legend||'<div class="subtle">Noch keine gesetzten Pins.</div>')+'</div>';
+ const img=root.querySelector('.pinMapImage'),board=root.querySelector('.pinBoard');
+ if(img&&board){const sync=()=>{if(img.naturalWidth&&img.naturalHeight)board.style.aspectRatio=img.naturalWidth+' / '+img.naturalHeight;};if(img.complete)sync();else img.addEventListener('load',sync,{once:true});}
+}
 async function toggleParticipant(participantId){if(!currentSession||currentSession.status!=='running')return;const row=currentRows.find(r=>r.participant_id===participantId);if(row){const {error}=await db.from('responses').delete().eq('id',row.id);if(error){setConnection('Antwort konnte nicht zurückgesetzt werden: '+error.message);return}setConnection('Antwort von '+(participantMap.get(participantId)||'Schüler')+' zurückgesetzt');}else{const {error}=await db.from('responses').insert({session_id:currentSession.id,participant_id:participantId,slide_index:Number(currentSession.current_slide)||0,answer:{value:null,teacherMarked:true}});if(error){setConnection('Teilnehmer konnte nicht als beantwortet markiert werden: '+error.message);return}setConnection((participantMap.get(participantId)||'Schüler')+' als beantwortet markiert');}await refreshLiveData()}
 function renderRanking(root,rows,options){const pos=new Map(options.map(o=>[o,[]]));rows.forEach(r=>{const v=responseValue(r);if(Array.isArray(v))v.forEach((o,i)=>{if(pos.has(o))pos.get(o).push(i+1)})});const ranked=options.map(o=>{const vals=pos.get(o)||[];const avg=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length):Number.POSITIVE_INFINITY;return {option:o,avg,count:vals.length}}).sort((a,b)=>{if(a.avg!==b.avg)return a.avg-b.avg;if(a.count!==b.count)return b.count-a.count;return options.indexOf(a.option)-options.indexOf(b.option)});root.innerHTML=ranked.map((item,i)=>{const avg=Number.isFinite(item.avg)?item.avg.toFixed(1):'–';return '<div class="rankRow"><b>'+(i+1)+'</b><div>'+esc(item.option)+'<div class="subtle">Durchschnitt: '+avg+'</div></div><div class="subtle">'+item.count+'x</div></div>'}).join('')}
 async function move(delta){const slides=currentSession.survey_snapshot||[],next=Math.max(0,Math.min(slides.length-1,(Number(currentSession.current_slide)||0)+delta));if(next===(Number(currentSession.current_slide)||0))return;const {data,error}=await db.from('sessions').update({current_slide:next,updated_at:new Date().toISOString()}).eq('id',currentSession.id).select().single();if(error){setConnection('Folie konnte nicht geändert werden');return}currentSession=data;renderSession();refreshLiveData()}
@@ -138,12 +229,14 @@ async function runSessionAction(action){
     renderSession();
   }
 }
+$('showNamesBtn').onclick=()=>{showChoiceNames=!showChoiceNames;updateNamesButton();renderAnswers(currentRows,(currentSession.survey_snapshot||[])[Number(currentSession.current_slide)||0]||{});};
 $('prevBtn').onclick=()=>runSessionAction(()=>move(-1));$('nextBtn').onclick=()=>runSessionAction(()=>move(1));$('startBtn').onclick=()=>runSessionAction(startSession);$('restartBtn').onclick=()=>runSessionAction(restart);$('stopBtn').onclick=()=>runSessionAction(stop);$('accessBtn').onclick=openAccess;$('closeAccess').onclick=closeAccess;$('accessModal').onclick=e=>{if(e.target.id==='accessModal')closeAccess()};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAccess()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentSession){syncSessionStatus();refreshLiveData()}});
 load();
 </script>
 </body>
 </html>
+
 
 
 

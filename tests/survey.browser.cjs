@@ -23,9 +23,11 @@ function fixture(){
  };
  const persist=()=>sessionStorage.setItem('survey-test-state',JSON.stringify(state));
  window.__mutations=[];
+ const subscriptions=[];
+ window.__surveyEmit=(table,payload)=>subscriptions.filter(s=>s.table===table).forEach(s=>s.callback(payload));
  window.__surveyClient={
   auth:{getUser:async()=>({data:{user:{id:owner}},error:null})},
-  channel(){return {on(){return this},subscribe(cb){cb?.('SUBSCRIBED');return this}}},removeChannel:async()=>{},
+  channel(){return {on(event,filter,callback){subscriptions.push({table:filter.table,callback});return this},subscribe(cb){cb?.('SUBSCRIBED');return this}}},removeChannel:async()=>{},
   from(table){
    let operation='select',payload,filters=[],start=0,end=Infinity;
    const execute=async(single=false)=>{
@@ -71,7 +73,7 @@ function fixture(){
    await page.locator('#endedSessionList .exportCsvBtn').waitFor();
    assert.equal(await page.locator('#settingsBtn,#settingsModal,#refreshSessionsBtn,#refreshEndedBtn').count(),0);
    assert.equal(await page.locator('#surveyPanel > .panelHeader #newSurveyBtn').count(),1);
-   for(const button of await page.locator('#newSurveyBtn,.deleteSessionBtn,#surveyList .del').all()){
+   for(const button of await page.locator('#newSurveyBtn,.deleteSessionBtn,#surveyList .del,#surveyList .edit').all()){
     assert.equal((await button.innerText()).trim(),'');assert(await button.getAttribute('aria-label'));
     const box=await button.boundingBox();assert(box.width>=44&&box.height>=44,'Icon controls remain touch-friendly');
    }
@@ -142,8 +144,111 @@ function fixture(){
    page.once('dialog',dialog=>dialog.accept());await page.locator('#stopBtn').click();
    await page.waitForURL('**/apps/umfrage/index.html');
    assert.equal(await page.evaluate(()=>window.__surveyState.sessions.find(row=>row.id==='lobby').status),'ended');
+   // Each question uses one result surface; incoming changes use the actual realtime handlers.
+   await page.evaluate(()=>sessionStorage.removeItem('survey-test-state'));
+   await page.goto(base+'/apps/umfrage/live.html?id=running');
+   await page.locator('.choiceResult').first().waitFor();
+   assert.equal(await page.locator('#liveOptions,.answers,#answerTitle').count(),0);
+   assert.equal(await page.locator('.choiceResult').count(),2);
+   assert.deepEqual(await page.locator('.choiceCount').allTextContents(),['0','0']);
+   assert(await page.getByRole('button',{name:'Namen zeigen',exact:true}).isVisible());
+   await page.evaluate(()=>{
+    const s=window.__surveyState;
+    s.participants=[{id:'p1',session_id:'running',name:'Alex',joined_at:'1'},{id:'p2',session_id:'running',name:'Sam',joined_at:'2'},{id:'p3',session_id:'running',name:'Kim <img src=x>',joined_at:'3'}];
+    const response=(id,participant_id,value)=>({id,participant_id,session_id:'running',slide_index:0,answer:{value},created_at:'2026-10-20T10:01:00Z'});
+    s.responses=[response('r1','p1',s.sessions[1].survey_snapshot[0].options[0]),response('r2','p2',s.sessions[1].survey_snapshot[0].options[1])];
+    window.__surveyEmit('responses',{new:s.responses[0]});
+   });
+   await page.waitForFunction(()=>document.querySelector('.choiceCount').textContent==='1');
+   assert.deepEqual(await page.locator('.choiceCount').allTextContents(),['1','1']);
+   assert.equal(await page.locator('.choiceFill').first().evaluate(el=>el.style.width),'50%');
+   assert.deepEqual(await page.locator('.choiceNames').allTextContents(),['','']);
+   await page.getByRole('button',{name:'Namen zeigen',exact:true}).click();
+   assert.deepEqual(await page.locator('.choiceNames').allTextContents(),['Alex','Sam']);
+   // A third response must update the already visible names, counts and filling.
+   await page.evaluate(()=>{
+    const s=window.__surveyState;
+    const r={id:'r3',participant_id:'p3',session_id:'running',slide_index:0,answer:{value:s.sessions[1].survey_snapshot[0].options[0]},created_at:'2026-10-20T10:02:00Z'};
+    s.responses.push(r);window.__surveyEmit('responses',{new:r});
+   });
+   await page.waitForFunction(()=>document.querySelector('.choiceCount').textContent==='2');
+   assert.deepEqual(await page.locator('.choiceNames').allTextContents(),['Alex, Kim <img src=x>','Sam']);
+   assert.equal(await page.locator('.choiceNames img').count(),0);
+   assert(Math.abs(parseFloat(await page.locator('.choiceFill').first().evaluate(el=>el.style.width))-200/3)<.01);
+   await page.screenshot({path:path.join(root,`test-results/survey-choices-${width}.png`),fullPage:true});
+   await page.getByRole('button',{name:'Namen ausblenden',exact:true}).click();
+   assert.deepEqual(await page.locator('.choiceNames').allTextContents(),['','']);
+   // Removing an answer through the participant list also updates the single result view.
+   await page.locator('[data-participant-id="p1"]').click();
+   await page.waitForFunction(()=>document.querySelector('.choiceCount').textContent==='1');
+   assert.deepEqual(await page.locator('.choiceCount').allTextContents(),['1','1']);
+   async function setQuestion(slide,responses=[]){
+    await page.evaluate(({slide,responses})=>{
+     const s=window.__surveyState,room=s.sessions.find(s=>s.id==='running');
+     room.survey_snapshot=[slide];room.current_slide=0;room.updated_at=crypto.randomUUID();
+     s.responses=responses.map((value,i)=>({id:'r'+i,participant_id:'p'+(i+1),session_id:'running',slide_index:0,answer:{value},created_at:'2026-10-20T10:00:00Z'}));
+     window.__surveyEmit('sessions',{new:structuredClone(room)});
+    },{slide,responses});
+    await page.waitForFunction(question=>document.querySelector('#liveQuestion').textContent===question,slide.question);
+   }
+   await setQuestion({type:'Ranking',question:'Ordne die Energieträger.',options:['Sonne','Wind','Kohle']});
+   await page.waitForFunction(()=>document.querySelectorAll('.rankRow').length===3);
+   assert(await page.locator('#showNamesBtn').isHidden());
+   assert.equal(await page.locator('.rankRow').first().locator('div').first().evaluate(el=>el.firstChild.textContent),'Sonne');
+   await page.evaluate(()=>{
+    const r={id:'ranking',participant_id:'p1',session_id:'running',slide_index:0,answer:{value:['Wind','Sonne','Kohle']},created_at:'2026-10-20T10:00:00Z'};
+    window.__surveyState.responses=[r];window.__surveyEmit('responses',{new:r});
+   });
+   await page.waitForFunction(()=>document.querySelector('.rankRow>div').firstChild.textContent==='Wind');
+   await page.screenshot({path:path.join(root,`test-results/survey-ranking-${width}.png`),fullPage:true});
+   await setQuestion({type:'Skala',question:'Wie beurteilst du den Unterricht?',scaleItems:[{statement:'Verständlichkeit',min:0,max:10},{statement:'Tempo',min:-5,max:5}]},[{values:[{value:2},{value:-3}]},{values:[{value:8},{value:3}]}]);
+   await page.waitForFunction(()=>document.querySelector('.scaleAverage')?.textContent==='Ø 5,0');
+   assert.equal(await page.locator('.scaleLiveItem').count(),2);
+   assert.equal(await page.locator('.scaleLiveStatement').getByText('Verständlichkeit',{exact:true}).count(),1);
+   assert.equal(await page.locator('.scaleLiveMarker').first().evaluate(el=>el.style.left),'50%');
+   assert.deepEqual(await page.locator('.scaleAverage').allTextContents(),['Ø 5,0','Ø 0,0']);
+   // Fallback polling still works when a realtime event is missed.
+   await page.evaluate(()=>{window.__surveyState.responses[0].answer.value.values[0].value=10;});
+   await page.waitForFunction(()=>document.querySelector('.scaleAverage').textContent==='Ø 9,0');
+   assert.equal(await page.locator('.scaleLiveMarker').first().evaluate(el=>el.style.left),'90%');
+   assert(await page.locator('#showNamesBtn').isHidden());
+   await page.screenshot({path:path.join(root,`test-results/survey-scale-${width}.png`),fullPage:true});
+   await setQuestion({type:'Offene Frage',question:'Was möchtest du verbessern?'},['Mehr Experimente']);
+   await page.getByText('Mehr Experimente',{exact:true}).waitFor();
+   assert.equal(await page.locator('.textAnswer').count(),1);
+   assert.equal(await page.locator('#liveOptions').count(),0);
+   assert(await page.locator('#showNamesBtn').isHidden());
+   await setQuestion({type:'Wortwolke',question:'Welche Themen interessieren dich?'},['Energie Licht Energie','Magnetismus Licht','Bewegung']);
+   await page.waitForFunction(()=>document.querySelectorAll('.chip').length===4);
+   assert.equal(await page.locator('.chip').count(),4);
+   const colours=await page.locator('.chip').evaluateAll(els=>els.map(el=>getComputedStyle(el).backgroundColor));
+   assert(new Set(colours).size>1);
+   assert(await page.locator('#showNamesBtn').isHidden());
+   await page.screenshot({path:path.join(root,`test-results/survey-words-${width}.png`),fullPage:true});
+   await setQuestion({type:'Pin setzen',question:'Markiere den Ort.'},[{x:0,y:0},{x:100,y:100},{x:50,y:50}]);
+   await page.waitForFunction(()=>document.querySelectorAll('.pin').length===3);
+   assert.deepEqual(await page.locator('.pin').allTextContents(),['1','2','3']);
+   assert.deepEqual(await page.locator('.pinLegendDot').allTextContents(),['1','2','3']);
+   assert.equal(await page.locator('.pinLegendItem').nth(2).locator('span').nth(1).innerText(),'Kim <img src=x>');
+   assert(await page.locator('#showNamesBtn').isHidden());
+   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Results fit '+width);
+   await page.screenshot({path:path.join(root,`test-results/survey-pins-${width}.png`),fullPage:true});
+   // Legacy Q&A loads as an open question; it is no longer offered in the editor.
+   await page.evaluate(()=>{
+    window.__surveyState.surveys[0].slides=[{type:'Q&A',question:'Alte Frage',media:null}];
+    sessionStorage.setItem('survey-test-state',JSON.stringify(window.__surveyState));
+   });
+   await page.goto(base+'/apps/umfrage/editor.html?id=template');
+   await page.locator('#slideQuestion').waitFor();
+   assert.equal(await page.locator('.typeBtn').count(),6);
+   assert.equal(await page.locator('.typeBtn.selected strong').innerText(),'Offene Frage');
+   assert.equal(await page.locator('.typeBtn').getByText('Q&A',{exact:true}).count(),0);
+   assert.equal(await page.locator('#slideQuestion').inputValue(),'Alte Frage');
+   await page.locator('#saveBtn').click();
+   await page.waitForFunction(()=>window.__surveyState.surveys[0].slides[0].type==='Offene Frage');
    assert.deepEqual(errors,[]);await context.close();
    console.log('PASS: survey layout, accessible icon actions, CSV, individual deletion, start/navigation/restart/stop and error recovery at '+width+'px');
   }
  }finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});
+

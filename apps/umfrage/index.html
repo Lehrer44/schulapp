@@ -74,7 +74,7 @@ async function loadActiveSessions(){
   const sessions=data||[];
   root.innerHTML='';
   if(!sessions.length){
-    root.innerHTML='<div class="empty">Keine offenen Sitzungen. Starte eine Umfrage, um hier eine Sitzung zu sehen.</div>';
+    root.innerHTML='<div class="empty">Keine offenen Sitzungen.</div>';
     return;
   }
   sessions.forEach(session=>{
@@ -266,7 +266,7 @@ async function exportSessionCsv(session,button){
   }
 }
 
-function renderSurveys(){const root=$('surveyList');root.innerHTML='';if(!surveys.length){root.innerHTML='<div class="empty">Noch keine Umfragen vorhanden.</div>';return}surveys.forEach(s=>{const el=document.createElement('div');el.className='item';el.innerHTML='<div><div class="itemName">'+esc(s.name)+'</div><div class="itemMeta">'+((s.slides||[]).length)+' Folien</div></div><div class="actions"><button class="btn start">Starten</button><button class="btn edit">Bearbeiten</button><button class="btn danger icon-btn del" type="button" aria-label="Umfrage löschen" title="Umfrage löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button></div>';el.querySelector('.start').onclick=()=>startSurvey(s);el.querySelector('.edit').onclick=()=>window.location.href='editor.html?id='+encodeURIComponent(s.id);el.querySelector('.del').onclick=()=>deleteSurvey(s);root.appendChild(el)})}
+function renderSurveys(){const root=$('surveyList');root.innerHTML='';if(!surveys.length){root.innerHTML='<div class="empty">Noch keine Umfragen vorhanden.</div>';return}surveys.forEach(s=>{const el=document.createElement('div');el.className='item';el.innerHTML='<div><div class="itemName">'+esc(s.name)+'</div><div class="itemMeta">'+((s.slides||[]).length)+' Folien</div></div><div class="actions"><button class="btn start">Starten</button><button class="btn edit icon-btn" type="button" aria-label="Umfrage bearbeiten" title="Umfrage bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2 2 0 0 1 5 5L9 20l-6 1 1-6Z"/></svg></button><button class="btn danger icon-btn del" type="button" aria-label="Umfrage löschen" title="Umfrage löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button></div>';el.querySelector('.start').onclick=()=>startSurvey(s);el.querySelector('.edit').onclick=()=>window.location.href='editor.html?id='+encodeURIComponent(s.id);el.querySelector('.del').onclick=()=>deleteSurvey(s);root.appendChild(el)})}
 async function startSurvey(s){const user=await requireUser();if(!user)return;const {data,error}=await createSessionWithUniqueCode({survey_id:s.id,owner_id:user.id,title:s.name,survey_snapshot:s.slides,status:'lobby',current_slide:0});if(error){toast('Session konnte nicht gestartet werden: '+error.message);return}window.location.href='live.html?id='+encodeURIComponent(data.id)}
 async function deleteSurvey(s){if(!confirm('Umfrage wirklich löschen?'))return;const {error}=await db.from('surveys').delete().eq('id',s.id);if(error){toast('Löschen fehlgeschlagen: '+error.message);return}surveys=surveys.filter(x=>x.id!==s.id);renderSurveys();toast('Umfrage gelöscht.')}
 $('newSurveyBtn').onclick=()=>window.location.href='editor.html?new=1';
@@ -274,6 +274,7 @@ $('newSurveyBtn').onclick=()=>window.location.href='editor.html?new=1';
 </script>
 </body>
 </html>
+
 
 
 
