@@ -332,7 +332,8 @@ async function fixtures(){
  const pixels=await page.locator('#qrCode canvas').evaluate(c=>({data:Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data),width:c.width,height:c.height}));
  const decoded=jsQR(new Uint8ClampedArray(pixels.data),pixels.width,pixels.height);
  assert(decoded,'QR code must be machine-readable');assert.equal(decoded.data,base+'/join.html?code=BBBBB&kind=quiz');
- assert.equal(await page.locator('#joinDialog a').count(),0);
+ assert.equal(await page.locator('#joinDialog a').count(),1);
+ assert.equal(await page.locator('#joinPageLink').getAttribute('href'),decoded.data);
  await page.screenshot({path:path.join(outputRoot,'live-quiz-qr-desktop.png'),fullPage:true});
  await page.keyboard.press('Escape');assert.equal(await page.locator('#joinDialog').isVisible(),false);
  await page.setViewportSize({width:390,height:844});

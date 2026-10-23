@@ -23,9 +23,10 @@ function fixture(){
  const session={id:'session',owner_id:owner,quiz_title:quiz.title,quiz_snapshot:structuredClone(quiz),status:'lobby',current_index:-1,join_code:'ABCDE',question_states:quiz.questions.map(()=>({mode:'classic',locked:false,revealed:false})),updated_at:'initial'};
  window.__fixture={quiz,session,rows:[],saved:null};
  window.__client={auth:{getUser:async()=>({data:{user:{id:owner}}})},channel(){return {on(){return this},subscribe(cb){cb?.('SUBSCRIBED');return this;}}},removeChannel(){},from(){return {select(){return this},eq(){return this},single:async()=>({data:structuredClone(session)}),maybeSingle:async()=>({data:{revision:1,payload:{quizzes:[quiz]}}})};},rpc:async(name,args)=>{
+  if(name==='quiz_live_teacher_state'&&(window.__fixture.failSync||!navigator.onLine))return {error:{message:'Testverbindung unterbrochen'}};
   if(name==='save_teacher_library'){window.__fixture.saved=structuredClone(args.p_payload);return {data:{ok:true,revision:2}};}
   if(name==='quiz_live_teacher_state')return {data:{ok:true,session:structuredClone(session),leaderboard:people.map((p,i)=>({participant:p,score:session.question_states[session.current_index]?.revealed?(i===0?3:0):0,answered:window.__fixture.rows.some(r=>r.participant_id===p.id)})),responses:window.__fixture.rows.map(r=>session.question_states[session.current_index]?.revealed?r:{...r,answer:null,is_correct:null,awarded_points:0})}};
-  if(name==='quiz_live_start'){session.current_index=0;session.status='running';session.updated_at=crypto.randomUUID();}
+  if(name==='quiz_live_start'){window.__fixture.starts=(window.__fixture.starts||0)+1;session.current_index=0;session.status='running';session.updated_at=crypto.randomUUID();}
   if(name==='quiz_live_reveal_question'){session.question_states[session.current_index].revealed=true;session.question_states[session.current_index].locked=true;session.updated_at=crypto.randomUUID();}
   return {data:{ok:true}};
  }};
@@ -64,10 +65,38 @@ function fixture(){
   const lobby=await page.locator('#app').innerText();
   for(const text of ['Ein Quizname','Wartelobby','Live-Ranking','Grün markiert','Teilnehmende:','Die erste Frage ist noch verborgen'])assert(!lobby.includes(text));
   assert.equal(await page.locator('header .status-pill').count(),0);
-  const box=await page.locator('.lobby-panel').boundingBox(),button=await page.locator('[data-action="start"]').boundingBox();
-  assert(Math.abs((box.x+box.width/2)-(button.x+button.width/2))<2);assert(Math.abs((box.y+box.height/2)-(button.y+button.height/2))<2);
+  assert.equal(await page.locator('.lobby-panel button').count(),0);
+  assert.equal(await page.locator('button.lobby-panel[data-action="start"]').count(),1);
+  assert.equal(await page.locator('.lobby-panel').innerText(),'Quiz starten');
+  assert.equal(await page.locator('#connectionStatus').count(),0);
+  await page.waitForFunction(()=>document.querySelector('#saveStatus').dataset.state==='ready');
+  await page.evaluate(async()=>{window.__fixture.failSync=true;await refresh(true);});
+  assert.equal(await page.locator('#saveStatus').getAttribute('data-state'),'error');
+  assert.equal(await page.locator('#saveStatus').evaluate(el=>getComputedStyle(el).color),'rgb(162, 54, 40)');
+  assert((await page.locator('#saveStatus').innerText()).includes('Synchronisation fehlgeschlagen'));
+  await ctx.setOffline(true);await page.waitForFunction(()=>document.querySelector('#saveStatus').textContent.includes('Offline'));
+  await ctx.setOffline(false);
+  await page.waitForFunction(()=>document.querySelector('#saveStatus').dataset.state==='error');
+  await page.evaluate(async()=>{window.__fixture.failSync=false;await refresh(true);});
+  await page.waitForFunction(()=>document.querySelector('#saveStatus').dataset.state==='ready');
+  await page.locator('[data-action="access"]').click();
+  assert.equal(await page.locator('#joinDialog h2,#joinDialog .muted').count(),0);
+  assert.equal(await page.locator('#joinDialog').getAttribute('aria-label'),'Quizteilnahme');
+  const codeBox=await page.locator('#accessCode').boundingBox(),qrBox=await page.locator('#qrCode').boundingBox();
+  assert(codeBox.y+codeBox.height<=qrBox.y);
+  const link=page.getByRole('link',{name:'Teilnahmeseite öffnen',exact:true});
+  assert.equal(await link.getAttribute('href'),base+'/join.html?code=ABCDE&kind=quiz');
+  assert.equal(await link.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+  assert((await link.boundingBox()).y>=qrBox.y+qrBox.height);
+  const popupEvent=page.waitForEvent('popup');await link.click();const popup=await popupEvent;
+  await popup.waitForURL('**/join.html?code=ABCDE&kind=quiz');await popup.close();
+  assert(page.url().includes('live.html?session=session'));await page.keyboard.press('Escape');
   await page.screenshot({path:path.join(out,'live-quiz-lobby-'+width+'.png'),fullPage:true});
-  await page.locator('[data-action="start"]').click();await page.locator('.question-panel').waitFor();
+  if(width===390){await page.locator('.lobby-action').focus();await page.keyboard.press('Enter');}
+  else await page.locator('.lobby-action').click({position:{x:12,y:12}});
+  await page.locator('.question-panel').waitFor();
+  assert.equal(await page.evaluate(()=>window.__fixture.starts),1);
+  assert.equal(await page.locator('header .status-pill,#connectionStatus').count(),0);
   async function setQuestion(index,answers){await page.evaluate(async({index,answers})=>{
    const f=window.__fixture;f.session.current_index=index;f.session.updated_at=crypto.randomUUID();
    f.session.question_states[index]={mode:'classic',locked:false,revealed:false};

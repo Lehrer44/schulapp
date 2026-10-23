@@ -16,14 +16,12 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 @media(max-width:560px){.wrap{padding:9px}.top{padding:var(--space-2) var(--space-3);border-radius:15px;margin-bottom:var(--space-3);}.answers-board{grid-template-columns:minmax(0,1fr)}.response-row{grid-template-columns:minmax(0,1fr) auto}.response-answer{grid-column:1 / -1;grid-row:2}.response-points{grid-column:2;grid-row:1}.question-text{font-size:1.45rem;margin:var(--space-1) 0 var(--question-gap);}.side-col{display:flex}}
 </style>
 <script src="../../shared/cloud-library.js"></script>
-<link rel="stylesheet" href="../../shared/app-status.css">
-<script src="../../shared/connection-status.js"></script>
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css?v=compact-2">
 <link rel="stylesheet" href="../../shared/workspace.css?v=compact-2">
-<link rel="stylesheet" href="live.css?v=integrated-3">
+<link rel="stylesheet" href="live.css?v=lobby-4">
 <link rel="stylesheet" href="rich-text.css">
 <script src="rich-text.js"></script>
 <script src="play-modes.js"></script>
@@ -34,12 +32,12 @@ button,input,select{font:inherit}button{border:1px solid transparent;border-radi
 </head>
 <body data-studio="quiz" data-dashboard-view="live">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
-<div class="wrap"><div id="app"><div class="panel">Live-Quiz wird geladen …</div></div><div class="foot" id="saveStatus">Verbindung wird hergestellt</div></div>
-<dialog class="quiz-access-dialog" id="joinDialog" aria-labelledby="joinDialogTitle">
- <div class="access-heading"><h2 id="joinDialogTitle">Am Quiz teilnehmen</h2><button type="button" class="secondary icon-button" id="closeJoin" aria-label="Teilnahmefenster schließen" title="Schließen">×</button></div>
- <p class="muted">QR-Code scannen und mitspielen.</p>
- <div class="access-qr" id="qrCode" role="img" aria-label="QR-Code zur Quizteilnahme"></div>
+<div class="wrap"><div id="app"><div class="panel">Live-Quiz wird geladen …</div></div><div class="foot" id="saveStatus" role="status" aria-live="polite" data-state="waiting">Verbindung wird hergestellt</div></div>
+<dialog class="quiz-access-dialog" id="joinDialog" aria-label="Quizteilnahme">
+ <button type="button" class="secondary icon-button access-close" id="closeJoin" aria-label="Teilnahmefenster schließen" title="Schließen">×</button>
  <p class="access-code-label">Teilnahmecode</p><div class="access-code" id="accessCode"></div>
+ <div class="access-qr" id="qrCode" role="img" aria-label="QR-Code zur Quizteilnahme"></div>
+ <a class="btn secondary" id="joinPageLink" target="_blank" rel="noopener noreferrer">Teilnahmeseite öffnen</a>
  <p class="notice hidden" id="qrError" role="alert">Der QR-Code konnte nicht erstellt werden. Bitte verwende den Teilnahmecode.</p>
 </dialog>
 <script>
@@ -53,7 +51,14 @@ const params=new URLSearchParams(location.search);
 let user=null,session=null,participants=[],responses=[],serverLeaderboard=[],lastSignature='',refreshBusy=false,autoLockKey='',timerInterval=null,actionBusy=false,timerSeconds=30,actionError='';
 const esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
 const errText=function(e){return e&&e.message?e.message:String(e||'Unbekannter Fehler');};
-function toast(message){const el=document.getElementById('saveStatus');if(el)el.textContent=message;}
+function setConnectionStatus(mode,message){
+ const el=document.getElementById('saveStatus');if(!el)return;
+ if(!navigator.onLine){mode='error';message='Offline. Der Sitzungsstand kann derzeit nicht mit Supabase synchronisiert werden.';}
+ el.dataset.state=mode;el.textContent=message;
+}
+function toast(message,mode='ready'){setConnectionStatus(mode,message);}
+window.addEventListener('offline',()=>setConnectionStatus('error','Offline. Synchronisation nicht möglich.'));
+
 async function rpc(name,args){const r=await db.rpc(name,args);if(r.error)throw r.error;const value=r.data;if(value&&value.ok===false)throw new Error(value.error||'Aktion fehlgeschlagen');return value;}
 function qstate(){if(!session||!Array.isArray(session.question_states))return {};const i=session.current_index;return i>=0&&i<session.question_states.length?session.question_states[i]||{}:{};}
 function activeQuestion(){const qs=session&&session.quiz_snapshot&&session.quiz_snapshot.questions;const i=session?session.current_index:-1;return Array.isArray(qs)&&i>=0&&i<qs.length?qs[i]:null;}
@@ -71,6 +76,7 @@ const joinDialog=document.getElementById('joinDialog');
 function openJoin(){
  if(!session)return;
  document.getElementById('accessCode').textContent=session.join_code;
+ document.getElementById('joinPageLink').href=joinUrl();
  const holder=document.getElementById('qrCode');holder.innerHTML='';
  const error=document.getElementById('qrError');error.classList.add('hidden');
  joinDialog.showModal();
@@ -114,7 +120,7 @@ function questionToolbar(q,idx,count,st){
 }
 function renderQuestion(){
  const q=activeQuestion();const idx=session.current_index;const st=qstate();const revealed=!!st.revealed;const count=session.quiz_snapshot.questions.length;
- if(session.status==='lobby')return '<div class="panel lobby-panel"><button class="studio-primary" data-action="start">Quiz starten</button></div>' ;
+ if(session.status==='lobby')return '<button type="button" class="panel lobby-panel lobby-action" data-action="start">Quiz starten</button>' ;
  if(session.status==='ended'||idx>=count)return '<div class="panel"><div class="eyebrow">Quiz beendet</div><h1>'+esc(session.quiz_title)+'</h1><p class="lead">Das Quiz ist abgeschlossen. Die Rangliste enthält die endgültigen Punktstände.</p>'+leaderboardMarkup()+'<div class="controls"><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></div>';
  if(!q)return '<div class="panel"><div class="board-status">Frage wird geladen …</div></div>';
  const options=choices(q);
@@ -143,7 +149,7 @@ function render(){
  if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
  const st=qstate();const q=activeQuestion();
  const phase=session.status==='ended'?'Beendet':'Live';
- app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1>'+(session.status==='lobby'?'':'<div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div>')+'</div></div><div class="studio-actions">'+(session.status==='lobby'?'':'<span class="status-pill">'+participants.length+' Teilnehmende</span>')+'<button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col live-sidebar" tabindex="0" aria-label="Punktestand und Spielstatus">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div></div></aside></div>';
+ app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1>'+(session.status==='lobby'?'':'<div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div>')+'</div></div><div class="studio-actions"><button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col live-sidebar" tabindex="0" aria-label="Punktestand und Spielstatus">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div></div></aside></div>';
  if(q?.type==='pin')QuizPin.mount(app.querySelector('[data-quiz-pin]'),q,{showTarget:!!st.revealed});
  updateTimer();
 }
@@ -172,9 +178,8 @@ async function refresh(force){
   participants=serverLeaderboard.map(r=>r.participant);responses=state.responses||[];
   const sig=[session.updated_at,session.status,session.current_index,JSON.stringify(session.question_states),JSON.stringify(serverLeaderboard),responses.map(x=>x.id+':'+x.submitted_at+':'+x.awarded_points+':'+x.is_correct).join('|')].join('~');
   if(force||sig!==lastSignature){lastSignature=sig;render();}
-  setConnectionStatus('ready','Verbunden · Sitzungsstand aktualisiert.');
-  toast('Cloud verbunden · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
- }catch(e){setConnectionStatus('error','Verbindung unterbrochen. Der letzte bestätigte Stand bleibt sichtbar; wir versuchen es automatisch erneut.');toast('Live-Quiz: '+errText(e));}
+  setConnectionStatus('ready','Cloud verbunden · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
+ }catch(e){setConnectionStatus('error','Synchronisation fehlgeschlagen: '+errText(e)+'. Automatischer erneuter Versuch.');}
  finally{refreshBusy=false;}
 }
 async function act(name,args){await rpc(name,args);lastSignature='';await refresh(true);}
@@ -186,7 +191,7 @@ async function updateTimer(){
  el.textContent=secs>0?secs+'s':'0s';el.classList.toggle('expired',secs===0);
 
 }
-window.addEventListener('online',()=>refresh(true));
+window.addEventListener('online',()=>{setConnectionStatus('waiting','Verbindung wird erneut geprüft …');refresh(true);});
 document.body.addEventListener('click',async function(e){
  const el=e.target.closest('[data-action]');if(!el)return;
  const action=el.dataset.action;if(action==='access'){openJoin();return;}if(actionBusy)return;actionBusy=true;actionError='';const observedIndex=session?.current_index;app.querySelectorAll('button[data-action]').forEach(b=>b.disabled=true);el.disabled=true;
@@ -199,7 +204,7 @@ document.body.addEventListener('click',async function(e){
   else if(action==='lock'){await act('quiz_live_lock_question',{p_session_id:session.id,p_question_index:session.current_index});}
   else if(action==='reveal'){await act('quiz_live_reveal_question',{p_session_id:session.id,p_question_index:session.current_index});}
   else if(action==='end-quiz'){await rpc('quiz_live_end',{p_session_id:session.id});clearInterval(timerInterval);location.href='index.html';}
- }catch(err){actionError=err.message==='STATE_CHANGED'?'Die Frage wurde inzwischen gewechselt. Bitte prüfe die aktuelle Ansicht.':'Aktion fehlgeschlagen: '+errText(err);toast(actionError);}
+ }catch(err){actionError=err.message==='STATE_CHANGED'?'Die Frage wurde inzwischen gewechselt. Bitte prüfe die aktuelle Ansicht.':'Aktion fehlgeschlagen: '+errText(err);toast(actionError,'error');}
  finally{actionBusy=false;lastSignature='';await refresh(true);}
 });
 (async function init(){
@@ -209,7 +214,7 @@ document.body.addEventListener('click',async function(e){
   else if(params.get('quiz')){await createFromQuiz(params.get('quiz'));}
   else throw new Error('Es wurde kein Quiz ausgewählt.');
   await refresh(true);let polledAt=0;timerInterval=setInterval(function(){updateTimer();const interval=qstate().mode&&qstate().mode!=='classic'?500:1500;if(!document.hidden&&Date.now()-polledAt>=interval){polledAt=Date.now();refresh(false);}},250);
- }catch(e){app.innerHTML='<div class="panel"><h1>Live-Quiz konnte nicht gestartet werden</h1><p class="notice">'+esc(errText(e))+'</p><button onclick="location.href=\'index.html\'">Zum Quiz Studio</button></div>';toast(errText(e));}
+ }catch(e){app.innerHTML='<div class="panel"><h1>Live-Quiz konnte nicht gestartet werden</h1><p class="notice">'+esc(errText(e))+'</p><button onclick="location.href=\'index.html\'">Zum Quiz Studio</button></div>';toast('Synchronisation fehlgeschlagen: '+errText(e),'error');}
 })();
 </script>
 </body>
