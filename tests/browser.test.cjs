@@ -215,12 +215,12 @@ async function fixtures(){
     await live.screenshot({path:path.join(outputRoot,'live-quiz-formatted-'+(width===1280?'desktop':'mobile')+'.png'),fullPage:true});
    }
   }finally{await live.close();}
-  // Plain-text paste must not import active HTML or change the grading text.
+  // Answers are native text fields; formatting remains limited to questions.
   await page.locator('[data-action="add-question"][data-type="single"]').click();
   const option=page.locator('[data-field="option-text"]').first();await option.fill('Antwort');
-  await option.evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);getSelection().removeAllRanges();getSelection().addRange(range)});
-  await option.locator('..').getByRole('button',{name:'Fett',exact:true}).click();
-  await option.press('End');await option.evaluate(el=>{const data=new DataTransfer();data.setData('text/html','<img src=x onerror="window.__xss=true">');data.setData('text/plain',' sicher');el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}))});
+  assert.equal(await option.evaluate(el=>el.tagName),'INPUT');
+  assert.equal(await option.locator('..').locator('.rich-toolbar').count(),0);
+  await option.press('Control+b');await option.fill('Antwort sicher');
   assert.equal(await option.locator('img').count(),0);assert.equal(await page.evaluate(()=>window.__xss),undefined);
   await page.locator('#retryCloudSave').click();
   await page.waitForFunction(()=>window.__calls.some(x=>x.name==='save_teacher_library'&&x.args.p_payload.quizzes[0].questions.at(-1).options?.[0].text==='Antwort sicher'));

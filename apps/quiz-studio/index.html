@@ -311,13 +311,14 @@ min-height:var(--control-size);}
 <script src="rich-text.js"></script>
 <script src="rich-editor.js" defer></script>
 <script src="play-modes.js"></script>
-<script src="pin.js"></script>
+<script src="pin.js?v=editor-live-2"></script>
 <link rel="stylesheet" href="bluff/library.css?v=compact-2">
 <script src="bluff/library.js?v=controls-3"></script>
 <link rel="stylesheet" href="yesno/yesno.css?v=compact-2">
 <script src="yesno/common.js"></script>
 <script src="yesno/library.js?v=controls-3"></script>
-<link rel="stylesheet" href="pin.css">
+<link rel="stylesheet" href="pin.css?v=editor-live-2">
+<link rel="stylesheet" href="editor-compact.css?v=1">
 <link rel="stylesheet" href="play-modes.css">
 
 <style>
@@ -777,12 +778,6 @@ function viewEditor(){
 
   <div class="panel">
     <input class="title-input" data-bind="title" value="${esc(q.title)}" placeholder="Titel des Quiz">
-    <textarea class="desc-input" data-bind="description" placeholder="Beschreibung (optional)" rows="1">${esc(q.description)}</textarea>
-    <div class="settings-row">
-      <label class="check"><input type="checkbox" data-bind="shuffleQuestions" ${q.shuffleQuestions?'checked':''}> Fragen mischen</label>
-      <label class="check"><input type="checkbox" data-bind="shuffleAnswers" ${q.shuffleAnswers?'checked':''}> Antworten mischen</label>
-      <label class="check"><input type="checkbox" data-bind="immediateFeedback" ${q.immediateFeedback !== false ? 'checked':''}> Sofortiges Feedback</label>
-    </div>
     <div class="meta">${q.questions.length} ${q.questions.length===1?'Frage':'Fragen'} · ${fmt(totalPoints)} Punkte · Änderungen werden automatisch gespeichert</div>
   </div>
 
@@ -814,23 +809,20 @@ function mediaMarkup(media, className){
   }
   return '';
 }
+function questionMediaTools(q){
+ const pin=q.type==='pin',hasMedia=Boolean(q.media?.data);
+ return `<label class="btn secondary small media-upload-label">＋ ${pin?'Bild':'Medien'} auswählen
+   <input type="file" accept="${pin?'image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp':'image/*,audio/*,video/*'}" data-qid="${q.id}" data-media-input aria-label="${pin?'Bild':'Bild-, Audio- oder Videodatei'} auswählen">
+  </label>${hasMedia?`<button class="btn danger small" data-action="remove-question-media" data-qid="${q.id}">Medien entfernen</button>`:''}`;
+}
 function questionMediaEditor(q){
-  const pin=q.type==='pin';
-  const hasMedia = Boolean(q.media && q.media.data);
-  const missingMedia = Boolean(q.media && q.media.storedInIndexedDB && !q.media.data);
-  return `
-    <div class="question-media-editor">
-      <div class="media-tools">
-        <label class="btn secondary small media-upload-label">＋ ${pin?'Bild':'Medien'} auswählen
-          <input type="file" accept="${pin?'image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp':'image/*,audio/*,video/*'}" data-qid="${q.id}" data-media-input aria-label="Bild-, Audio- oder Videodatei auswählen">
-        </label>
-        ${hasMedia ? `<button class="btn danger small" data-action="remove-question-media" data-qid="${q.id}">Medien entfernen</button>` : ''}
-      </div>
-      <div class="media-paste-hint">Ein Bild kannst du kopieren und direkt im Fragenfeld mit Strg+V einfügen. Audio- und Videodateien wählst du über „Medien auswählen“ aus. Bei größeren Dateien fragt das Studio vor dem Einfügen nach.</div>
-      ${pin?'':mediaMarkup(q.media,'media-preview-editor')}
-      ${missingMedia ? '<div class="media-paste-hint">Die frühere Mediendatei konnte nicht wiederhergestellt werden. Bitte füge sie erneut hinzu.</div>' : ''}
-      ${hasMedia ? `<div class="media-paste-hint">Aktuelle Datei: ${esc(q.media.name || 'Eingebettete Mediendatei')}</div>` : ''}
-    </div>`;
+ const missingMedia=Boolean(q.media?.storedInIndexedDB&&!q.media.data);
+ if(!q.media?.data&&!missingMedia)return '';
+ return `<div class="question-media-editor">
+  ${q.type==='pin'?'':mediaMarkup(q.media,'media-preview-editor')}
+  ${missingMedia?'<div class="media-paste-hint">Die frühere Mediendatei konnte nicht wiederhergestellt werden. Bitte füge sie erneut hinzu.</div>':''}
+  ${q.media?.data?`<div class="media-paste-hint">Aktuelle Datei: ${esc(q.media.name||'Eingebettete Mediendatei')}</div>`:''}
+ </div>`;
 }
 function richEditor(value,attributes,placeholder,className){
   const align=value.textFormat?.align==='center'?'center':'left';
@@ -853,14 +845,17 @@ function questionCard(q,i){
       <span class="badge">${t.icon} ${t.label}</span>
       <span class="qnum">Frage ${i+1}</span>
       <div class="spacer"></div>
+      <div class="question-settings">
       <label class="points">Punkte
         <input type="number" min="0" step="0.5" value="${q.points}" data-qid="${q.id}" data-field="points">
       </label>
+      ${q.type==='pin'?'':`<label class="mode-field">Spielweise <select data-qid="${q.id}" data-field="play-mode" aria-label="Spielweise für Frage ${i+1}">${QuizModes.options(QuizModes.normalise(q.playMode))}</select></label>`}
+      ${questionMediaTools(q)}
+      </div>
       <button class="icon-btn" data-action="move-question" data-qid="${q.id}" data-dir="-1" title="Nach oben">↑</button>
       <button class="icon-btn" data-action="move-question" data-qid="${q.id}" data-dir="1" title="Nach unten">↓</button>
       <button class="icon-btn danger" data-action="del-question" data-qid="${q.id}" title="Frage löschen">✕</button>
     </div>
-    ${q.type==='pin'?'<p class="pin-hint">Pin · Alle Treffer im Lösungsradius erhalten die Fragenpunkte.</p>':`<label class="mode-field">Spielweise <select data-qid="${q.id}" data-field="play-mode" aria-label="Spielweise für Frage ${i+1}">${QuizModes.options(QuizModes.normalise(q.playMode))}</select></label>`}
     ${richEditor(q,`data-qid="${q.id}" data-field="text"`,'Fragestellung …','qtext')}
     ${questionMediaEditor(q)}
     <div class="qbody">${questionBody(q)}</div>
@@ -872,12 +867,11 @@ function questionBody(q){
   if(q.type === 'single' || q.type === 'multiple'){
     const isSingle = q.type === 'single';
     return `
-      <div class="hint">${isSingle ? 'Genau eine Antwort ist richtig.' : 'Eine oder mehrere Antworten sind richtig.'}</div>
       ${q.options.map((o,oi)=>`
         <div class="opt-row">
           <input type="${isSingle?'radio':'checkbox'}" name="q_${q.id}" ${o.correct?'checked':''}
                  data-qid="${q.id}" data-oid="${o.id}" data-field="correct">
-          ${richEditor(o,`data-qid="${q.id}" data-oid="${o.id}" data-field="option-text"`,`Antwort ${oi+1}`,'opt-text')}
+          <input class="opt-text" type="text" value="${esc(o.text)}" placeholder="Antwort ${oi+1}" aria-label="Antwort ${oi+1}" data-qid="${q.id}" data-oid="${o.id}" data-field="option-text">
           <button class="icon-btn danger" data-action="del-option" data-qid="${q.id}" data-oid="${o.id}">✕</button>
         </div>`).join('')}
       <div><button class="btn secondary small" data-action="add-option" data-qid="${q.id}">＋ Antwort</button></div>`;
@@ -885,7 +879,6 @@ function questionBody(q){
 
   if(q.type === 'truefalse'){
     return `
-      <div class="hint">Welche Aussage ist korrekt?</div>
       <div class="tf">
         <label><input type="radio" name="tf_${q.id}" value="true" ${q.correct===true?'checked':''}
                       data-qid="${q.id}" data-field="tf"> Wahr</label>
@@ -896,11 +889,10 @@ function questionBody(q){
 
   if(q.type === 'ranking'){
     return `
-      <div class="hint">Trage die Elemente in der <strong>richtigen Reihenfolge</strong> ein (von oben nach unten). Beim Spielen werden sie gemischt.</div>
       ${q.items.map((it,ii)=>`
         <div class="rank-row">
           <span class="rank-num">${ii+1}</span>
-          ${richEditor(it,`data-qid="${q.id}" data-iid="${it.id}" data-field="item-text"`,`Element ${ii+1}`,'opt-text')}
+          <input class="opt-text" type="text" value="${esc(it.text)}" placeholder="Element ${ii+1}" aria-label="Element ${ii+1}" data-qid="${q.id}" data-iid="${it.id}" data-field="item-text">
           <button class="icon-btn" data-action="move-item" data-qid="${q.id}" data-iid="${it.id}" data-dir="-1">↑</button>
           <button class="icon-btn" data-action="move-item" data-qid="${q.id}" data-iid="${it.id}" data-dir="1">↓</button>
           <button class="icon-btn danger" data-action="del-item" data-qid="${q.id}" data-iid="${it.id}">✕</button>
@@ -910,7 +902,6 @@ function questionBody(q){
 
   if(q.type === 'shortanswer'){
     return `
-      <div class="hint">Akzeptierte Antworten – Groß-/Kleinschreibung und Leerzeichen werden ignoriert.</div>
       ${q.answers.map((a,ai)=>`
         <div class="opt-row">
           <input class="opt-text" value="${esc(a)}" placeholder="Antwort ${ai+1}"
@@ -1582,7 +1573,7 @@ function editorInput(t){
   }
   else if(field === 'option-text'){
     const o = q.options.find(o=>o.id === t.dataset.oid);
-    if(o) Object.assign(o,QuizRichText.read(t));
+    if(o){o.text=t.value;delete o.textFormat;}
   }
   else if(field === 'correct'){
     if(q.type === 'single'){
@@ -1597,7 +1588,7 @@ function editorInput(t){
   }
   else if(field === 'item-text'){
     const it = q.items.find(i=>i.id === t.dataset.iid);
-    if(it) Object.assign(it,QuizRichText.read(t));
+    if(it){it.text=t.value;delete it.textFormat;}
   }
   else if(field === 'answer-text'){
     q.answers[Number(t.dataset.aid)] = t.value;

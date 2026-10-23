@@ -1,0 +1,15 @@
+/* Question settings share the card header; answer fields accept plain text. */
+body[data-dashboard-view="editor"] .qhead{align-items:center;gap:10px}
+.question-settings{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;min-width:0}
+.question-settings .points,.question-settings .mode-field{display:flex;align-items:center;gap:7px;margin:0}
+.question-settings .mode-field select{width:auto;min-height:44px}
+.question-settings .media-upload-label{margin:0;white-space:nowrap}
+.opt-row>input.opt-text,.rank-row>input.opt-text{flex:1;min-width:0;width:auto}
+@media(max-width:800px){
+ .question-settings{flex:1 1 100%;justify-content:flex-start;order:1}
+ body[data-dashboard-view="editor"] .qhead>.spacer{display:none}
+ .question-settings .mode-field{flex:1 1 auto}
+ .question-settings .mode-field select{flex:1;min-width:0}
+ .question-settings .media-upload-label{max-width:100%}
+ .opt-row>input.opt-text,.rank-row>input.opt-text{flex-basis:140px}
+}

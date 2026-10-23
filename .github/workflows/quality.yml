@@ -58,6 +58,7 @@ jobs:
       - name: Unterrichtsabläufe im Browser prüfen
         run: |
           node tests/survey.browser.cjs
+          node tests/quiz-layout.browser.cjs
           node tests/all-views.browser.cjs
           PGDATABASE=bluff_tests node tests/bluff.browser.cjs
           PGDATABASE=bluff_tests node tests/external-links.browser.cjs
@@ -90,6 +91,7 @@ jobs:
             test-results/live-*.png
             test-results/modes-*.png
           if-no-files-found: ignore
+
 
 
 
