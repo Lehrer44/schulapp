@@ -19,15 +19,15 @@ const cases=[
   for(const count of [3,80]){
    const rows=Array.from({length:count},(_,i)=>'<div style="padding:12px;border-bottom:1px solid #ccc">Person '+(i+1)+'</div>').join('');
    const ranking=card?'<section class="'+card+'"><h2>Punktestand</h2>'+rows+'</section>':'<h2>Teilnehmer</h2><div class="participantList">'+rows+'</div>';
-   const extra=['bluff','classic-student','speed','buzzer'].includes(name)?'<section class="panel"><h2>Spielstatus</h2><p>Weitere Informationen</p></section>':'';
+   const extra=['bluff','speed','buzzer'].includes(name)?'<section class="panel"><h2>Spielstatus</h2><p>Weitere Informationen</p></section>':'';
    await page.setContent('<html><head><style>'+css+'</style></head><body '+body+'><div id="app" class="wrap yn-main"><header style="height:180px">Spiel</header><div class="'+grid+'"><section class="'+main+'" style="min-height:2400px">Frage</section><aside class="'+side+(name==='bluff-student'?'':' live-sidebar')+'" tabindex="0">'+ranking+extra+'</aside></div></div><footer style="height:200px"></footer></body></html>');
 
-   if(name==='bluff-student'){
-    const aside=page.locator('.bluff-player-standings'),card=aside.locator('section').first();
+   if(name==='bluff-student'||name==='classic-student'&&width<=740){
+    const aside=page.locator(name==='bluff-student'?'.bluff-player-standings':'.side.live-sidebar'),card=aside.locator('section').first();
     assert.equal(await aside.evaluate(el=>getComputedStyle(el).position),'static','Player list follows page scrolling');
     assert(await card.evaluate(el=>el.scrollHeight<=el.clientHeight+1),'All player names fit naturally at '+width);
     const order=await page.evaluate(()=>{
-     const question=document.querySelector('.bluff-player-main').getBoundingClientRect(),list=document.querySelector('.bluff-player-standings').getBoundingClientRect();
+     const question=document.querySelector('.bluff-player-main,.layout>.main').getBoundingClientRect(),list=document.querySelector('.bluff-player-standings,.layout>.side').getBoundingClientRect();
      return list.top>=question.bottom;
     });
     assert(order,'Active player card comes before standings');
@@ -51,3 +51,4 @@ const cases=[
  for(const width of [1280,390]){const page=await browser.newPage({viewport:{width,height:720}}),{body,css}=styles('apps/jeopardy/index.html');await page.setContent('<style>'+css+'</style><body '+body+' class="play-screen"><main id="app"><header class="top">Jeopardy</header><div class="scorebar" tabindex="0">'+Array.from({length:80},(_,i)=>'<div class="team">Team '+i+'<div class="score">10</div></div>').join('')+'</div><section class="panel board-wrap">Spielfeld</section></main></body>');assert(await page.locator('.scorebar').evaluate(el=>el.scrollHeight>el.clientHeight));assert((await page.locator('.board-wrap').boundingBox()).height>200);await page.close();}
  console.log('PASS: sticky scores/participants, short and long lists, independent card scroll, desktop/mobile, all quiz formats and Jeopardy');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1});
+
