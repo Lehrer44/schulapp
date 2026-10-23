@@ -21,11 +21,13 @@ function fixture(){
  ]};
  const people=[{id:'p1',name:'Ada'},{id:'p2',name:'Ben <img src=x>'}];
  const session={id:'session',owner_id:owner,quiz_title:quiz.title,quiz_snapshot:structuredClone(quiz),status:'lobby',current_index:-1,join_code:'ABCDE',question_states:quiz.questions.map(()=>({mode:'classic',locked:false,revealed:false})),updated_at:'initial'};
- window.__fixture={quiz,session,rows:[],saved:null};
+ window.__fixture={quiz,session,rows:[],saved:null,playerState:{ok:true,status:'running',title:quiz.title,current_index:0,question_count:6,question:{type:'shortanswer',points:3},question_state:{mode:'classic',locked:false,revealed:false},play_mode:'classic',round_open:true,locked:false,revealed:false,own_response:null,leaderboard:[{name:'Ada',score:3,answered:false}]}};
  window.__client={auth:{getUser:async()=>({data:{user:{id:owner}}})},channel(){return {on(){return this},subscribe(cb){cb?.('SUBSCRIBED');return this;}}},removeChannel(){},from(){return {select(){return this},eq(){return this},single:async()=>({data:structuredClone(session)}),maybeSingle:async()=>({data:{revision:1,payload:{quizzes:[quiz]}}})};},rpc:async(name,args)=>{
-  if(name==='quiz_live_teacher_state'&&(window.__fixture.failSync||!navigator.onLine))return {error:{message:'Testverbindung unterbrochen'}};
+  if(['quiz_live_teacher_state','quiz_live_student_state_secure'].includes(name)&&(window.__fixture.failSync||!navigator.onLine))return {error:{message:'Testverbindung unterbrochen'}};
   if(name==='save_teacher_library'){window.__fixture.saved=structuredClone(args.p_payload);return {data:{ok:true,revision:2}};}
   if(name==='quiz_live_teacher_state')return {data:{ok:true,session:structuredClone(session),leaderboard:people.map((p,i)=>({participant:p,score:session.question_states[session.current_index]?.revealed?(i===0?3:0):0,answered:window.__fixture.rows.some(r=>r.participant_id===p.id)})),responses:window.__fixture.rows.map(r=>session.question_states[session.current_index]?.revealed?r:{...r,answer:null,is_correct:null,awarded_points:0})}};
+  if(name==='classroom_join')return {data:{ok:true,session_id:'session',participant_id:'p1',join_code:'ABCDE'}};
+  if(name==='quiz_live_student_state_secure')return {data:structuredClone(window.__fixture.playerState)};
   if(name==='quiz_live_start'){window.__fixture.starts=(window.__fixture.starts||0)+1;session.current_index=0;session.status='running';session.updated_at=crypto.randomUUID();}
   if(name==='quiz_live_reveal_question'){session.question_states[session.current_index].revealed=true;session.question_states[session.current_index].locked=true;session.updated_at=crypto.randomUUID();}
   return {data:{ok:true}};
@@ -131,6 +133,51 @@ function fixture(){
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Live type '+index+' fits '+width);
    await page.screenshot({path:path.join(out,'live-quiz-integrated-'+index+'-'+width+'.png'),fullPage:true});
   }
+  const player=await ctx.newPage();player.on('pageerror',e=>errors.push(e.message));
+  await player.goto(base+'/apps/quiz-studio/student.html?code=ABCDE');
+  await player.locator('#studentName').fill('Ada');await player.locator('#joinForm button').click();
+  await player.locator('#shortAnswer').waitFor();
+  assert.equal(await player.locator('header.top,.logo,#headerStatus,#connectionStatus').count(),0);
+  assert.equal(await player.getByText('Dein Status',{exact:true}).count(),0);
+  assert.equal(await player.getByText('Live-Ranking',{exact:true}).count(),0);
+  assert.equal(await player.getByText('Die Punkte werden erst nach der Lösungsanzeige aktualisiert.',{exact:true}).count(),0);
+  assert.equal(await player.locator('.side>.panel').count(),1);
+  for(const count of [3,80]){
+   await player.evaluate(async count=>{window.__fixture.playerState.leaderboard=Array.from({length:count},(_,i)=>({name:i?'Person '+i:'Ada',score:count-i,answered:false}));await refreshState(true);},count);
+   assert.equal(await player.locator('.rank-item').count(),count);
+   if(width<=740){
+    const answerBox=await player.locator('.layout>.main').boundingBox(),rankingBox=await player.locator('.layout>.side').boundingBox();
+    assert(rankingBox.y>=answerBox.y+answerBox.height,'Answers precede the complete mobile ranking');
+    assert.equal(await player.locator('.side').evaluate(el=>getComputedStyle(el).position),'static');
+    assert(await player.locator('.side>.panel').evaluate(el=>el.scrollHeight<=el.clientHeight+1),'Ranking adapts to '+count+' players');
+    await player.locator('.rank-item').last().scrollIntoViewIfNeeded();
+    assert.equal(await player.locator('.side>.panel').evaluate(el=>el.scrollTop),0);
+   }
+   assert(await player.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  }
+  await player.screenshot({path:path.join(out,'live-quiz-player-'+width+'.png'),fullPage:true});
+  await player.locator('#shortAnswer').fill('Entwurf bleibt erhalten');
+  await ctx.setOffline(true);await player.waitForFunction(()=>document.querySelector('#playerSyncStatus').dataset.state==='error');
+  assert((await player.locator('#playerSyncStatus').innerText()).includes('Offline'));
+  assert.equal(await player.locator('#playerSyncStatus').evaluate(el=>getComputedStyle(el).color),'rgb(162, 54, 40)');
+  assert.equal(await player.locator('#shortAnswer').inputValue(),'Entwurf bleibt erhalten');
+  await player.evaluate(()=>window.__fixture.failSync=true);await ctx.setOffline(false);
+  await player.waitForFunction(()=>document.querySelector('#playerSyncStatus').dataset.state==='error');
+  await player.evaluate(async()=>{window.__fixture.failSync=false;await refreshState(true);});
+  await player.waitForFunction(()=>document.querySelector('#playerSyncStatus').dataset.state==='ready');
+  assert.equal(await player.locator('#playerSyncStatus').innerText(),'Quiz Studio · Antworten werden erst bei der Lösungsanzeige bewertet.');
+  assert.equal(await player.locator('#connectionStatus').count(),0);
+  for(const [rows,place,points] of [
+   [[{name:'Ben',score:12},{name:'Cem',score:9},{name:'Ada',score:9}],2,9],
+   [[{name:'Ben',score:0},{name:'Ada',score:0}],1,0]
+  ]){
+   await player.evaluate(async rows=>{Object.assign(window.__fixture.playerState,{status:'ended',current_index:6,question:null,leaderboard:rows});await refreshState(true);},rows);
+   assert.equal(await player.locator('.final-result h1').innerText(),'Das Quiz ist beendet.');
+   assert.equal(await player.locator('.final-place').innerText(),'Platz '+place);
+   assert.equal(await player.locator('.final-points').innerText(),points+' Punkte');
+   assert.equal(await player.locator('.final-result .eyebrow,.final-result p').count(),0);
+  }
+  await player.screenshot({path:path.join(out,'live-quiz-player-finished-'+width+'.png'),fullPage:true});
   assert.deepEqual(errors,[]);await ctx.close();
   console.log('PASS: compact editor headers, question-only formatting, plain answers, lobby, all six revealed views, hidden answers and coloured names at '+width+'px');
  }}finally{await browser.close();server.close();}
