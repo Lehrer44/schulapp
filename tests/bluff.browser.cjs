@@ -67,7 +67,7 @@ server.on('request',async(req,res)=>{
 
  async function checkBoard(phase){
   await host.locator('.live-sidebar .ranking-panel').waitFor();
-  assert.deepEqual(await host.locator('.live-sidebar h2').allTextContents(),['Punktestand']);
+  assert.deepEqual(await host.locator('.live-sidebar h2').allTextContents(),['Rangliste']);
   assert.equal(await host.getByRole('heading',{name:'Teilnehmende',exact:true}).count(),0);
   assert.equal(await host.getByRole('heading',{name:'Punkte sammeln',exact:true}).count(),0);
   assert.equal(await host.locator('.bluff-phase,.bluff-source,[data-action="stop_timer"]').count(),0);
