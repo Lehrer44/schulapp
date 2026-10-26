@@ -1,0 +1,116 @@
+-- Dedicated EMPTY test database only. Never run this fixture on a live project.
+\set ON_ERROR_STOP on
+do $$begin if not exists(select 1 from pg_roles where rolname='anon') then create role anon;end if;if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated;end if;end;$$;
+create schema auth;
+create table auth.users(id uuid primary key);
+create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+grant usage on schema auth to anon,authenticated;
+create schema private;
+create function private.classroom_join_allowed(text) returns boolean language sql as $$select true$$;
+create table public.sessions(join_code text,status text);
+create table public.quiz_live_sessions(join_code text,status text);
+create table private.bluff_sessions(join_code text,phase text);
+create table private.yesno_sessions(join_code text,phase text);
+\ir ../supabase/rather.sql
+
+do $$declare u uuid:=gen_random_uuid();other uuid:=gen_random_uuid();sid uuid;sid2 uuid;a uuid;b uuid;c uuid;d uuid;
+ j jsonb;st jsonb;code text;ids bigint[];game uuid;q bigint;
+begin
+ insert into auth.users values(u),(other);
+ assert public.rather_question_list()->>'error'='NOT_AUTHENTICATED';
+ perform set_config('request.jwt.claim.sub',u::text,false);
+ j:=public.rather_question_list();assert jsonb_array_length(j->'questions')=10;
+ select array_agg((v->>'id')::bigint) into ids from jsonb_array_elements(j->'questions') v;
+ assert public.rather_create(11,null)->>'error'='NOT_ENOUGH_QUESTIONS';
+ assert public.rather_create(2,array[ids[1],ids[1]])->>'error'='INVALID_SELECTION';
+ assert public.rather_question_save(null,'tiny')->>'error'='INVALID_QUESTION';
+ j:=public.rather_question_save(null,'Wer würde eher einen Test schreiben?');q:=(j->>'id')::bigint;
+ assert public.rather_quiz_save(null,'Unsere Runde',array[q,ids[1]])->>'ok'='true';
+ game:=(public.rather_quiz_list()->'quizzes'->0->>'id')::uuid;
+ assert public.rather_question_delete(q)->>'ok'='true';
+ -- Saved question copies survive deletion and can still be edited/started.
+ assert public.rather_quiz_save(game,'Unsere Runde',array[q,ids[1]])->>'ok'='true';
+ j:=public.rather_quiz_start(game);sid:=(j->>'session_id')::uuid;code:=j->>'join_code';
+ assert j->>'ok'='true',j::text;
+ assert public.classroom_resolve_code(code,null)->'kinds'='["rather"]'::jsonb;
+ assert public.rather_host_action(sid,0,'lobby','start')->>'error'='NEED_TWO_PLAYERS';
+ perform set_config('request.jwt.claim.sub',other::text,false);
+ assert public.rather_host_state(sid)->>'error'='NOT_OWNER';
+ assert public.rather_host_action(sid,0,'lobby','end')->>'error'='NOT_OWNER';
+ assert public.rather_question_save(ids[1],'Fremde Aussage ändern?')->>'error'='NOT_OWNER';
+ assert public.rather_question_delete(ids[1])->>'error'='NOT_OWNER';
+ assert public.rather_quiz_delete(game)->>'error'='NOT_OWNER';
+ assert public.rather_quiz_start(game)->>'error'='NOT_OWNER';
+ assert public.rather_create(1,array[ids[1]])->>'error'='INVALID_SELECTION';
+ assert jsonb_array_length(public.rather_question_list()->'questions')=10;
+ perform set_config('request.jwt.claim.sub','',false);
+ j:=public.rather_join(code,'Ada',repeat('a',64));a:=(j->>'player_id')::uuid;assert j->>'ok'='true',j::text;
+ assert public.rather_join(code,'ada',repeat('b',64))->>'error'='NAME_TAKEN';
+ b:=(public.rather_join(code,'Ben',repeat('b',64))->>'player_id')::uuid;
+ c:=(public.rather_join(code,'Cleo',repeat('c',64))->>'player_id')::uuid;
+ d:=(public.rather_join(code,'Dora',repeat('d',64))->>'player_id')::uuid;
+ assert public.rather_player_state(sid,a,repeat('b',64))->>'error'='INVALID_PARTICIPANT_TOKEN';
+ st:=public.rather_player_state(sid,a,repeat('a',64));assert st->'question'='null'::jsonb;assert st->'results'='[]'::jsonb;
+ assert public.rather_vote(sid,a,repeat('a',64),0,a)->>'error'='PHASE_CHANGED';
+ perform set_config('request.jwt.claim.sub',u::text,false);
+ assert public.rather_host_action(sid,0,'lobby','start')->>'ok'='true';
+ assert public.rather_join(code,'Late',repeat('e',64))->>'error'='GAME_ALREADY_STARTED';
+ assert public.rather_join(code,'Ada',repeat('a',64))->>'player_id'=a::text;
+ assert public.rather_host_state(sid)->>'question'='Wer würde eher einen Test schreiben?';
+ assert public.rather_host_action(sid,0,'vote','reveal')->>'error'='INVALID_ACTION';
+ assert public.rather_vote(sid,a,repeat('a',64),0,gen_random_uuid())->>'error'='INVALID_OPTION';
+ -- Self-vote allowed. A retry is idempotent; changing a stored vote is rejected.
+ assert public.rather_vote(sid,a,repeat('a',64),0,a)->>'ok'='true';
+ assert public.rather_vote(sid,a,repeat('a',64),0,a)->>'ok'='true';
+ assert public.rather_vote(sid,a,repeat('a',64),0,b)->>'error'='VOTE_ALREADY_CAST';
+ assert public.rather_vote(sid,b,repeat('b',64),0,a)->>'ok'='true';
+ assert public.rather_vote(sid,c,repeat('c',64),0,b)->>'ok'='true';
+ st:=public.rather_player_state(sid,c,repeat('c',64));assert st->'results'='[]'::jsonb;assert st->>'own_vote'=b::text;
+ assert public.rather_host_state(sid)->'results'='[]'::jsonb;
+ assert public.rather_host_action(sid,0,'vote','show_bars')->>'ok'='true';
+ st:=public.rather_player_state(sid,c,repeat('c',64));
+ assert jsonb_array_length(st->'results')=4;
+ assert not exists(select 1 from jsonb_array_elements(st->'results') v where v?'voters');
+ assert (select (v->>'count')::int=2 from jsonb_array_elements(st->'results') v where v->>'id'=a::text);
+ assert (select sum(score)=0 from private.rather_players where session_id=sid);
+ assert public.rather_vote(sid,d,repeat('d',64),0,a)->>'error'='PHASE_CHANGED';
+ assert public.rather_host_action(sid,0,'bars','reveal')->>'ok'='true';
+ assert (select score=1 from private.rather_players where id=a);
+ assert (select score=1 from private.rather_players where id=b);
+ assert (select score=0 from private.rather_players where id=c);
+ assert (select score=0 from private.rather_players where id=d);
+ assert public.rather_host_action(sid,0,'bars','reveal')->>'error'='PHASE_CHANGED';
+ assert (select sum(score)=2 from private.rather_players where session_id=sid);
+ st:=public.rather_player_state(sid,a,repeat('a',64));
+ assert (select jsonb_array_length(v->'voters')=2 from jsonb_array_elements(st->'results') v where v->>'id'=a::text);
+ assert public.rather_host_action(sid,0,'reveal','scores')->>'ok'='true';
+ assert public.rather_host_action(sid,0,'leaderboard','next')->>'ok'='true';
+ -- Tie: both selected people have maximum votes, so both voters score.
+ assert public.rather_vote(sid,a,repeat('a',64),0,a)->>'error'='PHASE_CHANGED';
+ assert public.rather_vote(sid,a,repeat('a',64),1,a)->>'ok'='true';
+ assert public.rather_vote(sid,c,repeat('c',64),1,c)->>'ok'='true';
+ assert public.rather_host_action(sid,1,'vote','show_bars')->>'ok'='true';
+ assert public.rather_host_action(sid,1,'bars','reveal')->>'ok'='true';
+ assert (select sum(score)=4 from private.rather_players where session_id=sid);
+ assert public.rather_host_action(sid,1,'reveal','scores')->>'ok'='true';
+ assert public.rather_host_action(sid,1,'leaderboard','next')->>'ok'='true';
+ assert public.rather_host_state(sid)->>'phase'='ended';
+ assert public.rather_host_action(sid,1,'ended','start')->>'error'='INVALID_ACTION';
+ -- Zero votes award zero points; premature ending preserves only scored rounds.
+ sid2:=(public.rather_create(1,null)->>'session_id')::uuid;
+ code:=public.rather_host_state(sid2)->>'join_code';
+ perform public.rather_join(code,'One',repeat('a',64));perform public.rather_join(code,'Two',repeat('b',64));
+ perform public.rather_host_action(sid2,0,'lobby','start');perform public.rather_host_action(sid2,0,'vote','show_bars');perform public.rather_host_action(sid2,0,'bars','reveal');
+ assert (select sum(score)=0 from private.rather_players where session_id=sid2);
+ perform public.rather_host_action(sid2,0,'reveal','end');assert public.rather_host_state(sid2)->>'phase'='ended';
+ -- Unexposed private data, token hashes and explicit public execute permissions.
+ assert not has_table_privilege('anon','private.rather_votes','SELECT');
+ assert not has_table_privilege('authenticated','private.rather_players','SELECT');
+ assert not has_table_privilege('anon','public.rather_live_signals','UPDATE');
+ assert has_function_privilege('anon','public.rather_vote(uuid,uuid,text,integer,uuid)','EXECUTE');
+ assert not has_function_privilege('anon','public.rather_create(integer,bigint[])','EXECUTE');
+ assert not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'rather_%' and p.prosecdef);
+ perform set_config('request.jwt.claim.sub','',false);
+ assert private.rather_api('host_action',jsonb_build_object('p_session_id',sid,'p_action','end'))->>'error'='NOT_AUTHENTICATED';
+end;$$;
+select 'PASS: Wer würde eher ownership, snapshots, self-vote, secrecy, two-stage reveal, majority/ties, idempotency and end';

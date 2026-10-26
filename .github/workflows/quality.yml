@@ -49,6 +49,9 @@ jobs:
           createdb yesno_tests
           PGDATABASE=yesno_tests psql -v ON_ERROR_STOP=1 -f tests/yesno-db.sql
           PGDATABASE=yesno_tests node tests/yesno-concurrency.cjs
+          createdb rather_tests
+          PGDATABASE=rather_tests psql -v ON_ERROR_STOP=1 -f tests/rather-db.sql
+          PGDATABASE=rather_tests node tests/rather-concurrency.cjs
           createdb survey_tests
           PGDATABASE=survey_tests psql -v ON_ERROR_STOP=1 -f tests/survey-session-db.sql
       - name: Testbrowser vorbereiten
@@ -63,6 +66,7 @@ jobs:
           PGDATABASE=bluff_tests node tests/bluff.browser.cjs
           PGDATABASE=bluff_tests node tests/external-links.browser.cjs
           PGDATABASE=yesno_tests node tests/yesno.browser.cjs
+          PGDATABASE=rather_tests node tests/rather.browser.cjs
           node tests/live-sidebar.browser.cjs
           node tests/layout.browser.cjs
           node tests/browser.test.cjs
@@ -75,6 +79,7 @@ jobs:
           name: synthetische-testansichten
           path: |
             test-results/yesno-*.png
+            test-results/rather-*.png
             test-results/external-links-*.png
             test-results/bluff-*.png
             test-results/pin-*.png

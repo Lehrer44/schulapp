@@ -1,0 +1,100 @@
+/* Supabase is authoritative for secrets, phases, deadlines and scoring. */
+(function(){
+ 'use strict';
+ const client=supabase.createClient('https://mqtcwiiawmuxrpkjfrfc.supabase.co','sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-');
+ const app=document.getElementById('app'),message=document.getElementById('appMessage'),mode=document.body.dataset.bluffMode,params=new URLSearchParams(location.search);
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const errors={NOT_AUTHENTICATED:'Bitte melde dich mit deinem Lehrerkonto an.',NOT_OWNER:'Dieser Bereich gehört zu einem anderen Lehrerkonto.',INVALID_QUESTION:'Bitte gib eine Aussage mit 5 bis 500 Zeichen ein.',INVALID_ROUND_COUNT:'Wähle zwischen 1 und 50 Runden.',INVALID_SELECTION:'Wähle genau so viele unterschiedliche Fragen wie Runden.',NOT_ENOUGH_QUESTIONS:'Die Sammlung enthält dafür noch nicht genügend Fragen. Ergänze Fragen oder verringere die Rundenzahl.',NAME_TAKEN:'Dieser Name wird bereits verwendet. Wähle einen anderen Namen.',GAME_ALREADY_STARTED:'Das Spiel läuft bereits. Neue Spieler können erst beim nächsten Spiel beitreten.',ROOM_FULL:'Der Raum ist voll (maximal 50 Personen).',INVALID_JOIN_INPUT:'Prüfe Code und Namen.',SESSION_NOT_FOUND:'Dieser Raum ist nicht mehr verfügbar.',INVALID_PARTICIPANT_TOKEN:'Die Teilnahme konnte nicht bestätigt werden. Tritt bitte mit einem neuen Namen bei.',NEED_TWO_PLAYERS:'Zum Start müssen mindestens zwei Personen beigetreten sein.',WAITING_FOR_ANSWERS:'Es fehlen noch Antworten. Warte, bis alle abgegeben haben.',NO_BLUFFS:'Noch kein Bluff eingegangen. Gib mehr Zeit oder warte auf die erste Eingabe.',PHASE_CHANGED:'Die Spielphase hat sich geändert. Die Ansicht wird aktualisiert.',TIME_EXPIRED:'Die Zeit ist abgelaufen. Warte auf die nächste Phase.',INVALID_ANSWER:'Schreibe einen Bluff mit 1 bis 180 Zeichen.',ANSWER_MATCHES_TRUTH:'Das ist bereits die richtige Antwort. Erfinde einen anderen Bluff.',OWN_VOTE_FORBIDDEN:'Du kannst nicht für deinen eigenen Bluff stimmen.',VOTE_ALREADY_CAST:'Deine Stimme ist bereits verbindlich gespeichert.',INVALID_OPTION:'Diese Antwort gehört nicht zur aktuellen Runde.',JOIN_RATE_LIMITED:'Zu viele Beitrittsversuche. Warte bitte eine Minute.',INVALID_ACTION:'Diese Aktion ist in der aktuellen Phase nicht möglich.'};
+ let state=null,room=params.get('session')||'',credentials=null,questions=[],busy=false,refreshing=false,channel=null,poll=null,lastSignature='',editing=null;
+ function setConnectionStatus(status,text){
+  const el=document.getElementById('bluffConnectionStatus');if(!el)return;
+  if(!navigator.onLine){status='error';text='Offline. Die Synchronisation mit Supabase ist unterbrochen.';}
+  el.dataset.state=status;el.textContent=status==='ready'?'Mit Supabase verbunden':text;
+ }
+ window.addEventListener('offline',()=>setConnectionStatus('error','Offline. Synchronisation nicht möglich.'));
+ function say(text,success=false){message.textContent=text||'';message.classList.toggle('is-success',success);}
+ function errorText(e){return errors[e.message]||e.message||'Verbindung fehlgeschlagen. Bitte erneut versuchen.';}
+ async function rpc(name,args={}){
+  let result;
+  try{result=await client.rpc(name,args);if(result.error)throw Error(result.error.message);}
+  catch(e){setConnectionStatus('error','Synchronisation mit Supabase fehlgeschlagen: '+errorText(e));throw e;}
+  if(result.data?.ok===false)throw Error(result.data.error||'Aktion fehlgeschlagen');return result.data;
+ }
+ function header(sub,actions=''){if(mode==='player')return '';return '<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><div><h1 class="studio-title">Wer würde <span>eher</span></h1>'+(sub?'<p class="bluff-subtitle">'+esc(sub)+'</p>':'')+'</div></div><div class="studio-actions">'+actions+'</div></header>';}
+ function rules(){return '<ol class="bluff-rules"><li>Wähle die Person, auf die die Aussage am ehesten zutrifft – auch dich selbst.</li><li>Für eine Wahl mit den meisten Stimmen erhältst du <b>1 Punkt</b>.</li><li>Bei Gleichstand zählen alle Personen mit den meisten Stimmen.</li><li>Die Spielleitung zeigt zuerst Balken und danach die Namen der Abstimmenden.</li></ol>'; }
+ async function requireTeacher(){const {data,error}=await client.auth.getUser();if(error||!data?.user){location.href='../../../login.html?next=apps%2Fquiz-studio%2Frather%2Findex.html';return false;}return true;}
+ async function loadLibrary(){const q=await rpc('rather_question_list');questions=q.questions;renderLibrary();setConnectionStatus('ready','Fragensammlung mit Supabase verbunden.');}
+ function questionRows(){return questions.map(q=>'<article class="collection-row" data-question-id="'+q.id+'"><div><h3>'+esc(q.question)+'</h3></div><div class="bluff-row"><button data-action="edit-question" data-id="'+q.id+'">Bearbeiten</button><button class="danger" data-action="delete-question" data-id="'+q.id+'">Löschen</button></div></article>').join('');}
+ function renderLibrary(){
+  app.setAttribute('aria-busy','false');
+  app.innerHTML=header('Fragensammlung','<button class="studio-primary" data-action="new-question">＋ Frage hinzufügen</button>')+
+  '<section class="panel"><div class="library-heading"><h2>Deine Fragensammlung</h2><span class="library-count">'+questions.length+' Fragen</span></div><section class="bluff-editor" id="questionEditor" hidden><h3 id="editorTitle">Neue Frage</h3><form id="questionForm"><label class="bluff-label" for="questionText">Frage</label><textarea id="questionText" class="bluff-textarea" minlength="5" maxlength="500" required></textarea><div class="bluff-actions"><button class="studio-primary" type="submit">Frage speichern</button><button type="button" data-action="cancel-edit">Abbrechen</button></div><p id="questionSaveState" role="status"></p></form></section><div id="questionRows">'+questionRows()+'</div></section>';
+  document.getElementById('questionForm').onsubmit=saveQuestion;
+ }
+ function openEditor(q){editing=q?.id??null;document.getElementById('questionEditor').hidden=false;document.getElementById('editorTitle').textContent=q?'Aussage bearbeiten':'Neue Aussage';document.getElementById('questionText').value=q?.question||'';document.getElementById('questionText').focus();}
+ async function saveQuestion(e){e.preventDefault();if(busy)return;busy=true;const button=e.submitter;button.disabled=true;try{await rpc('rather_question_save',{p_id:editing,p_question:document.getElementById('questionText').value.trim()});await loadLibrary();say('Aussage gespeichert.',true);}catch(err){document.getElementById('questionSaveState').textContent=errorText(err);}finally{busy=false;button.disabled=false;}}
+ function getStored(){try{return JSON.parse(sessionStorage.getItem('rather.credentials.v1')||'null');}catch{return null;}}
+ function token(){return [...crypto.getRandomValues(new Uint8Array(32))].map(n=>n.toString(16).padStart(2,'0')).join('');}
+ function renderJoin(){app.setAttribute('aria-busy','false');app.innerHTML=header('Mitspielen · Wer würde eher')+'<div class="bluff-grid"><section class="panel"><h2>Wer würde eher · Beitreten</h2><form id="joinForm"><label class="bluff-label" for="roomCode">Raum-Code</label><input class="bluff-input bluff-code" id="roomCode" maxlength="5" minlength="5" pattern="[A-Za-z0-9]{5}" required autocapitalize="characters" autocomplete="off" value="'+esc((params.get('code')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5))+'"><label class="bluff-label" for="playerName">Dein Name</label><input class="bluff-input" id="playerName" maxlength="40" required autocomplete="off"><button class="bluff-primary" type="submit" style="margin-top:18px">Beitreten →</button></form></section><aside class="panel"><h2>So funktioniert es</h2>'+rules()+'</aside></div>';
+ document.getElementById('roomCode').oninput=e=>e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);
+ document.getElementById('joinForm').onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;e.submitter.disabled=true;try{const t=credentials?.token||token();const d=await rpc('rather_join',{p_code:document.getElementById('roomCode').value,p_name:document.getElementById('playerName').value.trim(),p_token:t});credentials={session:d.session_id,player:d.player_id,token:t,name:d.name,code:d.join_code};try{sessionStorage.setItem('rather.credentials.v1',JSON.stringify(credentials));}catch{}room=d.session_id;lastSignature='';say('');await refresh(true);connect();}catch(err){say(errorText(err));}finally{busy=false;e.submitter.disabled=false;}};
+ }
+ function leaderboard(){if(!state.players.length)return '<div class="bluff-empty">noch keine Teilnehmer</div>';return '<div class="bluff-stack">'+state.players.map((p,i)=>{
+  const submitted=mode==='host'&&['bluff','answers'].includes(state.phase)&&p.submitted;
+  const voted=mode==='host'&&state.phase==='vote'&&p.voted;
+  const status=submitted?'Antwort eingegeben':voted?'Stimme abgegeben':'';
+  return '<div class="bluff-score '+(p.id===credentials?.player?'me ':'')+(submitted?'has-answer':voted?'has-vote':'')+'" data-player-id="'+esc(p.id)+'"><span>'+(state.phase==='ended'?1+state.players.filter(other=>Number(other.score)>Number(p.score)).length:i+1)+'</span><strong class="bluff-score-name">'+esc(p.name)+(status?'<span class="bluff-answer-mark" role="img" aria-label="'+status+'" title="'+status+'">✓</span>':'')+'</strong><b>'+p.score+' P</b></div>';
+ }).join('')+'</div>';}
+ function phaseActions(){const s=state;const actions={lobby:['start','Erste Aussage freigeben'],vote:['show_bars','Abstimmung schließen & Balken zeigen'],bars:['reveal','Namen einblenden'],reveal:['scores','Rundenwertung anzeigen'],leaderboard:['next',s.round_index+1>=s.round_count?'Endplatzierung anzeigen':'Nächste Aussage freigeben →']};const a=actions[s.phase];return a?'<button class="bluff-primary" data-action="'+a[0]+'" '+(s.phase==='lobby'&&s.players.length<2?'disabled':'')+'>'+a[1]+'</button>':'';}
+ function personChip(person,kind){
+  const name=String(person.name||'Teilnehmende Person'),parts=name.trim().split(/\s+/u);
+  const initials=(Array.from(parts[0]||'')[0]||'')+(parts.length>1?(Array.from(parts.at(-1))[0]||''):'');
+  let hash=0;for(const char of String(person.id||name))hash=(hash*31+char.codePointAt(0))%360;
+  return '<span class="bluff-person '+kind+'" style="--person-hue:'+hash+'"><span class="bluff-avatar" aria-hidden="true">'+esc(initials.toLocaleUpperCase('de-DE'))+'</span><span class="bluff-person-name">'+esc(name)+'</span></span>';
+ }
+ function choices(host){
+  if(state.phase==='vote')return '<div class="rather-choices">'+state.players.map(p=>'<button data-action="vote" data-id="'+esc(p.id)+'" '+(host||state.own_vote?'disabled':'')+' aria-pressed="'+(state.own_vote===p.id)+'">'+personChip(p,'bluff-author')+(state.own_vote===p.id?' ✓ Deine Wahl':'')+'</button>').join('')+'</div>';
+  const total=state.results.reduce((sum,p)=>sum+p.count,0),maximum=Math.max(0,...state.results.map(p=>p.count));
+  return '<div class="rather-results">'+state.results.map(p=>'<article class="rather-result" data-target-id="'+esc(p.id)+'"><div class="bluff-row bluff-between">'+personChip(p,'bluff-author')+'<strong>'+p.count+' '+(p.count===1?'Stimme':'Stimmen')+(maximum>0&&p.count===maximum?' · Mehrheit':'')+'</strong></div><div class="rather-bar" role="meter" aria-label="Stimmen für '+esc(p.name)+'" aria-valuemin="0" aria-valuemax="'+Math.max(1,total)+'" aria-valuenow="'+p.count+'"><span style="width:'+ (total?100*p.count/total:0)+'%"></span></div>'+(p.voters?'<div class="bluff-voters"><span class="bluff-voters-label">Gewählt von</span><div class="bluff-voter-list">'+(p.voters.length?p.voters.map(v=>personChip(v,'bluff-voter')).join(''):'<span class="bluff-no-votes">Keine Stimmen</span>')+'</div></div>':'')+'</article>').join('')+'</div>';
+ }
+ function renderGame(){const s=state,host=mode==='host';
+  const lobbyHost=host&&s.phase==='lobby';let main='';
+  if(s.phase==='ended')main='<h2 class="bluff-question">Endplatzierung</h2><div class="bluff-final-ranking">'+leaderboard()+'</div>';
+  else if(s.phase!=='lobby'){
+   main='<p class="bluff-help">Runde '+(s.round_index+1)+' von '+s.round_count+'</p><h2 class="bluff-question">'+esc(s.question)+'</h2>';
+   if(s.phase==='vote')main+='<p class="bluff-status">'+s.players.filter(p=>p.voted).length+' von '+s.players.length+' haben abgestimmt.</p>'+(!host?'<p class="bluff-save-status">'+(s.own_vote?'✓ Deine Stimme ist verbindlich gespeichert.':'Wähle eine Person. Du kannst auch dich selbst wählen.')+'</p>':'');
+   if(s.phase==='bars')main+='<p class="bluff-help">Abstimmung geschlossen · Die Namen werden anschließend eingeblendet.</p>';
+   if(['reveal','leaderboard'].includes(s.phase))main+='<p class="bluff-save-status">✓ Punkte vergeben · 1 Punkt für jede Wahl der Mehrheit.</p>';
+   main+=choices(host);
+  }
+  const controls=host&&s.phase!=='ended'?'<footer class="bluff-controls"><div class="bluff-actions">'+phaseActions()+'</div></footer>':'';
+  const panel=lobbyHost?'<button class="panel bluff-start-card" data-action="start" '+(s.players.length<2?'disabled':'')+'>Erste Aussage freigeben</button>':s.phase==='lobby'?'':'<section class="panel '+(host?'bluff-host-main':'bluff-player-main')+(s.phase==='ended'?' bluff-final-result':'')+'">'+main+controls+'</section>';
+  const ranking=s.phase!=='ended'?'<aside class="bluff-stack '+(host?'live-sidebar':'bluff-player-standings')+'" aria-label="Rangliste"><section class="panel ranking-panel"><h2>Rangliste</h2>'+leaderboard()+'</section></aside>':'';
+  app.innerHTML=(host?header('','<button data-action="participation">Teilnahme</button>'+(s.phase!=='ended'?'<button class="bluff-end" data-action="end">Beenden</button>':'<a class="btn" href="../index.html">Quiz Studio</a>')):'')+'<div class="bluff-grid'+(lobbyHost?' bluff-lobby':'')+(!host?' bluff-player-grid':'')+'">'+(!host&&s.phase==='lobby'?'<section class="panel"><h2>Wartelobby</h2><p>Du bist dabei. Die Spielleitung gibt gleich die erste Aussage frei.</p>'+rules()+'</section>':'')+panel+ranking+'</div>';
+  app.setAttribute('aria-busy','false');
+ }
+ function showParticipation(){
+  const d=document.getElementById('participationDialog'),qr=d.querySelector('.bluff-qr');
+  d.querySelector('.bluff-join-code').textContent=state.join_code;qr.replaceChildren();
+  const u=new URL('../../../join.html',location.href);u.searchParams.set('code',state.join_code);u.searchParams.set('kind','rather');
+  if(typeof QRCode==='function'){new QRCode(qr,{text:u.href,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});qr.removeAttribute('title');}
+  d.querySelector('[data-join-link]').href=u.href;d.showModal();
+  d.querySelector('[data-close]').onclick=()=>{d.close();app.querySelector('[data-action="participation"]')?.focus();};
+  d.onclose=()=>app.querySelector('[data-action="participation"]')?.focus();
+ }
+ async function refresh(force=false){if(refreshing||!room)return;refreshing=true;try{const next=await rpc(mode==='host'?'rather_host_state':'rather_player_state',mode==='host'?{p_session_id:room}:{p_session_id:room,p_player_id:credentials.player,p_token:credentials.token});const signature=[next.revision,next.phase,next.round_index,next.reveal_count].join(':');state=next;if(force||signature!==lastSignature){lastSignature=signature;renderGame();}setConnectionStatus('ready','Verbunden');}catch(e){setConnectionStatus('error','Synchronisation mit Supabase fehlgeschlagen: '+errorText(e)+'. Automatischer erneuter Versuch.');if(!state){app.setAttribute('aria-busy','false');app.innerHTML=header('')+'<section class="panel"><p>Die Ansicht konnte nicht geladen werden.</p><button onclick="location.reload()">Erneut versuchen</button></section>';}}finally{refreshing=false;}}
+ function connect(){if(channel)client.removeChannel(channel);channel=client.channel('rather-signal-'+room).on('postgres_changes',{event:'UPDATE',schema:'public',table:'rather_live_signals',filter:'session_id=eq.'+room},()=>refresh()).subscribe(status=>{if(status==='SUBSCRIBED')refresh();});if(poll)clearInterval(poll);poll=setInterval(()=>refresh(),2000);}
+ async function hostAction(action){if(busy||!state)return;busy=true;say('');const snapshot=state;try{await rpc('rather_host_action',{p_session_id:room,p_round:snapshot.round_index,p_phase:snapshot.phase,p_action:action});await refresh(true);}catch(e){say(errorText(e));await refresh(true);}finally{busy=false;}}
+ async function playerAction(name,args){if(busy||!state)return;busy=true;say('');const buttons=[...app.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await rpc(name,{p_session_id:room,p_player_id:credentials.player,p_token:credentials.token,p_round:state.round_index,...args});await refresh(true);}catch(e){say(errorText(e));await refresh(true);}finally{busy=false;if(state)renderGame();}}
+ app.addEventListener('click',async e=>{const button=e.target.closest('[data-action]');if(!button)return;const a=button.dataset.action;
+ if(mode==='library'){
+ const q=questions.find(q=>String(q.id)===button.dataset.id);
+ if(a==='new-question')openEditor(null);if(a==='edit-question')openEditor(q);if(a==='cancel-edit')document.getElementById('questionEditor').hidden=true;
+ if(a==='delete-question'&&!busy&&confirm('Frage wirklich aus deiner Sammlung löschen?')){busy=true;try{await rpc('rather_question_delete',{p_id:q.id});await loadLibrary();say('Frage gelöscht.',true);}catch(err){say(errorText(err));}finally{busy=false;}}
+ }else if(mode==='host'){if(a==='participation'){showParticipation();return;}if(a==='end'&&!confirm('Spiel für alle beenden? Bereits vergebene Punkte bleiben erhalten.'))return;await hostAction(a);}else if(a==='vote'){await playerAction('rather_vote',{p_target_id:button.dataset.id});}
+ });
+ window.addEventListener('online',()=>{setConnectionStatus('waiting','Verbindung mit Supabase wird erneut geprüft …');if(mode==='library')loadLibrary().catch(e=>setConnectionStatus('error',errorText(e)));else refresh(true);});window.addEventListener('pagehide',()=>{if(channel)client.removeChannel(channel);clearInterval(poll);});
+ (async()=>{try{if(mode==='library'){if(await requireTeacher())await loadLibrary();}else if(mode==='host'){if(!await requireTeacher())return;if(!room)throw Error('Wähle zuerst Fragen aus und erstelle eine Lobby.');await refresh(true);connect();}else{const old=getStored();if(old&&/^[a-f0-9]{64}$/.test(old.token||'')&&(!params.get('code')||old.code===params.get('code').toUpperCase())){credentials=old;room=old.session;await refresh(true);if(state){connect();return;}}credentials=null;room='';lastSignature='';renderJoin();}}catch(e){say(errorText(e));setConnectionStatus('error','Verbindung fehlgeschlagen. Bitte erneut versuchen.');app.setAttribute('aria-busy','false');app.innerHTML=header('Gerade nicht erreichbar')+'<section class="panel"><p>Die Ansicht konnte nicht geladen werden. Deine gespeicherten Inhalte bleiben erhalten.</p><button onclick="location.reload()">Erneut versuchen</button></section>';}})();
+})();
+
+

@@ -1,0 +1,10 @@
+/* Shared Bluff cards, lobby, person chips and final placement stay identical. */
+.rather-choices,.rather-results{display:grid;gap:12px;margin:20px 0}
+.rather-choices{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.rather-choices>button{text-align:left;white-space:normal;min-width:0;overflow-wrap:anywhere}
+.rather-choices>button[aria-pressed="true"]{outline:3px solid #765392;outline-offset:2px}
+.rather-result{padding:16px;border:1px solid #d3c5de;border-radius:13px;background:#faf7fc;min-width:0;overflow-wrap:anywhere}
+.rather-bar{height:20px;margin:12px 0;border-radius:10px;background:#e8e0ed;overflow:hidden}
+.rather-bar>span{display:block;height:100%;background:#765392;border-radius:inherit;transition:width .6s ease}
+.rather-result .bluff-voters{margin-top:12px}
+@media(prefers-reduced-motion:reduce){.rather-bar>span{transition:none}}
