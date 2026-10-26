@@ -63,6 +63,18 @@ Tests: `tests/bluff-db.sql` benötigt eine eigene leere Testdatenbank. Es prüft
 
 Die Bluff-Spieleransicht enthält keine Dashboard- oder Editor-Navigation. Das Dashboard zeigt die Anwendungsauswahl erst nach erfolgreicher Anmeldung; anonyme Spielteilnahmen geben sie nicht frei. Lehrkraftansichten bleiben über Anmeldung und serverseitige Besitzprüfung geschützt.
 
+## Wer würde eher
+
+Im Quiz Studio bietet „Wer würde eher“ zufällige Spiele, benannte Spiele mit 1–50 ausgewählten Aussagen und einen persönlichen, editierbaren Fragenkatalog mit zehn Startaussagen. Gespeicherte Spiele und laufende Sitzungen behalten Kopien ihrer Aussagen. Änderungen und Löschungen im Katalog betreffen ausschließlich das eigene Lehrkraftkonto.
+
+Layout, Wartelobby, Rangliste und Endplatzierung verwenden die Bluff-Quiz-Bausteine. Unter „Teilnahme“ stehen Raum-Code, QR-Code und Link; auch der gemeinsame Einstieg `join.html` erkennt die Räume. Zwei bis 50 Personen können in der Lobby beitreten. Nach Neuladen wird die Teilnahme im selben Browser-Tab mit einem zufälligen 256-Bit-Token fortgesetzt. Die Datenbank speichert ausschließlich dessen Hash.
+
+Die Spielleitung gibt die erste Aussage und jede folgende Runde frei. Jede Person wählt verbindlich eine teilnehmende Person, einschließlich sich selbst. Erst „Abstimmung schließen & Balken zeigen“ veröffentlicht die Stimmenzahlen unter allen Namen. „Namen einblenden“ veröffentlicht anschließend die Abstimmenden und vergibt einmalig die Punkte. Jede Wahl einer Person mit der höchsten Stimmenzahl zählt einen Punkt; bei Gleichstand zählen alle Personen mit dieser Stimmenzahl. Fehlende Stimmen und Runden ohne Stimmen erhalten keine Punkte. Danach folgen Rundenwertung und nächste Aussage bzw. Endplatzierung; gleiche Punktzahlen erhalten denselben Platz. Vorzeitiges Beenden erhält bereits vergebene Punkte.
+
+`supabase/rather.sql` wird nach `yesno_settings.sql` eingespielt. Es ergänzt private Tabellen, berechtigte RPCs, eine nur lesbare Realtime-Signaltabelle und den gemeinsamen Code-Einstieg. Weder einzelne Stimmen noch Abstimmendennamen werden vor der jeweiligen Freigabe ausgeliefert. Sitzungssperren schützen Abgaben und Phasenwechsel gegen parallele und wiederholte Aktionen. Ein zweisekündiger Abruf überbrückt Realtime-Ausfälle. Die öffentlichen RPCs laufen als Invoker; die private Implementierung prüft Besitz oder Teilnehmer-Token.
+
+`tests/rather-db.sql` benötigt eine eigene leere Testdatenbank und prüft den Ablauf, Geheimhaltung, Eigentümerschaft, Fragekopien, Eigenstimmen, Mehrheiten, Gleichstände, Nullstimmen und Doppelwertung. `tests/rather.browser.cjs` prüft Katalog, gespeicherte und zufällige Spiele, decodierten QR-Beitritt, Lobby, Abstimmung, Neuladen, beide Auflösungsschritte und Endplatzierung auf Desktop und Mobilgeräten gegen tatsächliche PostgreSQL-RPCs. Beide Prüfungen laufen in der GitHub-Action.
+
 ## Externe Links
 
 Die Dashboard-Kachel „Externe Links“ speichert persönliche Links über „Link hinzufügen“ mit Name und HTTP-/HTTPS-Adresse. Jede Zeile enthält den Namen, einen „Öffnen“-Button für einen neuen Tab und ein Papierkorb-Symbol zum Löschen. Die Links werden in Supabase im jeweiligen Lehrkraftkonto gespeichert. `supabase/external_links.sql` legt die Tabelle und RLS-Regeln für eigene Einträge an. Anonyme Spieler erhalten keinen Lese- oder Schreibzugriff. Beim Abmelden werden die angezeigten Zeilen entfernt.
