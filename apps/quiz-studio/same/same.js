@@ -80,7 +80,7 @@
  }
  function tick(){const el=document.getElementById('sameTimer');if(el&&state?.deadline){el.textContent='Noch '+Math.max(0,Math.ceil((Date.parse(state.deadline)-Date.now())/1000))+' Sekunden';}}
  const clock=setInterval(tick,250);
- async function manage(action,args={}){if(busy||!state)return;busy=true;say('');try{await rpc('same_manage',{p_session_id:room,p_round:state.round_index,p_phase:state.phase,p_action:action,p_target:null,p_team:null,p_value:null,...args});await refresh(true);}catch(e){say(errorText(e));await refresh(true);}finally{busy=false;}}
+ async function manage(action,args={}){if(busy||!state)return;busy=true;app.inert=true;say('');try{await rpc('same_manage',{p_session_id:room,p_round:state.round_index,p_phase:state.phase,p_action:action,p_target:null,p_team:null,p_value:null,...args});await refresh(true);}catch(e){say(errorText(e));await refresh(true);}finally{busy=false;app.inert=false;}}
  app.addEventListener('change',e=>{if(e.target.matches('[data-assign]')&&e.target.value)manage('assign',{p_target:e.target.dataset.assign,p_team:Number(e.target.value)});});
  function showParticipation(){
   const d=document.getElementById('participationDialog'),qr=d.querySelector('.bluff-qr');
