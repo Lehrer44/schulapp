@@ -315,6 +315,7 @@ min-height:var(--control-size);}
 <link rel="stylesheet" href="bluff/library.css?v=compact-2">
 <script src="bluff/library.js?v=controls-3"></script>
 <script src="rather/library.js"></script>
+<script src="same/library.js"></script>
 <link rel="stylesheet" href="yesno/yesno.css?v=compact-2">
 <script src="yesno/common.js"></script>
 <script src="yesno/library.js?v=controls-3"></script>
@@ -328,7 +329,7 @@ body[data-studio="quiz"] .icon-btn svg{display:block;width:22px;height:22px;fill
 #cloudStatus[data-state="error"]{color:#a23628;font-weight:600}
 /* One control and spacing system for all three Quiz Studio libraries. */
 body[data-studio="quiz"][data-dashboard-view="library"] #app{--library-control-height:var(--control-size);}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary,#ratherLibrary){padding:var(--panel-padding);margin:0 0 var(--section-gap);min-width:0;}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary,#ratherLibrary,#sameLibrary){padding:var(--panel-padding);margin:0 0 var(--section-gap);min-width:0;}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;
   align-items:center;gap:var(--space-2);margin:0 0 var(--space-3);}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{margin:0;font-size:18px;line-height:1.35;min-width:0;}
@@ -355,12 +356,12 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{padding:var
 body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .card-actions{
   display:flex;align-items:center;gap:6px;margin:0;padding:0;flex-wrap:wrap;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#bluffLibrary,#yesnoLibrary,#ratherLibrary) .empty{display:flex;align-items:center;justify-content:center;min-height:0;
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#bluffLibrary,#yesnoLibrary,#ratherLibrary,#sameLibrary) .empty{display:flex;align-items:center;justify-content:center;min-height:0;
   margin:0;padding:var(--panel-padding);text-wrap:balance;}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status]){
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]){
   margin:12px 0 0;color:#a23628;font-size:14px;overflow-wrap:anywhere;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status]):empty{
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]):empty{
   display:none;
 }
 @media(max-width:960px){
@@ -371,7 +372,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-sta
   }
 }
 @media(max-width:480px){
-  body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary,#ratherLibrary){padding:var(--panel-padding);
+  body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary,#ratherLibrary,#sameLibrary){padding:var(--panel-padding);
   ;margin:0 0 var(--section-gap);}
   body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{grid-template-columns:minmax(0,1fr) auto;
   ;gap:var(--space-2);margin:0 0 var(--space-3);}
@@ -697,6 +698,7 @@ function render(){
   mountPinQuestions();
   if(state.view==='list') window.BluffLibrary.mount(document.getElementById('bluffLibrary'),cloudClient);
   if(state.view==='list') window.RatherLibrary.mount(document.getElementById('ratherLibrary'),cloudClient);
+  if(state.view==='list') window.SameLibrary.mount(document.getElementById('sameLibrary'),cloudClient);
   if(state.view==='list') window.YesNoLibrary.mount(document.getElementById('yesnoLibrary'),cloudClient);
   renderedEditorId = editorId;
   window.scrollTo({left:keepPosition?position.left:0,top:keepPosition?position.top:0,behavior:'instant'});
@@ -744,6 +746,17 @@ function viewList(){
       </div>
     </div>
     <div data-rather-list></div><p data-rather-status role="status"></p>
+  </section>
+  <section class="panel" id="sameLibrary">
+    <div class="library-heading">
+      <h2>Das gleiche Antworten</h2>
+      <div class="studio-actions">
+        <button data-same-action="random">Zufälliges Spiel</button>
+        <a class="btn" href="same/index.html">Fragenkatalog</a>
+        <button class="studio-primary studio-add" data-same-action="new" title="Neues Das gleiche Antworten" aria-label="Neues Das gleiche Antworten"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    </div>
+    <div data-same-list></div><p data-same-status role="status"></p>
   </section>
   <section class="panel" id="yesnoLibrary">
     <div class="library-heading">

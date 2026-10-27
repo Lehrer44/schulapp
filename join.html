@@ -12,9 +12,9 @@
 <script src="shared/connection-status.js"></script>
 </head>
 <body><main>
-<h1>Am Unterricht teilnehmen</h1><p>Ein Einstieg für Umfragen, Quizze, „Wer würde eher“ und das Ja/Nein-Schätzspiel. Gib den Code von deiner Lehrkraft ein.</p>
+<h1>Am Unterricht teilnehmen</h1><p>Ein Einstieg für Umfragen und alle Spiele aus Quiz Studio. Gib den Code von deiner Lehrkraft ein.</p>
 <form id="entryForm"><label for="entryCode">Teilnahmecode</label><input id="entryCode" maxlength="5" minlength="5" pattern="[A-Za-z0-9]{5}" autocapitalize="characters" autocomplete="off" required placeholder="z. B. A7K3P"><button id="continueBtn" type="submit">Weiter</button></form>
-<p id="entryError" class="error" role="alert"></p><div class="choices" id="kindChoices" hidden><button type="button" data-kind="survey">Zur Umfrage</button><button type="button" data-kind="quiz">Zum Quiz</button><button type="button" data-kind="bluff">Zum Bluff-Quiz</button><button type="button" data-kind="rather">Zu Wer würde eher</button><button type="button" data-kind="yesno">Zum Ja/Nein-Schätzspiel</button></div>
+<p id="entryError" class="error" role="alert"></p><div class="choices" id="kindChoices" hidden><button type="button" data-kind="survey">Zur Umfrage</button><button type="button" data-kind="quiz">Zum Quiz</button><button type="button" data-kind="bluff">Zum Bluff-Quiz</button><button type="button" data-kind="same">Zu Das gleiche Antworten</button><button type="button" data-kind="rather">Zu Wer würde eher</button><button type="button" data-kind="yesno">Zum Ja/Nein-Schätzspiel</button></div>
 <p><a href="index.html">Zur Startseite</a></p>
 </main><script>
 const client=supabase.createClient('https://mqtcwiiawmuxrpkjfrfc.supabase.co','sb_publishable_eY5NBW8EJHuyO2Ic5S3HBQ_tSwErhp-');
@@ -22,10 +22,10 @@ const params=new URLSearchParams(location.search),codeInput=document.getElementB
 const normalize=value=>value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);
 codeInput.value=normalize(params.get('code')||'');
 codeInput.addEventListener('input',()=>codeInput.value=normalize(codeInput.value));
-function route(kind){const url=new URL(kind==='rather'?'apps/quiz-studio/rather/student.html':kind==='yesno'?'apps/quiz-studio/yesno/student.html':kind==='bluff'?'apps/quiz-studio/bluff/student.html':kind==='quiz'?'apps/quiz-studio/student.html':'apps/umfrage/student.html',location.href);url.searchParams.set('code',codeInput.value);location.replace(url.href);}
+function route(kind){const url=new URL(kind==='same'?'apps/quiz-studio/same/student.html':kind==='rather'?'apps/quiz-studio/rather/student.html':kind==='yesno'?'apps/quiz-studio/yesno/student.html':kind==='bluff'?'apps/quiz-studio/bluff/student.html':kind==='quiz'?'apps/quiz-studio/student.html':'apps/umfrage/student.html',location.href);url.searchParams.set('code',codeInput.value);location.replace(url.href);}
 async function resolveCode(){
  const button=document.getElementById('continueBtn'),error=document.getElementById('entryError');button.disabled=true;error.textContent='';document.getElementById('kindChoices').hidden=true;setConnectionStatus('waiting','Code wird geprüft …');
- try{const hint=params.get('kind');const {data,error:failure}=await client.rpc('classroom_resolve_code',{p_join_code:codeInput.value,p_kind_hint:['quiz','survey','bluff','yesno','rather'].includes(hint)?hint:null});if(failure)throw failure;if(!data?.ok)throw new Error(data?.error||'SESSION_NOT_FOUND');if(data.kinds.length===1)route(data.kinds[0]);else{document.getElementById('kindChoices').hidden=false;document.querySelectorAll('[data-kind]').forEach(b=>b.hidden=!data.kinds.includes(b.dataset.kind));error.textContent='Dieser Code wird für mehrere Aktivitäten verwendet. Wähle die Aktivität deiner Lehrkraft.';setConnectionStatus('ready','Code bestätigt. Bitte Aktivität auswählen.');}}
+ try{const hint=params.get('kind');const {data,error:failure}=await client.rpc('classroom_resolve_code',{p_join_code:codeInput.value,p_kind_hint:['quiz','survey','bluff','yesno','rather','same'].includes(hint)?hint:null});if(failure)throw failure;if(!data?.ok)throw new Error(data?.error||'SESSION_NOT_FOUND');if(data.kinds.length===1)route(data.kinds[0]);else{document.getElementById('kindChoices').hidden=false;document.querySelectorAll('[data-kind]').forEach(b=>b.hidden=!data.kinds.includes(b.dataset.kind));error.textContent='Dieser Code wird für mehrere Aktivitäten verwendet. Wähle die Aktivität deiner Lehrkraft.';setConnectionStatus('ready','Code bestätigt. Bitte Aktivität auswählen.');}}
  catch(failure){error.textContent=failure.message==='JOIN_RATE_LIMITED'?'Zu viele Versuche. Bitte warte eine Minute.':failure.message==='SESSION_NOT_FOUND'?'Keine offene Aktivität gefunden. Prüfe den Code oder frage deine Lehrkraft.':'Der Code konnte nicht geprüft werden. Bitte erneut versuchen.';setConnectionStatus('error',error.textContent);}
  finally{button.disabled=false;}
 }

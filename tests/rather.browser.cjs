@@ -8,7 +8,7 @@ function value(v){if(v==null)return 'null';if(Array.isArray(v))return 'array['+v
 let db,serial=Promise.resolve();
 function sql(query){if(db)return db.exec(query);return Promise.resolve(execFileSync('psql',['-X','-q','-A','-t','-v','ON_ERROR_STOP=1','-c',query],{encoding:'utf8'}).trim().split('\n').filter(Boolean).at(-1));}
 async function rpc(name,args,host){
- if(!signatures[name]){if(['bluff_quiz_list','yesno_game_list'].includes(name))return {ok:true,quizzes:[],games:[],sessions:[]};throw Error('Unknown RPC '+name);}
+ if(!signatures[name]){if(['bluff_quiz_list','yesno_game_list','same_quiz_list'].includes(name))return {ok:true,quizzes:[],games:[],sessions:[]};throw Error('Unknown RPC '+name);}
  if(!host&&!participant.has(name))throw Error('RPC denied');
  const query='begin;'+(host?"select set_config('request.jwt.claim.sub',"+lit(teacher)+",true);set local role authenticated;":'set local role anon;')+'select public.'+name+'('+signatures[name].map(k=>k+'=>'+value(args[k])).join(',')+');commit;';
  if(db){const results=await sql(query);return Object.values(results.filter(r=>r.rows.length).at(-1).rows[0])[0];}
