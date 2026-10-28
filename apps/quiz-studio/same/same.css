@@ -27,3 +27,8 @@ body[data-studio="quiz"] #app .same-score{grid-template-columns:22px minmax(0,1f
 @media(prefers-reduced-motion:reduce){.same-person.same-new .same-answer{animation:none}.same-person{transition:none}}
 @media(max-width:850px){body[data-bluff-mode="host"] .bluff-grid>.live-sidebar{position:static;order:0;max-height:none}}
 @media(max-width:520px){.same-teams{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.same-team-heading{align-items:flex-start;margin-bottom:14px}.same-team-heading h3{font-size:18px}.same-members{gap:14px}.same-person{min-height:62px;padding:10px}.same-person .same-name,.same-answer,body[data-studio="quiz"] #app .same-person>button.same-name{font-size:18px}.same-point-actions{gap:5px}body[data-studio="quiz"] #app .same-point-actions button{min-height:44px;padding:5px 9px}.same-person label{flex-wrap:wrap}.same-person select{max-width:100%}body[data-studio="quiz"] #app .same-person>button.same-name{padding:10px;margin:-10px}}
+
+/* Keep the heading clear of the first tile and use the same blue rank typography
+   for the final results as for the in-game standings. */
+body[data-studio="quiz"] #app .ranking-panel>h2{margin:0 0 16px}
+body[data-studio="quiz"] #app .bluff-final-ranking .same-rank{display:block;min-width:0;height:auto;border-radius:0;background:transparent;color:inherit;font-size:18px;font-weight:500;line-height:1.5}

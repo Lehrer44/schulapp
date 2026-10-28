@@ -85,7 +85,7 @@ Alle Teammitglieder gleich: 3 Punkte; andernfalls mindestens zwei gleich: 1 Punk
 
 **Prüfung:** `tests/same-db.sql` ausschließlich in einer eigenen leeren Testdatenbank ausführen. Der Test prüft Katalog, Fragekopien, Besitzrechte, Teamverteilung, Geheimhaltung, Einzelaufdeckung, unveränderliche Antworten, Wertung, Overrides, Timer und Berechtigungen. `tests/same.browser.cjs` prüft den Ablauf auf Desktop und mit sechs mobilen Teilnehmern gegen PostgreSQL. Beide Tests sind in der GitHub-Action eingebunden. Optional kann `SAME_PGLITE` auf eine installierte `@electric-sql/pglite`-Version und `SAME_BROWSER` auf einen Chromium-Browser zeigen, um ohne lokalen PostgreSQL-Dienst zu testen.
 
-Das Layout zeigt Teams nebeneinander, Mitglieder untereinander und färbt abgegebene Antworten in der jeweiligen Teamfarbe. Die Rangliste fasst Teamname und Mitglieder in einer Kachel zusammen. Die Verbindungsanzeige steht in der Fußzeile. Bei bestehenden Installationen zusätzlich `supabase/same_layout.sql` ausführen; das Skript entfernt serverseitig die Schreibweisenkorrektur und begrenzt manuelle Rundenpunkte auf 0, 1 oder 3.
+Das Layout zeigt Teams nebeneinander, Mitglieder untereinander und färbt abgegebene Antworten in der jeweiligen Teamfarbe. Die Rangliste fasst Teamname und Mitglieder in einer Kachel zusammen. Spieler sehen nur die Frage mit Eingabe beziehungsweise Rundenstatus und die Rangliste; Teamspalten und aufgedeckte Antworten erscheinen ausschließlich in der Spielleiteransicht an der Tafel. Die Verbindungsanzeige steht in der Fußzeile. Bei bestehenden Installationen zusätzlich `supabase/same_layout.sql` ausführen; das Skript entfernt serverseitig die Schreibweisenkorrektur und begrenzt manuelle Rundenpunkte auf 0, 1 oder 3.
 
 ## Externe Links
 
