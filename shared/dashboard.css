@@ -75,3 +75,8 @@ body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.connection-sta
 .studio-identity>div{min-width:0}
 .studio-title{overflow-wrap:anywhere}
 .studio-actions:empty{display:none}
+
+/* Connection and action status belong after the complete app on every view. */
+body[data-dashboard-view]:not([data-dashboard-view="workspace"])>:is(.bluff-foot,.bluff-message){order:2}
+body[data-dashboard-view="bluff"]{min-height:100dvh}
+body[data-dashboard-view]:not([data-dashboard-view="workspace"])>.bluff-foot{order:3;margin-top:auto}

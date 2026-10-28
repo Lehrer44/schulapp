@@ -91,6 +91,7 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
      await page.evaluate(()=>document.fonts.ready);
      const overflow=await page.evaluate(()=>({width:document.documentElement.scrollWidth,viewport:innerWidth}));
      assert(overflow.width<=width+1,`${name} at ${width}: page overflow ${overflow.width}`);
+     assert(await page.evaluate(()=>{const status=document.querySelector('#bluffConnectionStatus,#connectionStatus'),app=document.querySelector('main');return !status||!status.getClientRects().length||!app||status.getBoundingClientRect().top>=app.getBoundingClientRect().bottom-1;}),`${name} at ${width}: connection status must follow the app`);
      // Measure computed styles of the rendered pages; catches local CSS overriding the shared scale.
      for(const panel of await page.locator('.panel:visible').all()){
       if(await panel.evaluate(el=>el.closest('.play-screen,.board-wrap')!==null))continue;

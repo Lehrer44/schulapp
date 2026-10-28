@@ -13,6 +13,7 @@ create table private.bluff_sessions(join_code text,phase text);
 create table private.yesno_sessions(join_code text,phase text);
 create table private.rather_sessions(join_code text,phase text);
 \ir ../supabase/same.sql
+\ir ../supabase/same_layout.sql
 
 do $$declare u uuid:=gen_random_uuid();other uuid:=gen_random_uuid();sid uuid;sid2 uuid;ids bigint[];
  players uuid[];names text[]:=array['Ada','Ben','Cleo','Dora','Emil','Finn'];i integer;j jsonb;st jsonb;code text;quiz uuid;q bigint;
@@ -73,7 +74,8 @@ begin
  for i in 1..6 loop perform public.same_manage(sid,0,'reveal','reveal',players[i],null,null);end loop;
  st:=public.same_player_state(sid,players[2],repeat('2',64));
  assert (select v->>'answer'='ROT' from jsonb_array_elements(st->'players') v where v->>'id'=players[1]::text);
- perform public.same_manage(sid,0,'reveal','correct',players[6],null,'"Grün!"');
+ assert public.same_manage(sid,0,'reveal','correct',players[6],null,'"Grün!"')->>'error'='INVALID_ACTION';
+ assert (select answer='Grün' from private.same_answers where session_id=sid and player_id=players[6]);
  assert public.same_host_action(sid,0,'reveal','scores')->>'ok'='true';
  assert (select points=3 from private.same_points where session_id=sid and round_index=0 and team=1);
  assert (select points=1 from private.same_points where session_id=sid and round_index=0 and team=2);
@@ -82,6 +84,7 @@ begin
  perform public.same_manage(sid,0,'leaderboard','override',null,2,'3');
  assert (select points=3 from private.same_points where session_id=sid and round_index=0 and team=2);
  assert public.same_manage(sid,0,'leaderboard','override',null,2,'4')->>'error'='INVALID_POINTS';
+ assert public.same_manage(sid,0,'leaderboard','override',null,2,'2')->>'error'='INVALID_POINTS';
  perform public.same_host_action(sid,0,'leaderboard','next');
  assert public.same_answer(sid,players[1],repeat('1',64),0,'Ada')->>'error'='PHASE_CHANGED';
  assert public.same_answer(sid,players[1],repeat('1',64),1,'Dora')->>'error'='TEAM_NAME_REQUIRED';
@@ -134,4 +137,4 @@ begin
  assert not has_function_privilege('anon','public.same_manage(uuid,integer,text,text,uuid,integer,jsonb)','EXECUTE');
  assert not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'same_%' and p.prosecdef);
 end;$$;
-select 'PASS: same catalogue, snapshots, ownership, teams, secrecy, reveal, corrections, 3/1/0, override, deadline, stale requests and permissions';
+select 'PASS: same catalogue, snapshots, ownership, teams, secrecy, reveal, immutable answers, 3/1/0, override, deadline, stale requests and permissions';
