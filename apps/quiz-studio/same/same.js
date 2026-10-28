@@ -43,7 +43,7 @@
  function teamStyle(team){const colours=[['#6b9f35','#365b23','#e3f0d7'],['#4775df','#223e72','#deebf7'],['#a66bcb','#633b7d','#eee3f5'],['#c47b28','#744715','#faecd7'],['#2e9489','#205b55','#dbf0ec'],['#bd627b','#73384a','#f7e2e9'],['#7c85b4','#454d78','#e8ebf7'],['#8e8733','#56501d','#f1efd6'],['#4785a1','#285169','#dfedf5'],['#a47752','#62462e','#f3e8df']];const c=colours[(Math.max(1,team||1)-1)%colours.length];return '--team-color:'+c[0]+';--team-ink:'+c[1]+';--team-tint:'+c[2];}
  function leaderboard(){
   const teams=[...state.teams].sort((a,b)=>b.score-a.score||a.id-b.id);
-  return '<div class="bluff-stack">'+teams.map(t=>'<div class="bluff-score same-score" style="'+teamStyle(t.id)+'" data-rank-team="'+t.id+'"><span>'+ (1+teams.filter(o=>o.score>t.score).length)+'</span><div class="same-score-team"><strong>Team '+t.id+'</strong><p>'+state.players.filter(p=>p.team===t.id).map(p=>esc(p.name)).join(' · ')+'</p></div><b>'+t.score+' P</b></div>').join('')+'</div>';
+  return '<div class="bluff-stack">'+teams.map(t=>'<div class="bluff-score same-score" style="'+teamStyle(t.id)+'" data-rank-team="'+t.id+'"><span class="same-rank">'+ (1+teams.filter(o=>o.score>t.score).length)+'</span><div class="same-score-team"><strong>Team '+t.id+'</strong><p>'+state.players.filter(p=>p.team===t.id).map(p=>esc(p.name)).join(' · ')+'</p></div><b>'+t.score+' P</b></div>').join('')+'</div>';
  }
  function phaseActions(){const actions={lobby:['start','Erste Frage freigeben'],answers:['close','Eingabe schließen'],reveal:['scores','Auswertung'],leaderboard:['next',state.round_index+1>=state.round_count?'Endplatzierung anzeigen':'Nächste Frage']};const a=actions[state.phase];return a?'<button class="bluff-primary" data-action="'+a[0]+'">'+a[1]+'</button>':'';}
  function roster(host){return '<div class="same-teams">'+Array.from({length:state.team_count},(_,i)=>i+1).concat(state.phase==='lobby'&&state.players.some(p=>!p.team)?[null]:[]).map(team=>{
@@ -63,14 +63,14 @@
   else if(s.phase==='lobby'){
    main='<h2>Wartelobby</h2><p>'+(host?'Ordne alle Personen gleich großen Teams zu. Jedes Team braucht mindestens zwei Mitglieder.':'Du bist dabei. Die Spielleitung ordnet die Teams zu und startet die Runde.')+'</p>';
    if(host)main+='<form id="settingsForm" class="bluff-fields"><label>Anzahl der Teams<input class="bluff-input" id="teamCount" type="number" min="2" max="10" value="'+s.team_count+'" required></label><label>Zeit pro Runde (0 = ohne Timer)<input class="bluff-input" id="timerSeconds" type="number" min="0" max="600" value="'+s.timer_seconds+'" required></label><button type="submit">Einstellungen übernehmen</button></form>';
-   main+=roster(host)+rules();
+   if(host)main+=roster(true)+rules();
   }else{
    main='<p class="bluff-help">Runde '+(s.round_index+1)+' von '+s.round_count+' · '+(s.kind==='team'?'Teamfrage':'Assoziation')+'</p><h2 class="bluff-question">'+esc(s.question)+'</h2>';
    if(s.phase==='answers'){
     main+='<p class="bluff-status" role="status">'+s.players.filter(p=>p.submitted).length+' von '+s.players.length+' haben geantwortet.</p><p id="sameTimer" class="bluff-counter"></p>';
     if(!host){const own=s.players.find(p=>p.id===credentials.player);main+=s.own_answer?'<p class="bluff-save-status">✓ Deine Antwort ist gespeichert.</p>':'<form id="answerForm"><label class="bluff-label" for="answerText">Deine verdeckte Antwort</label>'+(s.kind==='team'?'<select class="bluff-select" id="answerText" required><option value="">Name aus deinem Team wählen</option>'+s.players.filter(p=>p.team===own?.team).map(p=>'<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>').join('')+'</select>':'<input class="bluff-input" id="answerText" maxlength="180" required autocomplete="off">')+'<button class="bluff-primary" type="submit">Antwort verdeckt abgeben</button></form>';}
    }else if(s.phase==='reveal')main+='<p class="bluff-help">Eingabe geschlossen. '+(host?'Klicke auf die Namen, um die Antworten einzeln aufzudecken.':'Die Spielleitung deckt die Antworten einzeln auf.')+'</p>';
-   main+=roster(host);
+   if(host)main+=roster(true);
   }
   const controls=host&&s.phase!=='ended'?'<footer class="bluff-controls"><div class="bluff-actions">'+phaseActions()+'</div></footer>':'';
   app.innerHTML=(host?header('','<button data-action="participation">Teilnahme</button>'+(s.phase!=='ended'?'<button class="bluff-end" data-action="end">Beenden</button>':'<a class="btn" href="../index.html">Quiz Studio</a>')):'')+'<div class="bluff-grid'+(!host?' bluff-player-grid':'')+'"><section class="panel '+(host?'bluff-host-main':'bluff-player-main')+(s.phase==='ended'?' bluff-final-result':'')+'">'+main+controls+'</section>'+(s.phase!=='ended'?'<aside class="bluff-stack '+(host?'live-sidebar':'bluff-player-standings')+'"><section class="panel ranking-panel"><h2>Rangliste</h2>'+leaderboard()+'</section></aside>':'')+'</div>';
