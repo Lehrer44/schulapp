@@ -31,4 +31,5 @@ body[data-studio="quiz"] #app .same-score{grid-template-columns:22px minmax(0,1f
 /* Keep the heading clear of the first tile and use the same blue rank typography
    for the final results as for the in-game standings. */
 body[data-studio="quiz"] #app .ranking-panel>h2{margin:0 0 16px}
+body[data-studio="quiz"] #app .bluff-final-result>.bluff-question{margin-bottom:24px}
 body[data-studio="quiz"] #app .bluff-final-ranking .same-rank{display:block;min-width:0;height:auto;border-radius:0;background:transparent;color:inherit;font-size:18px;font-weight:500;line-height:1.5}
