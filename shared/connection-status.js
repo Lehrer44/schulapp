@@ -3,7 +3,7 @@
  function draw(){
   if(!document.body)return;
   let el=document.getElementById('connectionStatus');
-  if(!el){el=document.createElement('div');el.id='connectionStatus';el.className='connection-status';el.setAttribute('role','status');el.setAttribute('aria-live','polite');document.body.prepend(el);}
+  if(!el){el=document.createElement('footer');el.id='connectionStatus';el.className='connection-status';el.setAttribute('role','status');el.setAttribute('aria-live','polite');document.body.append(el);}
   el.dataset.state=status.mode;
   if(el.textContent!==status.text)el.textContent=status.text;
  }

@@ -194,17 +194,9 @@ begin
     if not found then return jsonb_build_object('ok',false,'error','INVALID_PLAYER');end if;
    elsif txt='reveal' and s.phase='reveal' then
     update private.same_answers set revealed=true where session_id=s.id and round_index=s.round_index and player_id=target;
-   elsif txt='correct' and s.phase='reveal' then
-    j:=a->'p_value';txt:=regexp_replace(j#>>'{}','^[[:space:]]+|[[:space:]]+$','','g');
-    if txt is null or length(txt) not between 1 and 180 then return jsonb_build_object('ok',false,'error','INVALID_ANSWER');end if;
-    update private.same_answers set answer=txt where session_id=s.id and round_index=s.round_index and player_id=target and revealed;
-    if not found then return jsonb_build_object('ok',false,'error','INVALID_ACTION');end if;
-    if s.questions->s.round_index->>'kind'='team' and not exists(select 1 from private.same_players pl join private.same_players chosen on chosen.session_id=pl.session_id and chosen.team=pl.team where pl.id=target and pl.session_id=s.id and lower(chosen.name)=lower(txt)) then
-     raise exception 'TEAM_NAME_REQUIRED';
-    end if;
    elsif txt='override' and s.phase='leaderboard' then
     pts:=(a->>'p_value')::integer;
-    if pts is null or pts not between 0 and 3 or team_no is null or team_no not between 1 and s.team_count then return jsonb_build_object('ok',false,'error','INVALID_POINTS');end if;
+    if pts is null or pts not in (0,1,3) or team_no is null or team_no not between 1 and s.team_count then return jsonb_build_object('ok',false,'error','INVALID_POINTS');end if;
     update private.same_points set points=pts where session_id=s.id and round_index=s.round_index and team=team_no;
    else return jsonb_build_object('ok',false,'error','INVALID_ACTION');end if;
    changed:=true;
