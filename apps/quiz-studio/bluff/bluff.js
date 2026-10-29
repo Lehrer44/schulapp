@@ -57,10 +57,7 @@
  }).join('')+'</div>';}
  function phaseActions(){const s=state;if(s.phase==='lobby')return '<button class="bluff-primary" data-action="start" '+(s.players.length<2?'disabled':'')+'>Spiel starten</button>';if(s.phase==='question')return '<button class="bluff-primary" data-action="open_bluff">Bluff-Phase öffnen</button>';if(s.phase==='bluff')return '<button class="bluff-primary" data-action="show_answers" '+(s.players.some(p=>!p.submitted)?'disabled':'')+'>Antworten anzeigen</button>';if(s.phase==='answers')return '<button class="bluff-primary" data-action="start_vote">Abstimmung starten</button>';if(s.phase==='vote')return '<button class="bluff-primary" data-action="reveal">Abstimmung schließen & enthüllen</button>';if(s.phase==='reveal')return '<button class="bluff-primary" data-action="reveal_next">Alle Antworten aufdecken</button>';if(s.phase==='leaderboard')return '<button class="bluff-primary" data-action="next">'+(s.round_index+1>=s.round_count?'Endergebnis anzeigen':'Nächste Runde →')+'</button>';return '';}
  function personChip(person,kind){
-  const name=String(person.name||'Teilnehmende Person'),parts=name.trim().split(/\s+/u);
-  const initials=(Array.from(parts[0]||'')[0]||'')+(parts.length>1?(Array.from(parts.at(-1))[0]||''):'');
-  let hash=0;for(const char of String(person.id||name))hash=(hash*31+char.codePointAt(0))%360;
-  return '<span class="bluff-person '+kind+'" style="--person-hue:'+hash+'"><span class="bluff-avatar" aria-hidden="true">'+esc(initials.toLocaleUpperCase('de-DE'))+'</span><span class="bluff-person-name">'+esc(name)+'</span></span>';
+  return '<span class="'+kind+'"><span class="bluff-person-name">'+esc(person.name||'Teilnehmende Person')+'</span></span>';
  }
  function optionCards(host){
   const s=state,voting=s.phase==='vote'&&!host;
@@ -68,8 +65,8 @@
    const choosing=voting&&!o.revealed;
    const content=o.revealed?'<div class="bluff-authors">'+(o.is_truth?'✓ Die echte Antwort':o.authors.map(p=>personChip(p,'bluff-author')).join(''))+'</div>':'';
    const choice=choosing&&!o.own?'<label class="bluff-vote-control"><input type="radio" name="bluff-vote" data-action="vote" data-id="'+esc(o.id)+'" aria-label="Antwort wählen: '+esc(upperAnswer(o.answer))+'" '+(s.own_vote===o.id?'checked ':'')+(s.own_vote||expired()?'disabled':'')+'></label>':'';
-   const voters=o.revealed?'<div class="bluff-voters"><span class="bluff-voters-label">Gewählt von</span><div class="bluff-voter-list">'+(o.voters.length?o.voters.map(p=>personChip(p,'bluff-voter')).join(''):'<span class="bluff-no-votes">Keine Stimmen</span>')+'</div></div>':'';
-   return '<article class="bluff-option '+(choosing?'bluff-voting-option ':'')+(o.revealed?'revealed ':'')+(o.revealed&&!seenReveals.has(o.id)?'new-reveal ':'')+(o.is_truth?'truth':'')+'" data-option-id="'+esc(o.id)+'"><div class="bluff-option-answer"><h3>'+esc(upperAnswer(o.answer))+'</h3>'+content+'</div>'+choice+voters+'</article>';
+   const voters=o.revealed?'<div class="bluff-voters"><div class="bluff-voter-list" aria-label="Stimmen">'+o.voters.map(p=>personChip(p,'bluff-voter')).join('')+'</div></div>':'';
+   return '<article class="bluff-option manipulation-option '+(choosing?'bluff-voting-option ':'')+(o.revealed?'revealed ':'')+(o.revealed&&!seenReveals.has(o.id)?'new-reveal ':'')+(o.is_truth?'truth':'')+'" data-option-id="'+esc(o.id)+'"><div class="bluff-option-answer"><h3>'+esc(upperAnswer(o.answer))+'</h3>'+content+'</div>'+choice+voters+'</article>';
   }).join('')+'</div>';
  }
  function expired(){return !!state?.deadline&&Date.parse(state.deadline)<=Date.now()+offset;}
@@ -83,9 +80,8 @@
   if(!host)main+='<form id="bluffForm"><label class="bluff-label" for="bluffAnswer">Deine glaubwürdige Fake-Antwort</label><textarea class="bluff-textarea" id="bluffAnswer" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="180" required '+(expired()?'disabled':'')+'>'+esc(draft)+'</textarea><button class="bluff-primary" id="sendBluff" type="submit" '+(expired()?'disabled':'')+'>'+(s.own_entry?'Antwort aktualisieren':'Antwort abgeben')+'</button><p class="bluff-save-status">'+(s.own_entry?'✓ Gespeichert: '+esc(upperAnswer(s.own_entry.answer)):'Noch nicht abgegeben.')+'</p></form>';
  }
  if(['answers','vote','reveal','leaderboard'].includes(s.phase)){
-  if(s.phase==='vote')main+='<p class="bluff-status">'+s.players.filter(p=>p.voted).length+' von '+s.players.length+' haben abgestimmt.</p>'+(s.own_vote&&!host?'<p class="bluff-save-status">✓ Deine Stimme ist gespeichert.</p>':'');
+  if(s.phase==='vote'&&s.own_vote&&!host)main+='<p class="bluff-save-status">✓ Deine Stimme ist gespeichert.</p>';
   if(s.phase==='reveal')main+='<p>Die Spielleitung deckt alle Antworten gleichzeitig auf.</p>';
-  if(s.phase==='leaderboard')main+='<p class="bluff-save-status">✓ Punkte vergeben · echte Antwort: '+esc(upperAnswer(s.correct_answer))+'</p>';
   main+=optionCards(host);
  }
  }
