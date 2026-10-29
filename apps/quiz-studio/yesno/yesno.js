@@ -7,7 +7,7 @@
  let state=null,room=params.get('session'),credentials=null,channel=null,poll=null,tick=null,refreshBusy=false,refreshAgain=false,actionBusy=false,signature='',serverOffset=0;
  let draftRound=null,draftAnswer=null,draftEstimate=null,questions=[],editing=null;
  function say(text,success=false){notice.textContent=text;notice.classList.toggle('yn-success',success);}
- function header(title,actions=''){return '<header class="yn-heading"><div><span class="yn-tag">JA/NEIN-SCHÄTZSPIEL</span><h1>'+esc(title)+'</h1></div><div class="yn-actions">'+actions+'</div></header>';}
+ function header(title,actions=''){return '<header class="yn-heading"><div><span class="yn-tag">JA ODER NEIN</span><h1>'+esc(title)+'</h1></div><div class="yn-actions">'+actions+'</div></header>';}
  function rules(){return '<p class="muted">'+(state?.reveal_answers?'Die eigenen Antworten werden bei der Auswertung aufgedeckt.':'Die eigene Antwort bleibt privat.')+' Schätze die Zahl aller Ja-Stimmen inklusive deiner eigenen.</p><ul class="yn-rules"><li>Genau richtig: '+(state?.exact_points??3)+' Punkte.</li><li>Bis zu '+(state?.tolerance??1)+' Personen daneben: '+(state?.near_points??1)+' Punkte.</li><li>Sonst oder ohne Abgabe: 0 Punkte.</li></ul>';}
  async function requireTeacher(){
   const {data,error:failure}=await client.auth.getUser();

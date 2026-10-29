@@ -20,6 +20,12 @@ Neue Anwendungen bekommen einen Ordner `apps/<name>/` mit einem eigenen `index.h
 Die Umstrukturierung verändert weder das Supabase-Projekt noch Tabellen, Buckets, Konten oder gespeicherte Inhalte. Auch bestehende Browser-Speicherschlüssel bleiben erhalten.
 
 
+## Quiz Studio: Spielübersicht
+
+Die Übersicht zeigt fünf Kacheln in dieser Reihenfolge: Quiz, Manipulation, Wer würde eher, Dieselbe Antwort und Ja oder Nein. Auf großen Bildschirmen stehen drei Kacheln nebeneinander, auf mittleren zwei und auf schmalen eine. Zufälliges Spiel (gekreuzte Pfeile), Fragenkatalog (Bücher) und Neues Spiel (Plus) stehen direkt im Kachelkopf; die Symbolbuttons haben Tooltips und zugängliche Namen. Gespeicherte Spiele erscheinen als kompakte Zeilen mit Start, Bearbeiten und Löschen.
+
+Manipulation hieß zuvor Bluff-Quiz, Dieselbe Antwort hieß Das gleiche Antworten und Ja oder Nein hieß Ja/Nein-Schätzspiel. Bestehende Links, Spielkennungen und gespeicherte Inhalte bleiben kompatibel. Für diese Layoutänderung ist kein SQL-Update nötig.
+
 ## Live-Spielweisen im Quiz Studio
 
 Die Spielweise wird pro Frage im Editor gewählt: Klassisch, Buzzer oder Schnellantwort. Fehlende oder frühere „Standard übernehmen“-Einstellungen werden als klassisch behandelt. Beim Klick auf „Live mit Schülern“ wird direkt eine Wartelobby angelegt. Erst „Quiz starten“ zeigt die erste Frage und öffnet gleichzeitig die Antworten. „Weiter“ zeigt und öffnet jeweils die nächste Frage. Beim Zurückgehen bleiben bereits erfolgte Bewertungen und Zeitstempel erhalten.
