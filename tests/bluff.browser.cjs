@@ -27,7 +27,7 @@ server.on('request',async(req,res)=>{
  assert.equal(await host.locator('#classicLibrary [data-action="import"]').count(),0);
  assert.equal(await host.locator('#classicLibrary [data-action="export-all"]').count(),0);
  assert.equal(await host.locator('#classicLibrary [data-action="new-quiz"]').count(),1);
- assert.deepEqual(await host.locator('#classicLibrary,#bluffLibrary').evaluateAll(els=>els.map(el=>[getComputedStyle(el).backgroundColor,getComputedStyle(el).borderRadius])),[['rgb(255, 254, 250)','18px'],['rgb(255, 254, 250)','18px']]);
+ assert.deepEqual(await host.locator('#classicLibrary,#bluffLibrary').evaluateAll(els=>els.map(el=>[getComputedStyle(el).backgroundColor,getComputedStyle(el).borderRadius])),[['rgb(255, 255, 255)','8px'],['rgb(255, 255, 255)','8px']]);
  await host.locator('#bluffLibrary a').click();await host.waitForURL('**/bluff/index.html');
  assert.equal(await host.locator('#gameForm,#category,#sourceUrl,.bluff-banner').count(),0);
  assert.equal(await host.locator('[data-action="edit-question"]').count(),10);

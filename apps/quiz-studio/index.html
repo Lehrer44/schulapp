@@ -327,68 +327,90 @@ min-height:var(--control-size);}
 body[data-studio="quiz"] .studio-title{font-size:clamp(20px,2.5vw,24px)}
 body[data-studio="quiz"] .icon-btn svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #cloudStatus[data-state="error"]{color:#a23628;font-weight:600}
-/* One control and spacing system for all three Quiz Studio libraries. */
-body[data-studio="quiz"][data-dashboard-view="library"] #app{--library-control-height:var(--control-size);}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary,#ratherLibrary,#sameLibrary){padding:var(--panel-padding);margin:0 0 var(--section-gap);min-width:0;}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;
-  align-items:center;gap:var(--space-2);margin:0 0 var(--space-3);}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{margin:0;font-size:18px;line-height:1.35;min-width:0;}
-
+/* Library layout follows the five-tile Quiz Studio concept. */
+body[data-studio="quiz"][data-dashboard-view="library"] #app{
+  --library-control-height:36px;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:40px clamp(24px,4vw,64px);align-items:stretch;margin-top:24px;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid>.panel{
+  min-width:0;min-height:214px;margin:0;padding:10px;
+  border:1px solid #999;border-radius:8px;background:#fff;
+  box-shadow:0 1px 4px #0003;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
+  display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;
+  gap:8px;margin:4px 2px 18px;min-height:32px;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{
+  margin:0;min-width:0;font-size:20px;font-weight:700;line-height:1.25;
+  color:#444;overflow-wrap:anywhere;
+}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-actions{
-  width:auto;display:flex;align-items:center;justify-content:flex-end;
-  gap:8px;flex-wrap:wrap;justify-self:end;
+  display:flex;flex-wrap:nowrap;align-items:center;gap:6px;width:auto;flex:none;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is(button,.btn){
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   box-sizing:border-box;height:var(--library-control-height);min-height:var(--library-control-height);
-  padding:0 14px;font:600 14px/1.4 Inter,"Avenir Next",system-ui,sans-serif;
-  border-radius:10px;text-decoration:none;white-space:nowrap;
+  padding:0 9px;font:500 14px/1.4 Inter,"Avenir Next",system-ui,sans-serif;
+  border:1px solid #999;border-radius:6px;background:#fff;color:#444;
+  box-shadow:0 1px 3px #0002;text-decoration:none;white-space:nowrap;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is(button,.btn):hover:not(:disabled){
+  background:var(--studio-soft);border-color:var(--studio-accent);
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is(.studio-add,.icon-btn){
   width:var(--library-control-height);min-width:var(--library-control-height);
   flex:0 0 var(--library-control-height);padding:0;order:0;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-add svg{
-  display:block;width:20px;height:20px;fill:none;stroke:currentColor;
-  stroke-width:2;stroke-linecap:round;pointer-events:none;
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading :is(button,.btn){
+  --library-control-height:32px;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{padding:var(--card-padding);margin:0;gap:var(--space-3);}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading svg{
+  display:block;width:22px;height:22px;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .grid{gap:12px}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
+  padding:7px 8px;margin:0;gap:8px;border:1px solid #999;border-radius:8px;
+  background:#fff;box-shadow:0 1px 3px #0003;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .quiz-info h3{
+  margin:0;font-size:14px;font-weight:700;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .quiz-info .muted{display:none}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .card-actions{
-  display:flex;align-items:center;gap:6px;margin:0;padding:0;flex-wrap:wrap;
+  grid-column:2;grid-row:1;display:flex;justify-content:flex-end;align-items:center;
+  gap:8px;margin:0;padding:0;flex-wrap:nowrap;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#bluffLibrary,#yesnoLibrary,#ratherLibrary,#sameLibrary) .empty{display:flex;align-items:center;justify-content:center;min-height:0;
-  margin:0;padding:var(--panel-padding);text-wrap:balance;}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .icon-btn.danger{
+  color:#e00000;border-color:#e00000;background:#fff1f1;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .empty{
+  display:flex;align-items:center;justify-content:center;min-height:128px;
+  margin:0;padding:16px;border:1px solid #999;border-radius:20px;
+  background:#fff;color:#555;font-size:12px;box-shadow:0 1px 3px #0002;text-wrap:balance;
+}
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]){
   margin:12px 0 0;color:#a23628;font-size:14px;overflow-wrap:anywhere;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]):empty{
-  display:none;
-}
-@media(max-width:960px){
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{grid-template-columns:minmax(0,1fr) auto;gap:var(--space-2);
-  ;margin:0 0 var(--space-3);}
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions{
-    grid-column:1/-1;justify-self:start;justify-content:flex-start;
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]):empty{display:none}
+@media(max-width:1100px){
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;
   }
 }
-@media(max-width:480px){
-  body[data-studio="quiz"][data-dashboard-view="library"] #app :is(#classicLibrary,#bluffLibrary,#yesnoLibrary,#ratherLibrary,#sameLibrary){padding:var(--panel-padding);
-  ;margin:0 0 var(--section-gap);}
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{grid-template-columns:minmax(0,1fr) auto;
-  ;gap:var(--space-2);margin:0 0 var(--space-3);}
-
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{display:flex;align-items:center;}
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-actions{
-    gap:6px;
+@media(max-width:800px),(pointer:coarse){
+  body[data-studio="quiz"][data-dashboard-view="library"] #app,
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading :is(button,.btn){--library-control-height:44px}
+}
+@media(max-width:700px){
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{
+    grid-template-columns:minmax(0,1fr);gap:24px;
   }
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading :is(button,.btn){
-    padding-inline:10px;font-size:13px;
-  }
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-add{
-    padding:0;
-  }
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{padding:var(--card-padding);
-  ;gap:var(--space-3);}
 }
 </style>
 </head>
@@ -711,27 +733,25 @@ function viewList(){
   <header class="studio-header">
     <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><h1 class="studio-title">Quiz <span>Studio</span></h1></div>
   </header>
+  <div class="studio-library-grid">
   <section class="panel" id="classicLibrary">
     <div class="library-heading">
-      <h2>Deine Quizze</h2>
+      <h2>Quiz</h2>
       <div class="studio-actions">
         <button class="studio-primary studio-add" type="button" data-action="new-quiz" title="Neues Quiz" aria-label="Neues Quiz"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>
     ${ quizzes.length === 0
-      ? `<div class="empty">
-           <p style="margin:0 0 16px">Noch keine Quizze vorhanden. Erstelle dein erstes Quiz, um zu beginnen.</p>
-           <button class="btn primary" data-action="new-quiz">＋ Quiz erstellen</button>
-         </div>`
+      ? `<div class="empty">Noch keine Spiele vorhanden.</div>`
       : `<div class="grid">${quizzes.map(q => quizCard(q)).join('')}</div>` }
   </section>
   <section class="panel" id="bluffLibrary">
     <div class="library-heading">
-      <h2>Bluff-Quiz</h2>
+      <h2>Manipulation</h2>
       <div class="studio-actions">
-        <button data-bluff-action="random">Zufälliges Spiel</button>
-        <a class="btn" href="bluff/index.html">Fragenkatalog</a>
-        <button class="studio-primary studio-add" data-bluff-action="new" title="Neues Bluff-Quiz" aria-label="Neues Bluff-Quiz"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="icon-btn" data-bluff-action="random" title="Zufälliges Spiel" aria-label="Zufälliges Spiel · Manipulation"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h3c5 0 7 12 12 12h3m-4-4 4 4-4 4M3 18h3c2 0 4-2 6-6s4-6 6-6h3m-4-4 4 4-4 4"/></svg></button>
+        <a class="btn icon-btn" href="bluff/index.html" title="Fragenkatalog" aria-label="Fragenkatalog · Manipulation"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="3" width="5" height="18" rx="1"/><path d="M4.5 6v12M10 3h4v18h-4zM15 4l4-1 4 17-4 1z"/></svg></a>
+        <button class="studio-primary studio-add" data-bluff-action="new" title="Neues Spiel „Manipulation“" aria-label="Neues Spiel „Manipulation“"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>
     <div data-bluff-list></div><p data-bluff-status role="status"></p>
@@ -740,8 +760,8 @@ function viewList(){
     <div class="library-heading">
       <h2>Wer würde eher</h2>
       <div class="studio-actions">
-        <button data-rather-action="random">Zufälliges Spiel</button>
-        <a class="btn" href="rather/index.html">Fragenkatalog</a>
+        <button class="icon-btn" data-rather-action="random" title="Zufälliges Spiel" aria-label="Zufälliges Spiel · Wer würde eher"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h3c5 0 7 12 12 12h3m-4-4 4 4-4 4M3 18h3c2 0 4-2 6-6s4-6 6-6h3m-4-4 4 4-4 4"/></svg></button>
+        <a class="btn icon-btn" href="rather/index.html" title="Fragenkatalog" aria-label="Fragenkatalog · Wer würde eher"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="3" width="5" height="18" rx="1"/><path d="M4.5 6v12M10 3h4v18h-4zM15 4l4-1 4 17-4 1z"/></svg></a>
         <button class="studio-primary studio-add" data-rather-action="new" title="Neues Wer würde eher" aria-label="Neues Wer würde eher"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>
@@ -749,26 +769,27 @@ function viewList(){
   </section>
   <section class="panel" id="sameLibrary">
     <div class="library-heading">
-      <h2>Das gleiche Antworten</h2>
+      <h2>Dieselbe Antwort</h2>
       <div class="studio-actions">
-        <button data-same-action="random">Zufälliges Spiel</button>
-        <a class="btn" href="same/index.html">Fragenkatalog</a>
-        <button class="studio-primary studio-add" data-same-action="new" title="Neues Das gleiche Antworten" aria-label="Neues Das gleiche Antworten"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="icon-btn" data-same-action="random" title="Zufälliges Spiel" aria-label="Zufälliges Spiel · Dieselbe Antwort"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h3c5 0 7 12 12 12h3m-4-4 4 4-4 4M3 18h3c2 0 4-2 6-6s4-6 6-6h3m-4-4 4 4-4 4"/></svg></button>
+        <a class="btn icon-btn" href="same/index.html" title="Fragenkatalog" aria-label="Fragenkatalog · Dieselbe Antwort"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="3" width="5" height="18" rx="1"/><path d="M4.5 6v12M10 3h4v18h-4zM15 4l4-1 4 17-4 1z"/></svg></a>
+        <button class="studio-primary studio-add" data-same-action="new" title="Neues Spiel „Dieselbe Antwort“" aria-label="Neues Spiel „Dieselbe Antwort“"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>
     <div data-same-list></div><p data-same-status role="status"></p>
   </section>
   <section class="panel" id="yesnoLibrary">
     <div class="library-heading">
-      <h2>Ja/Nein-Schätzspiel</h2>
+      <h2>Ja oder Nein</h2>
       <div class="studio-actions">
-        <button data-yn-action="random">Zufälliges Spiel</button>
-        <a class="btn" href="yesno/index.html">Fragenkatalog</a>
+        <button class="icon-btn" data-yn-action="random" title="Zufälliges Spiel" aria-label="Zufälliges Spiel · Ja oder Nein"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h3c5 0 7 12 12 12h3m-4-4 4 4-4 4M3 18h3c2 0 4-2 6-6s4-6 6-6h3m-4-4 4 4-4 4"/></svg></button>
+        <a class="btn icon-btn" href="yesno/index.html" title="Fragenkatalog" aria-label="Fragenkatalog · Ja oder Nein"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="3" width="5" height="18" rx="1"/><path d="M4.5 6v12M10 3h4v18h-4zM15 4l4-1 4 17-4 1z"/></svg></a>
         <button class="studio-primary studio-add" data-yn-action="new" title="Neues Ja/Nein-Spiel" aria-label="Neues Ja/Nein-Spiel"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>
     <div data-yn-list></div><p data-yn-status role="status"></p>
   </section>
+  </div>
   `;
 }
 
@@ -781,7 +802,7 @@ function quizCard(q){
       <div class="muted">${q.questions.length} ${q.questions.length === 1 ? 'Frage' : 'Fragen'} · ${fmt(pts)} Punkte</div>
     </div>
     <div class="card-actions">
-      <button data-action="live-quiz" data-id="${q.id}">Starten</button>
+      <button data-action="live-quiz" data-id="${q.id}">Start</button>
       <button class="icon-btn" data-action="open-quiz" data-id="${q.id}" title="Bearbeiten" aria-label="Quiz bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2 2 0 0 1 5 5L9 20l-6 1 1-6Z"/></svg></button>
       <button class="icon-btn danger" data-action="del-quiz" data-id="${q.id}" title="Löschen" aria-label="Quiz löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
     </div>
@@ -797,7 +818,7 @@ function viewEditor(){
   <header class="studio-header">
     <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">${esc(q.title) || 'Quiz bearbeiten'}</div></div></div>
     <div class="studio-actions">
-      <button class="btn secondary" data-action="back-to-list">← Meine Quizze</button>
+      <button class="btn secondary" data-action="back-to-list">← Quiz</button>
       <button class="studio-primary" data-action="retry-cloud-save" id="retryCloudSave">Erneut speichern</button>
     </div>
   </header>
