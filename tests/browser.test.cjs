@@ -74,7 +74,7 @@ async function fixtures(){
   assert.equal(await cards.count(),3);
   for(const card of await cards.all()){
    const buttons=card.locator('.card-actions button');
-   assert.equal(await buttons.nth(0).innerText(),'Start');
+   assert.equal(await buttons.nth(0).innerText(),'Starten');
    assert.equal(await buttons.nth(1).innerText(),'');assert.equal(await buttons.nth(2).innerText(),'');
    assert.equal(await buttons.nth(1).locator('svg path').count(),1);assert.equal(await buttons.nth(2).locator('svg path').count(),1);
    assert(await buttons.nth(1).getAttribute('aria-label'));assert(await buttons.nth(2).getAttribute('aria-label'));
@@ -142,7 +142,7 @@ async function fixtures(){
     const libraries=[...document.querySelectorAll('#classicLibrary,#bluffLibrary,#yesnoLibrary')];
     const buttons=libraries.flatMap(el=>[...el.querySelectorAll('button,.btn')]);
     return {
-     heights:buttons.map(el=>({actual:rect(el).height,expected:innerWidth<=800?44:el.closest('.library-heading')?32:36})),
+     heights:buttons.map(el=>({actual:rect(el).height,expected:44})),
      plusOffsets:libraries.map(el=>{
       const button=rect(el.querySelector('.studio-add')),icon=rect(el.querySelector('.studio-add svg'));
       return {x:Math.abs(button.x+button.width/2-icon.x-icon.width/2),y:Math.abs(button.y+button.height/2-icon.y-icon.height/2)};
@@ -152,7 +152,7 @@ async function fixtures(){
      emptyCards:[...document.querySelectorAll('#bluffLibrary .empty,#yesnoLibrary .empty')].map(el=>({padding:getComputedStyle(el).padding,contentFits:el.scrollHeight<=el.clientHeight+1}))
     };
    });
-   assert(layout.heights.every(height=>Math.abs(height.actual-height.expected)<1),'Compact desktop controls and 44px touch controls');
+   assert(layout.heights.every(height=>Math.abs(height.actual-height.expected)<1),'Consistent 44px controls on desktop and mobile');
    assert(layout.plusOffsets.every(offset=>offset.x<1&&offset.y<1),'Add icons are centered on both axes');
    assert.equal(layout.emptyCards[0].padding,layout.emptyCards[1].padding,'Empty libraries use the same spacing');
    assert(layout.emptyCards.every(card=>card.contentFits),'Different-length empty messages remain fully readable without forced equal heights');
