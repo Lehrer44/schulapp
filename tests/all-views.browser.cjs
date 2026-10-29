@@ -17,7 +17,7 @@ function fixtures(){
  const survey={id:'survey-session',owner_id:owner,name:title,title,slides,survey_snapshot:slides,current_slide:0,status:'running',join_code:'ABCDE',updated_at:'initial'};
  const qs={id:'quiz-session',owner_id:owner,quiz_title:title,quiz_snapshot:quiz,current_index:0,status:'running',join_code:'ABCDE',question_states:[{locked:false,revealed:false,mode:'classic'}],updated_at:'initial'};
  const players=[{id:'player',name:'Alexandra mit einem längeren Namen',score:3,ready:true,submitted:false},{id:'other',name:'Ben',score:1,ready:true,submitted:false}];
- const bluff={ok:true,session_id:'room',join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,reveal_count:phase==='leaderboard'?2:0,deadline:null,server_now:new Date().toISOString(),question:'Wozu wird die Energie beim Bremsen umgewandelt?',players,options:phase==='vote'||phase==='leaderboard'?[{id:'o1',answer:'WÄRME',own:false,revealed:phase==='leaderboard',is_truth:true,authors:[],voters:[players[0]]},{id:'o2',answer:'LICHT',own:false,revealed:phase==='leaderboard',is_truth:false,authors:[players[1]],voters:[]}]:[],entries:[],own_entry:null,own_vote:null};
+ const bluff={ok:true,session_id:'room',join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,reveal_count:phase==='leaderboard'?2:0,deadline:null,server_now:new Date().toISOString(),question:'Wozu wird die Energie beim Bremsen umgewandelt?',players,options:['answers','vote','leaderboard'].includes(phase)?[{id:'o1',answer:'WÄRME DURCH DIE REIBUNG ZWISCHEN DEN BREMSBELÄGEN UND DEM RAD',own:false,revealed:phase==='leaderboard',is_truth:phase==='leaderboard',authors:[],voters:[players[0]]},{id:'o2',answer:'LICHT',own:true,revealed:phase==='leaderboard',is_truth:false,authors:[players[1]],voters:[]}]:[],entries:[],own_entry:null,own_vote:null};
  const yn={ok:true,session_id:'room',title,join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,deadline:new Date(Date.now()+60000).toISOString(),server_now:new Date().toISOString(),question:'Fährst du regelmäßig mit dem Fahrrad zur Schule?',players,player_count:2,seconds:60,exact_points:3,near_points:1,tolerance:1,reveal_answers:false,own_answer:null,yes_count:1,no_count:1,results:players.map(p=>({...p,estimate:1,points:3,exact:true}))};
  if(active){
   const credentials={session:'room',player:'player',token:'a'.repeat(64),name:players[0].name,code:'ABCDE'};
@@ -32,11 +32,12 @@ function fixtures(){
   from(table){let kind;const data=()=>table==='teacher_libraries'?{revision:1,payload:kind==='quiz'?{quizzes:[quiz]}:{games:[game]}}:table==='surveys'?survey:table==='sessions'?survey:table==='quiz_live_sessions'?qs:table==='jeopardy_catalog'?{payload:{games:[game]}}:[];
    return {select(){return this},eq(k,v){if(k==='kind')kind=v;return this},in(){return this},order(){return this},range(){return this},maybeSingle:()=>result(data()),single:()=>result(data()),then(resolve,reject){return result(table==='surveys'?[survey]:[]).then(resolve,reject)}};
   },
-  rpc(name){
+  rpc(name,args){
    if(name==='bluff_quiz_list')return result({ok:true,quizzes:[]});
    if(name==='yesno_game_list')return result({ok:true,games:[],sessions:[]});
    if(name.endsWith('question_list'))return result({ok:true,questions:[{id:1,question:'Wie viel Energie wird bei dieser Bewegung umgewandelt?',correct_answer:'WÄRME',pack:'Alltag',category:'Physik'}]});
    if(name==='bluff_host_state'||name==='bluff_player_state')return result(bluff);
+   if(name==='bluff_vote'){bluff.own_vote=args.p_option_id;players[0].voted=true;bluff.revision++;return result({ok:true});}
    if(name==='yesno_host_state'||name==='yesno_player_state')return result(yn);
    if(name==='quiz_live_teacher_state')return result({ok:true,session:qs,leaderboard:players.map(p=>({participant:p,score:p.score,answered:false})),responses:[]});
    if(name==='classroom_join')return result({ok:true,session_id:'survey-session',participant_id:'player',join_code:'ABCDE'});
@@ -71,8 +72,8 @@ const views=[
  ['yesno-editor','apps/quiz-studio/yesno/index.html','#ynQuestionRows',async p=>{await p.locator('[data-action="new-question"]').click();}],
  ['yesno-join','apps/quiz-studio/yesno/student.html','#ynJoinForm'],
 ];
-for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(const phase of format==='bluff'?['lobby','bluff','vote','leaderboard']:['lobby','question','result','finished']){
- views.push([`${format}-${mode}-${phase}`,`apps/quiz-studio/${format}/${mode==='host'?'live':'student'}.html?session=room&code=ABCDE&fixture=active&phase=${phase}`,format==='bluff'?'.ranking-panel':'.yn-grid']);
+for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(const phase of format==='bluff'?['lobby','bluff','answers','vote','leaderboard','ended']:['lobby','question','result','finished']){
+ views.push([`${format}-${mode}-${phase}`,`apps/quiz-studio/${format}/${mode==='host'?'live':'student'}.html?session=room&code=ABCDE&fixture=active&phase=${phase}`,format==='bluff'?(phase==='ended'?'.bluff-final-ranking':'.ranking-panel'):'.yn-grid']);
 }
 (async()=>{
  fs.mkdirSync(output,{recursive:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -88,6 +89,21 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
     try{
      await page.goto(`http://127.0.0.1:${server.address().port}/${url}`);await page.locator(ready).first().waitFor({state:'visible',timeout:10000});
      if(setup)await setup(page);
+     if(name.startsWith('bluff-'))assert.equal(await page.getByText(/haben eine Antwort eingegeben|Anonyme Antwort \d/).count(),0,'Removed phase helper text');
+     if(name==='bluff-player-vote'){
+      const own=page.locator('[data-option-id="o2"]');
+      assert.equal((await own.innerText()).trim(),'LICHT');assert.equal(await own.locator('input,button,label,p').count(),0,'Own answer contains only the answer');
+      const choice=page.getByRole('radio');assert.equal(await choice.count(),1);
+      const answer=await page.locator('[data-option-id="o1"] .bluff-option-answer').boundingBox(),control=await page.locator('.bluff-vote-control').boundingBox();
+      assert(control.x>=answer.x+answer.width,'Choice stays to the right of a wrapped answer');
+      assert(control.y<answer.y+answer.height&&control.y+control.height>answer.y,'Choice aligns vertically with the answer');
+      assert(control.width>=44&&control.height>=44,'Choice has a touch-sized target');
+      await choice.focus();await page.keyboard.press('Space');
+      await page.waitForFunction(()=>document.querySelector('input[data-action="vote"]')?.checked&&document.querySelector('input[data-action="vote"]').disabled);
+      assert.equal(await choice.isChecked(),true);assert.equal(await choice.isDisabled(),true);
+      assert.equal((await own.innerText()).trim(),'LICHT','Own answer stays free of vote comments');
+     }
+     if(name==='bluff-player-ended')assert.equal(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(217, 239, 223)');
      await page.evaluate(()=>document.fonts.ready);
      const overflow=await page.evaluate(()=>({width:document.documentElement.scrollWidth,viewport:innerWidth}));
      assert(overflow.width<=width+1,`${name} at ${width}: page overflow ${overflow.width}`);
