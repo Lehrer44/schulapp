@@ -37,7 +37,7 @@ function fixture(){
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));fs.mkdirSync(out,{recursive:true});
  const base='http://127.0.0.1:'+server.address().port,browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  try{
- for(const width of [360,390,768,1024,1280,1440]){
+ for(const width of [360,390,768,1024,1199,1200,1280,1440,1920]){
   const ctx=await browser.newContext({viewport:{width,height:900}});await ctx.addInitScript(fixture);
   await ctx.route('**/*',r=>r.request().url().startsWith(base)?r.continue():r.fulfill({contentType:'text/javascript',body:'window.supabase={createClient:()=>window.__client}'}));
   const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -55,7 +55,7 @@ function fixture(){
   await page.locator('[data-bluff-quiz-id]').waitFor();await page.locator('[data-yn-game-id]').waitFor();
   assert.deepEqual(await page.locator('.studio-library-grid>.panel h2').allTextContents(),['Quiz','Manipulation','Wer würde eher','Dieselbe Antwort','Ja oder Nein']);
   const boxes=await page.locator('.studio-library-grid>.panel').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};}));
-  const columns=width>1100?3:width>700?2:1;
+  const columns=width>=1200?3:width>700?2:1;
   for(let i=0;i<5;i++){
    assert(Math.abs(boxes[i].x-boxes[i%columns].x)<1,'Aligned grid columns');
    if(i<columns)assert(Math.abs(boxes[i].y-boxes[0].y)<1,'Aligned first row');
@@ -64,7 +64,7 @@ function fixture(){
   for(const action of await page.locator('.library-heading :is(button,a)').all()){
    assert.equal((await action.innerText()).trim(),'');assert(await action.getAttribute('aria-label'));
    assert(await action.getAttribute('title'));assert.equal(await action.locator('svg').count(),1);
-   assert((await action.boundingBox()).height>=(width<=800?44:32));
+   assert((await action.boundingBox()).height>=44);
   }
   for(const [key,folder] of [['bluff','bluff'],['rather','rather'],['same','same'],['yn','yesno']]){
    assert.equal(await page.locator(`[data-${key}-action="random"]`).getAttribute('title'),'Zufälliges Spiel');
@@ -75,7 +75,17 @@ function fixture(){
     await page.keyboard.press('Escape');await page.locator('dialog[open]').waitFor({state:'detached'});
    }
   }
+  for(const heading of await page.locator('.library-heading').all()){
+   const title=await heading.locator('h2').boundingBox(),actions=await heading.locator('.studio-actions').boundingBox();
+   assert(title.x+title.width<=actions.x+1,'Heading cannot overlap icons');
+   for(const button of await heading.locator('button,a').all()){
+    const rect=await button.boundingBox(),icon=await button.locator('svg').boundingBox();
+    assert(Math.abs(rect.width-44)<1&&Math.abs(rect.height-44)<1,'Uniform square controls');
+    assert(Math.abs(rect.x+rect.width/2-icon.x-icon.width/2)<1&&Math.abs(rect.y+rect.height/2-icon.y-icon.height/2)<1,'Centered icons');
+   }
+  }
   for(const card of await page.locator('.qzcard').all()){
+   assert.equal(await card.locator('.card-actions button').first().innerText(),'Starten');
    const title=await card.locator('h3').boundingBox(),actions=await card.locator('.card-actions').boundingBox();
    assert(title.x+title.width<=actions.x+1,'Title cannot overlap actions');
   }
@@ -85,7 +95,7 @@ function fixture(){
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Long title fits '+width);
   assert.deepEqual(errors,[]);await ctx.close();
  }
- console.log('PASS: five-tile grid, renamed games, icon actions, dialogs, long titles and touch controls at 360/390/768/1024/1280/1440px');
+ console.log('PASS: five-tile grid, renamed games, icon actions, dialogs, long titles and touch controls at 360/390/768/1024/1199/1200/1280/1440/1920px');
  for(const width of [390,1280]){
   const ctx=await browser.newContext({viewport:{width,height:900}});await ctx.addInitScript(fixture);
   await ctx.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:'window.supabase={createClient:()=>window.__client}'}));

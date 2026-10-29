@@ -102,7 +102,7 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
       const gap=await header.evaluate(el=>parseFloat(getComputedStyle(el).paddingBottom)+parseFloat(getComputedStyle(el).marginBottom));
       assert(gap<=24,`${name}: oversized header gap ${gap}`);
      }
-     for(const btn of await page.locator('.studio-actions button:visible,.yn-answer:visible,.yn-submit:visible,.rank-choice button:visible').all())assert((await btn.boundingBox()).height>=(name==='quiz-library'&&width>800?31:43),`${name}: control shrank`);
+     for(const btn of await page.locator('.studio-actions button:visible,.yn-answer:visible,.yn-submit:visible,.rank-choice button:visible').all())assert((await btn.boundingBox()).height>=43,`${name}: control shrank`);
      assert.deepEqual(errors,[],name+' script errors');
      if(width===390||width===1280)await page.screenshot({path:path.join(output,`layout-${name}-${width}.png`),fullPage:!name.startsWith('jeopardy-')});
     }catch(e){console.error('VIEW FAILURE',name,width,'script errors:',errors,'auth:',await page.evaluate(async()=>({url:location.href,auth:await window.__layoutClient?.auth.getUser()})),'page:',await page.locator('body').innerText());await page.screenshot({path:path.join(output,`layout-FAILED-${name}-${width}.png`),fullPage:true});throw e;}
