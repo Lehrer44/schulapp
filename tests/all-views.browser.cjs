@@ -17,7 +17,7 @@ function fixtures(){
  const survey={id:'survey-session',owner_id:owner,name:title,title,slides,survey_snapshot:slides,current_slide:0,status:'running',join_code:'ABCDE',updated_at:'initial'};
  const qs={id:'quiz-session',owner_id:owner,quiz_title:title,quiz_snapshot:quiz,current_index:0,status:'running',join_code:'ABCDE',question_states:[{locked:false,revealed:false,mode:'classic'}],updated_at:'initial'};
  const players=[{id:'player',name:'Alexandra mit einem längeren Namen',score:3,ready:true,submitted:false},{id:'other',name:'Ben',score:1,ready:true,submitted:false}];
- const bluff={ok:true,session_id:'room',join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,reveal_count:phase==='leaderboard'?2:0,deadline:null,server_now:new Date().toISOString(),question:'Wozu wird die Energie beim Bremsen umgewandelt?',players,options:['answers','vote','leaderboard'].includes(phase)?[{id:'o1',answer:'WÄRME DURCH DIE REIBUNG ZWISCHEN DEN BREMSBELÄGEN UND DEM RAD',own:false,revealed:phase==='leaderboard',is_truth:phase==='leaderboard',authors:[],voters:[players[0]]},{id:'o2',answer:'LICHT',own:true,revealed:phase==='leaderboard',is_truth:false,authors:[players[1]],voters:[]}]:[],entries:[],own_entry:null,own_vote:null};
+ const bluff={ok:true,session_id:'room',join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,reveal_count:phase==='leaderboard'?2:0,deadline:null,server_now:new Date().toISOString(),question:'Wozu wird die Energie beim Bremsen umgewandelt?',players,options:['answers','vote','leaderboard'].includes(phase)?[{id:'o1',answer:'WÄRME DURCH DIE REIBUNG ZWISCHEN DEN BREMSBELÄGEN UND DEM RAD',own:false,revealed:phase==='leaderboard',is_truth:phase==='leaderboard',authors:[],voters:[players[0],players[1]]},{id:'o2',answer:'LICHT',own:true,revealed:phase==='leaderboard',is_truth:false,authors:[players[0],players[1]],voters:[]}]:[],entries:[],own_entry:null,own_vote:null};
  const yn={ok:true,session_id:'room',title,join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,deadline:new Date(Date.now()+60000).toISOString(),server_now:new Date().toISOString(),question:'Fährst du regelmäßig mit dem Fahrrad zur Schule?',players,player_count:2,seconds:60,exact_points:3,near_points:1,tolerance:1,reveal_answers:false,own_answer:null,yes_count:1,no_count:1,results:players.map(p=>({...p,estimate:1,points:3,exact:true}))};
  if(active){
   const credentials={session:'room',player:'player',token:'a'.repeat(64),name:players[0].name,code:'ABCDE'};
@@ -89,7 +89,27 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
     try{
      await page.goto(`http://127.0.0.1:${server.address().port}/${url}`);await page.locator(ready).first().waitFor({state:'visible',timeout:10000});
      if(setup)await setup(page);
-     if(name.startsWith('bluff-'))assert.equal(await page.getByText(/haben eine Antwort eingegeben|Anonyme Antwort \d/).count(),0,'Removed phase helper text');
+     if(name.startsWith('bluff-')){
+      assert.equal(await page.getByText(/haben eine Antwort eingegeben|Anonyme Antwort \d|haben abgestimmt|Punkte vergeben|Gewählt von|Keine Stimmen/).count(),0,'Removed phase helper text');
+      for(const card of await page.locator('.manipulation-option').all()){
+       const centered=await card.evaluate(el=>{
+        const row=el.getBoundingClientRect(),title=el.querySelector('h3').getBoundingClientRect(),authors=el.querySelector('.bluff-authors')?.getBoundingClientRect();
+        return Math.abs((title.top-row.top)-(row.bottom-(authors?.bottom??title.bottom)))<2;
+       });
+       assert(centered,'Answer and its authors are vertically centered in '+name+' at '+width);
+      }
+     }
+     if(name==='bluff-host-leaderboard'||name==='bluff-player-leaderboard'){
+      const styles=await page.locator('.bluff-author').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return [s.backgroundColor,s.color,s.fontSize,s.padding,s.borderRadius];}));
+      assert.equal(styles.length,2);assert.deepEqual(styles[0],styles[1],'Authors use uniform name badges');
+      assert.equal(styles[0][0],'rgb(49, 89, 148)');assert.equal(await page.locator('.manipulation-option .bluff-avatar').count(),0);
+      for(const votes of await page.locator('.manipulation-option .bluff-voters').all()){
+       assert.equal(await votes.evaluate(el=>getComputedStyle(el).borderLeftWidth),'1px','Keep divider even without votes');
+      }
+      for(const voter of await page.locator('.bluff-voter').all()){
+       assert.deepEqual(await voter.evaluate(el=>{const s=getComputedStyle(el);return [s.fontSize,s.fontWeight,s.backgroundColor,s.borderWidth,s.padding];}),['14px','400','rgba(0, 0, 0, 0)','0px','0px'],'Voters are plain names');
+      }
+     }
      if(name==='bluff-player-vote'){
       const own=page.locator('[data-option-id="o2"]');
       assert.equal((await own.innerText()).trim(),'LICHT');assert.equal(await own.locator('input,button,label,p').count(),0,'Own answer contains only the answer');
