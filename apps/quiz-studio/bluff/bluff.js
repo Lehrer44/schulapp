@@ -63,14 +63,13 @@
   return '<span class="bluff-person '+kind+'" style="--person-hue:'+hash+'"><span class="bluff-avatar" aria-hidden="true">'+esc(initials.toLocaleUpperCase('de-DE'))+'</span><span class="bluff-person-name">'+esc(name)+'</span></span>';
  }
  function optionCards(host){
-  const s=state;
-  return '<div class="bluff-options">'+s.options.map((o,i)=>{
-   let content='';
-   if(o.revealed)content='<div class="bluff-authors">'+(o.is_truth?'✓ Die echte Antwort':o.authors.map(p=>personChip(p,'bluff-author')).join(''))+'</div>';
-   else if(s.phase==='vote'&&!host)content='<button data-action="vote" data-id="'+esc(o.id)+'" '+(o.own||s.own_vote||expired()?'disabled':'')+'>'+(o.own?'Dein Bluff · nicht wählbar':s.own_vote===o.id?'✓ Deine Stimme':s.own_vote?'Abstimmung gespeichert':'Diese Antwort wählen')+'</button>';
-   else content='<p class="bluff-help">Anonyme Antwort '+(i+1)+'</p>';
+  const s=state,voting=s.phase==='vote'&&!host;
+  return '<div class="bluff-options"'+(voting?' role="radiogroup" aria-label="Antwort auswählen"':'')+'>'+s.options.map(o=>{
+   const choosing=voting&&!o.revealed;
+   const content=o.revealed?'<div class="bluff-authors">'+(o.is_truth?'✓ Die echte Antwort':o.authors.map(p=>personChip(p,'bluff-author')).join(''))+'</div>':'';
+   const choice=choosing&&!o.own?'<label class="bluff-vote-control"><input type="radio" name="bluff-vote" data-action="vote" data-id="'+esc(o.id)+'" aria-label="Antwort wählen: '+esc(upperAnswer(o.answer))+'" '+(s.own_vote===o.id?'checked ':'')+(s.own_vote||expired()?'disabled':'')+'></label>':'';
    const voters=o.revealed?'<div class="bluff-voters"><span class="bluff-voters-label">Gewählt von</span><div class="bluff-voter-list">'+(o.voters.length?o.voters.map(p=>personChip(p,'bluff-voter')).join(''):'<span class="bluff-no-votes">Keine Stimmen</span>')+'</div></div>':'';
-   return '<article class="bluff-option '+(o.revealed?'revealed ':'')+(o.revealed&&!seenReveals.has(o.id)?'new-reveal ':'')+(o.is_truth?'truth':'')+'" data-option-id="'+esc(o.id)+'"><div class="bluff-option-answer"><h3>'+esc(upperAnswer(o.answer))+'</h3>'+content+'</div>'+voters+'</article>';
+   return '<article class="bluff-option '+(choosing?'bluff-voting-option ':'')+(o.revealed?'revealed ':'')+(o.revealed&&!seenReveals.has(o.id)?'new-reveal ':'')+(o.is_truth?'truth':'')+'" data-option-id="'+esc(o.id)+'"><div class="bluff-option-answer"><h3>'+esc(upperAnswer(o.answer))+'</h3>'+content+'</div>'+choice+voters+'</article>';
   }).join('')+'</div>';
  }
  function expired(){return !!state?.deadline&&Date.parse(state.deadline)<=Date.now()+offset;}
@@ -81,7 +80,6 @@
  main=s.phase==='ended'?'<h2 class="bluff-question">'+(host?'Endplatzierung':'Platzierung')+'</h2><div class="bluff-final-ranking">'+leaderboard()+'</div>':'<div class="bluff-row bluff-between"><span class="bluff-help">Runde '+(s.round_index+1)+' von '+s.round_count+'</span></div><h2 class="bluff-question">'+esc(s.question)+'</h2>';
  if(s.phase==='question')main+='<p>Lies die Frage. Die echte Antwort bleibt geheim.</p>'+(!host?'<p class="bluff-help">Die Spielleitung öffnet gleich das Textfeld.</p>':'');
  if(s.phase==='bluff'){
-  const submitted=s.players.filter(p=>p.submitted).length;main+='<p class="bluff-status">'+submitted+' von '+s.players.length+' haben eine Antwort eingegeben.</p>';
   if(!host)main+='<form id="bluffForm"><label class="bluff-label" for="bluffAnswer">Deine glaubwürdige Fake-Antwort</label><textarea class="bluff-textarea" id="bluffAnswer" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="180" required '+(expired()?'disabled':'')+'>'+esc(draft)+'</textarea><button class="bluff-primary" id="sendBluff" type="submit" '+(expired()?'disabled':'')+'>'+(s.own_entry?'Antwort aktualisieren':'Antwort abgeben')+'</button><p class="bluff-save-status">'+(s.own_entry?'✓ Gespeichert: '+esc(upperAnswer(s.own_entry.answer)):'Noch nicht abgegeben.')+'</p></form>';
  }
  if(['answers','vote','reveal','leaderboard'].includes(s.phase)){
@@ -119,7 +117,7 @@
  function countdown(){if(!state)return;const el=document.getElementById('countdown');if(!el)return;if(!state.deadline){el.textContent='';return;}const seconds=Math.max(0,Math.ceil((Date.parse(state.deadline)-Date.now()-offset)/1000));el.textContent=seconds?'Noch '+seconds+' s':state.phase==='bluff'?(mode==='host'?'Zeit abgelaufen · mehr Zeit geben':'Zeit abgelaufen · warte auf die Spielleitung'):'Zeit abgelaufen · warte auf den Phasenwechsel';if(!seconds){const send=document.getElementById('sendBluff');if(send)send.disabled=true;app.querySelectorAll('[data-action="vote"]').forEach(b=>b.disabled=true);if(mode==='host'&&!busy&&lastExpired!==state.revision){lastExpired=state.revision;hostAction('expire');}}}
  function connect(){if(channel)client.removeChannel(channel);channel=client.channel('bluff-signal-'+room).on('postgres_changes',{event:'UPDATE',schema:'public',table:'bluff_live_signals',filter:'session_id=eq.'+room},()=>refresh()).subscribe(status=>{if(status==='SUBSCRIBED')refresh();});if(poll)clearInterval(poll);poll=setInterval(()=>refresh(),2000);}
  async function hostAction(action){if(busy||!state)return;busy=true;say('');const snapshot=state;try{const seconds=action==='timer'?Number(document.getElementById('timerSeconds').value):null;await rpc('bluff_host_action',{p_session_id:room,p_round:snapshot.round_index,p_phase:snapshot.phase,p_action:action,p_seconds:seconds,p_reveal_count:snapshot.reveal_count});if(action==='end'){location.href='../index.html';return;}await refresh(true);}catch(e){say(errorText(e));await refresh(true);}finally{busy=false;}}
- async function playerAction(name,args){if(busy||!state)return;busy=true;say('');const buttons=[...app.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await rpc(name,{p_session_id:room,p_player_id:credentials.player,p_token:credentials.token,p_round:state.round_index,...args});await refresh(true);}catch(e){say(errorText(e));await refresh(true);}finally{busy=false;if(state)renderGame();}}
+ async function playerAction(name,args){if(busy||!state)return;busy=true;say('');const buttons=[...app.querySelectorAll('button,input[data-action="vote"]')];buttons.forEach(b=>b.disabled=true);try{await rpc(name,{p_session_id:room,p_player_id:credentials.player,p_token:credentials.token,p_round:state.round_index,...args});await refresh(true);}catch(e){say(errorText(e));await refresh(true);}finally{busy=false;if(state)renderGame();}}
  app.addEventListener('click',async e=>{const button=e.target.closest('[data-action]');if(!button)return;const a=button.dataset.action;
  if(mode==='library'){
  const q=questions.find(q=>String(q.id)===button.dataset.id);

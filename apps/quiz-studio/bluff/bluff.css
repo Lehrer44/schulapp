@@ -59,3 +59,14 @@ body[data-studio="quiz"][data-dashboard-view="bluff"][data-bluff-mode="host"] bu
 }
 
 
+
+/* Voting uses one horizontal answer row with a native single-choice control. */
+.bluff-option.bluff-voting-option{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:12px}
+.bluff-voting-option .bluff-option-answer h3{margin:0}
+.bluff-vote-control{display:grid;place-items:center;width:44px;height:44px;cursor:pointer}
+.bluff-vote-control input{appearance:none;width:26px;height:26px;margin:0;border:2px solid #9d8da9;border-radius:50%;background:#fff;cursor:pointer}
+.bluff-vote-control input:checked{border-color:#386449;background:#386449;box-shadow:inset 0 0 0 5px #fff}
+.bluff-vote-control:has(input:disabled){cursor:default}
+.bluff-vote-control input:disabled{cursor:default}
+@media(forced-colors:active){.bluff-vote-control input{appearance:auto}.bluff-vote-control input:checked{background:none;box-shadow:none}}
+body[data-bluff-mode="player"] .bluff-final-ranking .bluff-score.me{background:#d9efdf;border-color:#47815e;color:#234c32}
