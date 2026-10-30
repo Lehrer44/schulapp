@@ -103,6 +103,12 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
       const styles=await page.locator('.bluff-author').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return [s.backgroundColor,s.color,s.fontSize,s.padding,s.borderRadius];}));
       assert.equal(styles.length,2);assert.deepEqual(styles[0],styles[1],'Authors use uniform name badges');
       assert.equal(styles[0][0],'rgb(49, 89, 148)');assert.equal(await page.locator('.manipulation-option .bluff-avatar').count(),0);
+      for(const badge of await page.locator('.bluff-author').all()){
+       assert(await badge.evaluate(el=>{
+        const outer=el.getBoundingClientRect(),text=el.firstElementChild.getBoundingClientRect();
+        return outer.height>=28&&text.top>outer.top&&text.bottom<outer.bottom&&Math.abs((text.top+text.bottom-outer.top-outer.bottom)/2)<=1.1&&el.scrollHeight<=el.clientHeight;
+       }),'Short and wrapped names stay centered and unclipped inside their blue fields');
+      }
       for(const votes of await page.locator('.manipulation-option .bluff-voters').all()){
        assert.equal(await votes.evaluate(el=>getComputedStyle(el).borderLeftWidth),'1px','Keep divider even without votes');
       }
