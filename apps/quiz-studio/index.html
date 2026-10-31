@@ -327,7 +327,15 @@ min-height:var(--control-size);}
 body[data-studio="quiz"] .studio-title{font-size:clamp(20px,2.5vw,24px)}
 body[data-studio="quiz"] .icon-btn svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #cloudStatus[data-state="error"]{color:#a23628;font-weight:600}
-/* Library layout follows the five-tile Quiz Studio concept. */
+/* A cool, quiet canvas and white tiles for the library only. */
+body[data-studio="quiz"][data-dashboard-view="library"]{
+  --studio-bg:#f6f8fc;--studio-surface:#fff;--studio-soft:#f8fafc;
+  --studio-line:#e2e8f0;--studio-text:#1e293b;--studio-muted:#64748b;
+  --studio-accent:#4f46e5;--studio-tint:#eef2ff;
+  background:radial-gradient(ellipse at 5% 0%,#e7edff 0,transparent 48%),
+             radial-gradient(ellipse at 100% 95%,#e6f3fc 0,transparent 44%),#f6f8fc;
+  min-height:100dvh;
+}
 body[data-studio="quiz"][data-dashboard-view="library"] #app{
   --library-control-height:44px;
 }
@@ -336,9 +344,9 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-gri
   gap:24px;align-items:stretch;margin-top:24px;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid>.panel{
-  min-width:0;min-height:214px;margin:0;padding:10px;
-  border:1px solid #999;border-radius:8px;background:#fff;
-  box-shadow:0 1px 4px #0003;
+  min-width:0;min-height:236px;margin:0;padding:16px;
+  border:1px solid #e2e8f0;border-radius:20px;background:#fff;
+  box-shadow:0 4px 20px #263b6308,0 1px 3px #263b6305;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
   display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;
@@ -346,7 +354,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{
   margin:0;min-width:0;font-size:20px;font-weight:700;line-height:1.25;
-  color:#444;overflow-wrap:anywhere;
+  color:var(--studio-text);overflow-wrap:anywhere;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-actions{
   display:flex;flex-wrap:nowrap;align-items:center;gap:6px;width:auto;flex:none;
@@ -355,11 +363,11 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is(button,.btn){
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   box-sizing:border-box;height:var(--library-control-height);min-height:var(--library-control-height);
   padding:0 9px;font:500 14px/1.4 Inter,"Avenir Next",system-ui,sans-serif;
-  border:1px solid #999;border-radius:6px;background:#fff;color:#444;
-  box-shadow:0 1px 3px #0002;text-decoration:none;white-space:nowrap;
+  border:1px solid #e2e8f0;border-radius:11px;background:#fff;color:#475569;
+  box-shadow:none;text-decoration:none;white-space:nowrap;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is(button,.btn):hover:not(:disabled){
-  background:var(--studio-soft);border-color:var(--studio-accent);
+  background:#f1f5ff;border-color:#c7d2fe;color:#4338ca;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is(.studio-add,.icon-btn){
   width:var(--library-control-height);min-width:var(--library-control-height);
@@ -368,6 +376,12 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is(.studio-add,.ic
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading :is(button,.btn){
   --library-control-height:44px;
 }
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-add{
+  background:#eef2ff;border-color:#dfe5ff;color:#4f46e5;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-add:hover:not(:disabled){
+  background:#e0e7ff;border-color:#c7d2fe;color:#4338ca;
+}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading svg{
   display:block;width:22px;height:22px;fill:none;stroke:currentColor;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
@@ -375,8 +389,8 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading sv
 body[data-studio="quiz"][data-dashboard-view="library"] #app .grid{gap:12px}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{
   display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
-  padding:7px 8px;margin:0;gap:8px;border:1px solid #999;border-radius:8px;
-  background:#fff;box-shadow:0 1px 3px #0003;
+  padding:8px;margin:0;gap:8px;border:1px solid #e7ecf3;border-radius:12px;
+  background:#fff;box-shadow:none;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .quiz-info h3{
   margin:0;font-size:14px;font-weight:700;
@@ -387,12 +401,12 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .card-actio
   gap:8px;margin:0;padding:0;flex-wrap:nowrap;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .icon-btn.danger{
-  color:#e00000;border-color:#e00000;background:#fff1f1;
+  color:#be334c;border-color:#f4d5dc;background:#fff5f6;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .empty{
   display:flex;align-items:center;justify-content:center;min-height:128px;
-  margin:0;padding:16px;border:1px solid #999;border-radius:20px;
-  background:#fff;color:#555;font-size:12px;box-shadow:0 1px 3px #0002;text-wrap:balance;
+  margin:0;padding:16px;border:1px dashed #dce3ee;border-radius:14px;
+  background:#f8fafc;color:var(--studio-muted);font-size:13px;box-shadow:none;text-wrap:balance;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]){
   margin:12px 0 0;color:#a23628;font-size:14px;overflow-wrap:anywhere;
