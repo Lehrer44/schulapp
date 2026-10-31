@@ -12,6 +12,7 @@ create table public.quiz_live_sessions(join_code text,status text);
 create table private.bluff_sessions(join_code text,phase text);
 create table private.yesno_sessions(join_code text,phase text);
 \ir ../supabase/rather.sql
+\ir ../supabase/rather_layout.sql
 
 do $$declare u uuid:=gen_random_uuid();other uuid:=gen_random_uuid();sid uuid;sid2 uuid;a uuid;b uuid;c uuid;d uuid;
  j jsonb;st jsonb;code text;ids bigint[];game uuid;q bigint;
@@ -71,7 +72,18 @@ begin
  st:=public.rather_player_state(sid,c,repeat('c',64));
  assert jsonb_array_length(st->'results')=4;
  assert not exists(select 1 from jsonb_array_elements(st->'results') v where v?'voters');
- assert (select (v->>'count')::int=2 from jsonb_array_elements(st->'results') v where v->>'id'=a::text);
+ assert not exists(select 1 from jsonb_array_elements(st->'results') v where v->'count'<>'null'::jsonb or (v->>'revealed')::boolean);
+ perform set_config('request.jwt.claim.sub',other::text,false);
+ assert public.rather_reveal_result(sid,0,a)->>'error'='NOT_OWNER';
+ perform set_config('request.jwt.claim.sub',u::text,false);
+ assert public.rather_reveal_result(sid,0,gen_random_uuid())->>'error'='INVALID_OPTION';
+ assert public.rather_reveal_result(sid,1,a)->>'error'='PHASE_CHANGED';
+ assert public.rather_reveal_result(sid,0,a)->>'ok'='true';
+ assert public.rather_reveal_result(sid,0,a)->>'ok'='true';
+ st:=public.rather_player_state(sid,c,repeat('c',64));
+ assert (select (v->>'count')::int=2 and (v->>'revealed')::boolean from jsonb_array_elements(st->'results') v where v->>'id'=a::text);
+ assert (select v->'count'='null'::jsonb from jsonb_array_elements(st->'results') v where v->>'id'=b::text);
+ assert not exists(select 1 from jsonb_array_elements(st->'results') v where v?'voters');
  assert (select sum(score)=0 from private.rather_players where session_id=sid);
  assert public.rather_vote(sid,d,repeat('d',64),0,a)->>'error'='PHASE_CHANGED';
  assert public.rather_host_action(sid,0,'bars','reveal')->>'ok'='true';
@@ -85,6 +97,7 @@ begin
  assert (select jsonb_array_length(v->'voters')=2 from jsonb_array_elements(st->'results') v where v->>'id'=a::text);
  assert public.rather_host_action(sid,0,'reveal','scores')->>'ok'='true';
  assert public.rather_host_action(sid,0,'leaderboard','next')->>'ok'='true';
+ assert not exists(select 1 from jsonb_array_elements(public.rather_host_state(sid)->'results') v where (v->>'revealed')::boolean);
  -- Tie: both selected people have maximum votes, so both voters score.
  assert public.rather_vote(sid,a,repeat('a',64),0,a)->>'error'='PHASE_CHANGED';
  assert public.rather_vote(sid,a,repeat('a',64),1,a)->>'ok'='true';
@@ -92,8 +105,7 @@ begin
  assert public.rather_host_action(sid,1,'vote','show_bars')->>'ok'='true';
  assert public.rather_host_action(sid,1,'bars','reveal')->>'ok'='true';
  assert (select sum(score)=4 from private.rather_players where session_id=sid);
- assert public.rather_host_action(sid,1,'reveal','scores')->>'ok'='true';
- assert public.rather_host_action(sid,1,'leaderboard','next')->>'ok'='true';
+ assert public.rather_host_action(sid,1,'reveal','next')->>'ok'='true';
  assert public.rather_host_state(sid)->>'phase'='ended';
  assert public.rather_host_action(sid,1,'ended','start')->>'error'='INVALID_ACTION';
  -- Zero votes award zero points; premature ending preserves only scored rounds.
@@ -108,6 +120,7 @@ begin
  assert not has_table_privilege('authenticated','private.rather_players','SELECT');
  assert not has_table_privilege('anon','public.rather_live_signals','UPDATE');
  assert has_function_privilege('anon','public.rather_vote(uuid,uuid,text,integer,uuid)','EXECUTE');
+ assert not has_function_privilege('anon','public.rather_reveal_result(uuid,integer,uuid)','EXECUTE');
  assert not has_function_privilege('anon','public.rather_create(integer,bigint[])','EXECUTE');
  assert not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'rather_%' and p.prosecdef);
  perform set_config('request.jwt.claim.sub','',false);

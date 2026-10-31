@@ -1,10 +1,24 @@
-/* Shared Bluff cards, lobby, person chips and final placement stay identical. */
+/* Keep the shared lobby and ranking layout; give this game quiet, light controls. */
+body[data-rather-game][data-studio="quiz"][data-dashboard-view="bluff"][data-bluff-mode] :is(button,a.btn){background:#fff;color:#344451;border:1px solid #d5dfe5;border-radius:12px;box-shadow:0 2px 5px #23384a08;font-weight:600;transition:background .18s,border-color .18s,box-shadow .18s}
+body[data-rather-game][data-studio="quiz"][data-dashboard-view="bluff"][data-bluff-mode] :is(button,a.btn):hover:not(:disabled){background:#f4f8fb;border-color:#afc4d2;color:#253f51;transform:none;filter:none;box-shadow:0 3px 10px #23384a0d}
+body[data-rather-game] button:focus-visible{outline:3px solid #597e99;outline-offset:3px}
+body[data-rather-game] button:disabled{opacity:.65;cursor:default}
+body[data-rather-game][data-studio="quiz"][data-dashboard-view="bluff"][data-bluff-mode] .bluff-end{color:#a34040;border-color:#e7d4d4;background:#fffafa}
 .rather-choices,.rather-results{display:grid;gap:12px;margin:20px 0}
 .rather-choices{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
-.rather-choices>button{text-align:left;white-space:normal;min-width:0;overflow-wrap:anywhere}
-.rather-choices>button[aria-pressed="true"]{outline:3px solid #765392;outline-offset:2px}
-.rather-result{padding:16px;border:1px solid #d3c5de;border-radius:13px;background:#faf7fc;min-width:0;overflow-wrap:anywhere}
-.rather-bar{height:20px;margin:12px 0;border-radius:10px;background:#e8e0ed;overflow:hidden}
-.rather-bar>span{display:block;height:100%;background:#765392;border-radius:inherit;transition:width .6s ease}
-.rather-result .bluff-voters{margin-top:12px}
-@media(prefers-reduced-motion:reduce){.rather-bar>span{transition:none}}
+.rather-choices>:is(button,.rather-choice){box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;min-height:64px;padding:16px 20px;white-space:normal;min-width:0;overflow-wrap:anywhere}
+.rather-choice{border:1px solid #d5dfe5;border-radius:12px;background:#fff;color:#344451}
+body[data-rather-game][data-studio="quiz"][data-dashboard-view="bluff"][data-bluff-mode] .rather-choices>button[aria-pressed="true"]{background:#eaf2f7;border-color:#8caec4;color:#284e67;opacity:1}
+.rather-name{min-width:0;overflow-wrap:anywhere;font-size:18px;font-weight:600;line-height:1.45}
+.rather-choice-mark{flex:none;color:#426d87}
+.rather-results{grid-template-columns:minmax(0,1fr)}
+.rather-result{border:1px solid #d5dfe5;border-radius:12px;background:#fff;overflow:hidden;min-width:0;overflow-wrap:anywhere}
+body[data-rather-game][data-studio="quiz"][data-dashboard-view="bluff"][data-bluff-mode] .rather-result-row{position:relative;isolation:isolate;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:66px;margin:0;padding:18px 20px;border:0;border-radius:0;box-shadow:none;background:transparent;text-align:left;white-space:normal;color:#344451}
+.rather-fill{position:absolute;z-index:-1;inset:0 auto 0 0;width:var(--vote-width);background:#dfeef5;pointer-events:none}
+.new-reveal .rather-fill{animation:rather-fill-in .55s ease-out both}
+.rather-count{flex:none;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.45}
+.rather-voters{display:flex;flex-wrap:wrap;gap:4px 8px;padding:12px 20px;border-top:1px solid #e8edf0;color:#596976;font-size:15px;line-height:1.5}
+.rather-voter:not(:last-child)::after{content:","}
+@keyframes rather-fill-in{from{width:0}to{width:var(--vote-width)}}
+@media(max-width:520px){.rather-count{font-size:14px}.rather-name{font-size:17px}.rather-result-row{gap:10px}}
+@media(prefers-reduced-motion:reduce){.new-reveal .rather-fill{animation:none}body[data-rather-game] :is(button,a.btn){transition:none}}

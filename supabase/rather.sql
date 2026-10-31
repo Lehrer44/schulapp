@@ -14,6 +14,7 @@ create table if not exists private.rather_sessions(
  id uuid primary key default gen_random_uuid(),owner_id uuid not null references auth.users on delete cascade,
  join_code text unique not null,questions jsonb not null,round_index integer not null default 0,
  phase text not null default 'lobby' check(phase in ('lobby','vote','bars','reveal','leaderboard','ended')),
+ result_reveals uuid[] not null default '{}',
  revision bigint not null default 1,created_at timestamptz not null default now()
 );
 create index if not exists rather_sessions_owner on private.rather_sessions(owner_id);
@@ -164,7 +165,12 @@ begin
     if txt='start' and s.phase='lobby' then
      if (select count(*) from private.rather_players where session_id=s.id)<2 then return jsonb_build_object('ok',false,'error','NEED_TWO_PLAYERS');end if;
      update private.rather_sessions set phase='vote' where id=s.id;
-    elsif txt='show_bars' and s.phase='vote' then update private.rather_sessions set phase='bars' where id=s.id;
+    elsif txt='show_bars' and s.phase='vote' then update private.rather_sessions set phase='bars',result_reveals='{}' where id=s.id;
+    elsif txt='reveal_result' and s.phase='bars' then
+     target:=(a->>'p_target_id')::uuid;
+     if not exists(select 1 from private.rather_players where id=target and session_id=s.id) then return jsonb_build_object('ok',false,'error','INVALID_OPTION');end if;
+     if target=any(s.result_reveals) then return jsonb_build_object('ok',true);end if;
+     update private.rather_sessions set result_reveals=array_append(result_reveals,target) where id=s.id;
     elsif txt='reveal' and s.phase='bars' then
      select max(c) into max_votes from (select count(*) c from private.rather_votes where session_id=s.id and round_index=s.round_index group by target_id) v;
      update private.rather_players pl set score=score+1 where pl.session_id=s.id and exists(
@@ -172,9 +178,9 @@ begin
       and (select count(*) from private.rather_votes w where w.session_id=s.id and w.round_index=s.round_index and w.target_id=v.target_id)=max_votes);
      update private.rather_sessions set phase='reveal' where id=s.id;
     elsif txt='scores' and s.phase='reveal' then update private.rather_sessions set phase='leaderboard' where id=s.id;
-    elsif txt='next' and s.phase='leaderboard' then
+    elsif txt='next' and s.phase in ('reveal','leaderboard') then
      update private.rather_sessions set phase=case when round_index+1=jsonb_array_length(questions) then 'ended' else 'vote' end,
-      round_index=least(round_index+1,jsonb_array_length(questions)-1) where id=s.id;
+      round_index=least(round_index+1,jsonb_array_length(questions)-1),result_reveals='{}' where id=s.id;
     else return jsonb_build_object('ok',false,'error','INVALID_ACTION');end if;
     changed:=true;
    end if;
@@ -189,7 +195,7 @@ begin
     'question',case when s.phase not in ('lobby','ended') then s.questions->s.round_index->>'question' end,
     'own_vote',(select target_id from private.rather_votes where session_id=s.id and round_index=s.round_index and player_id=pid),
     'players',(select coalesce(jsonb_agg(jsonb_build_object('id',id,'name',name,'score',score,'voted',exists(select 1 from private.rather_votes where session_id=s.id and round_index=s.round_index and player_id=pl.id)) order by score desc,joined_at,id),'[]') from private.rather_players pl where session_id=s.id),
-    'results',case when s.phase in ('bars','reveal','leaderboard') then (select coalesce(jsonb_agg(jsonb_build_object('id',pl.id,'name',pl.name,'count',(select count(*) from private.rather_votes where session_id=s.id and round_index=s.round_index and target_id=pl.id)) || case when s.phase in ('reveal','leaderboard') then jsonb_build_object('voters',(select coalesce(jsonb_agg(jsonb_build_object('id',voter.id,'name',voter.name) order by voter.joined_at),'[]') from private.rather_votes v join private.rather_players voter on voter.id=v.player_id where v.session_id=s.id and v.round_index=s.round_index and v.target_id=pl.id)) else '{}'::jsonb end order by pl.joined_at,pl.id),'[]') from private.rather_players pl where pl.session_id=s.id) else '[]'::jsonb end);
+    'results',case when s.phase in ('bars','reveal','leaderboard') then (select coalesce(jsonb_agg(jsonb_build_object('id',pl.id,'name',pl.name,'revealed',s.phase in ('reveal','leaderboard') or pl.id=any(s.result_reveals),'count',case when s.phase in ('reveal','leaderboard') or pl.id=any(s.result_reveals) then (select count(*) from private.rather_votes where session_id=s.id and round_index=s.round_index and target_id=pl.id) end) || case when s.phase in ('reveal','leaderboard') then jsonb_build_object('voters',(select coalesce(jsonb_agg(jsonb_build_object('id',voter.id,'name',voter.name) order by voter.joined_at),'[]') from private.rather_votes v join private.rather_players voter on voter.id=v.player_id where v.session_id=s.id and v.round_index=s.round_index and v.target_id=pl.id)) else '{}'::jsonb end order by pl.joined_at,pl.id),'[]') from private.rather_players pl where pl.session_id=s.id) else '[]'::jsonb end);
   end if;
  else return jsonb_build_object('ok',false,'error','INVALID_ACTION');
  end if;
@@ -271,3 +277,10 @@ end;$$;
 revoke all on function public.classroom_resolve_code(text,text) from public,anon,authenticated;
 grant execute on function public.classroom_resolve_code(text,text) to anon,authenticated;
 notify pgrst,'reload schema';
+
+create or replace function public.rather_reveal_result(p_session_id uuid,p_round integer,p_target_id uuid)
+returns jsonb language sql security invoker set search_path='' as $$
+ select private.rather_api('host_action',jsonb_build_object('p_session_id',p_session_id,'p_round',p_round,'p_phase','bars','p_action','reveal_result','p_target_id',p_target_id));
+$$;
+revoke all on function public.rather_reveal_result(uuid,integer,uuid) from public,anon,authenticated;
+grant execute on function public.rather_reveal_result(uuid,integer,uuid) to authenticated;
