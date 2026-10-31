@@ -17,7 +17,8 @@ body[data-rather-game][data-studio="quiz"][data-dashboard-view="bluff"][data-blu
 .rather-fill{position:absolute;z-index:-1;inset:0 auto 0 0;width:var(--vote-width);background:#dfeef5;pointer-events:none}
 .new-reveal .rather-fill{animation:rather-fill-in .55s ease-out both}
 .rather-count{flex:none;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.45}
-.rather-voters{display:flex;flex-wrap:wrap;gap:4px 8px;padding:12px 20px;border-top:1px solid #e8edf0;color:#596976;font-size:15px;line-height:1.5}
+.rather-voters{display:flex;flex:0 1 58%;justify-content:flex-end;flex-wrap:wrap;gap:2px 6px;min-width:0;margin-left:auto;text-align:right;color:#596976;font-size:15px;line-height:1.5;overflow-wrap:anywhere}
+.rather-voter{min-width:0;max-width:100%;overflow-wrap:anywhere}
 .rather-voter:not(:last-child)::after{content:","}
 @keyframes rather-fill-in{from{width:0}to{width:var(--vote-width)}}
 @media(max-width:520px){.rather-count{font-size:14px}.rather-name{font-size:17px}.rather-result-row{gap:10px}}
