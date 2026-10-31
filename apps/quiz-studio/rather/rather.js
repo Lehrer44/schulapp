@@ -53,9 +53,9 @@
    const revealed=p.revealed,interactive=host&&state.phase==='bars'&&!revealed;
    const key=room+':'+state.round_index+':'+p.id,animate=revealed&&!seenResults.has(key);if(revealed)seenResults.add(key);
    const meter=revealed?' role="meter" aria-label="Stimmen für '+esc(p.name)+'" aria-valuemin="0" aria-valuemax="'+Math.max(1,total)+'" aria-valuenow="'+p.count+'"':'';
-   const row='<span class="rather-fill" aria-hidden="true" style="--vote-width:'+(revealed&&total?100*p.count/total:0)+'%"></span><span class="rather-name">'+esc(p.name)+'</span>'+(revealed?'<strong class="rather-count">'+p.count+' '+(p.count===1?'Stimme':'Stimmen')+'</strong>':'');
-   const voters=p.voters?.length?'<div class="rather-voters">'+p.voters.map(v=>'<span class="rather-voter">'+esc(v.name)+'</span>').join('')+'</div>':'';
-   return '<article class="rather-result'+(revealed?' is-revealed':'')+(animate?' new-reveal':'')+'" data-target-id="'+esc(p.id)+'">'+(interactive?'<button class="rather-result-row" data-action="reveal-result" data-id="'+esc(p.id)+'" aria-label="Stimmen für '+esc(p.name)+' aufdecken">'+row+'</button>':'<div class="rather-result-row"'+meter+'>'+row+'</div>')+voters+'</article>';
+   const summary=Array.isArray(p.voters)?(p.voters.length?'<span class="rather-voters">'+p.voters.map(v=>'<span class="rather-voter">'+esc(v.name)+'</span>').join('')+'</span>':''):(revealed?'<strong class="rather-count">'+p.count+' '+(p.count===1?'Stimme':'Stimmen')+'</strong>':'');
+   const row='<span class="rather-fill" aria-hidden="true" style="--vote-width:'+(revealed&&total?100*p.count/total:0)+'%"></span><span class="rather-name">'+esc(p.name)+'</span>'+summary;
+   return '<article class="rather-result'+(revealed?' is-revealed':'')+(animate?' new-reveal':'')+'" data-target-id="'+esc(p.id)+'">'+(interactive?'<button class="rather-result-row" data-action="reveal-result" data-id="'+esc(p.id)+'" aria-label="Stimmen für '+esc(p.name)+' aufdecken">'+row+'</button>':'<div class="rather-result-row"'+meter+'>'+row+'</div>')+'</article>';
   }).join('')+'</div>';
  }
  function renderGame(){const s=state,host=mode==='host';const focusTarget=document.activeElement?.closest('[data-target-id]')?.dataset.targetId;
