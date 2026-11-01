@@ -34,6 +34,7 @@
   d.querySelector('form').onsubmit=async e=>{e.preventDefault();if(saving)return;saving=true;e.submitter.disabled=true;try{const f=e.target;await call('yesno_question_save',{p_id:editing?.id||null,p_question:f.elements.question.value.trim(),p_pack:f.elements.pack.value.trim()});d.close();await loadQuestions();say('Frage gespeichert.',true);}catch(err){d.querySelector('[role="status"]').textContent=error(err);}finally{saving=false;e.submitter.disabled=false;}};
  }
  function renderJoin(){
+  document.body.classList.remove('yn-in-lobby');
   const code=(params.get('code')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5),saved=readCredentials(code);
   app.innerHTML=header('Wie gut kennst du die Gruppe?')+'<section class="panel"><h2>Dem Spiel beitreten</h2><form id="ynJoinForm"><label>Raum-Code<input name="code" value="'+esc(code)+'" minlength="5" maxlength="5" pattern="[A-Za-z0-9]{5}" autocapitalize="characters" autocomplete="off" required></label><label>Dein Name<input name="playerName" maxlength="40" autocomplete="nickname" value="'+esc(saved?.name||'')+'" required></label><button class="yn-primary yn-submit" type="submit">Beitreten</button></form><p class="muted">'+(state?'':'Antworte geheim mit Ja oder Nein und schätze, wie viele in der Gruppe Ja sagen.')+'</p></section>';
   const form=app.querySelector('form');form.elements.code.oninput=e=>e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);
@@ -55,7 +56,8 @@
  function participants(){return '<div class="yn-players">'+state.players.map(p=>'<span class="yn-player '+((state.phase==='lobby'?p.ready:p.submitted)?'done':'')+'">'+esc(p.name)+(state.phase==='lobby'?(p.ready?' · bereit':' · wartet'):(p.submitted?' · ✓ abgegeben':' · …'))+'</span>').join('')+'</div>';}
  function joinLink(){const u=new URL('../../../join.html',location.href);u.searchParams.set('kind','yesno');u.searchParams.set('code',state.join_code);return u.href;}
  function participation(){
-  const url=joinLink(),d=dialog('Teilnahme','<div class="yn-code">'+esc(state.join_code)+'</div><div class="yn-qr"></div><a class="yn-join-link" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">'+esc(url)+'</a>');
+  const url=joinLink(),d=dialog('Teilnahme','<div class="yn-code">'+esc(state.join_code)+'</div><div class="yn-qr"></div><p class="yn-participation-link"><a class="btn yn-join-link" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">Teilnahmeseite öffnen</a></p>');
+  if(state.phase==='lobby')d.classList.add('yn-lobby-dialog');
   drawQr(d.querySelector('.yn-qr'),url);
  }
  function drawQr(qr,url){
@@ -73,16 +75,24 @@
   const n=state.player_count,yes=state.yes_count,no=state.no_count,missing=n-yes-no;
   return '<div class="yn-result-hero yn-pop"><span class="yn-total">'+yes+'</span><strong>von '+n+' sagen JA</strong><div class="yn-distribution yn-bar-enter" role="img" aria-label="'+yes+' Ja, '+no+' Nein, '+missing+' ohne Abgabe"><span class="yes" style="width:'+100*yes/n+'%"></span><span class="no" style="width:'+100*no/n+'%"></span><span class="missing" style="width:'+100*missing/n+'%"></span></div><div class="yn-legend"><span>● JA: '+yes+'</span><span>● NEIN: '+no+'</span>'+(missing?'<span>Ohne Abgabe: '+missing+'</span>':'')+'</div></div><h2>Die Schätzungen</h2>'+state.results.map(r=>'<div class="yn-result-row '+(r.exact?'exact yn-pop':'')+'"><strong>'+esc(r.name)+(state.reveal_answers&&typeof r.answer==='boolean'?' <span class="yn-revealed-answer '+(r.answer?'is-yes':'is-no')+'">('+(r.answer?'JA':'NEIN')+')</span>':'')+(r.exact?' · Volltreffer!':'')+'</strong><span>'+(r.estimate===null?'Keine Abgabe':'Tipp: '+r.estimate)+'</span><span class="yn-points">+'+r.points+'</span></div>').join('')+(state.reveal_answers?'':'<p class="muted">Persönliche Ja/Nein-Antworten werden nicht veröffentlicht.</p>');
  }
+ function lobbyScores(){
+  return '<section class="panel yn-lobby-ranking"><h2>Rangliste</h2>'+(state.players.length?'<div class="yn-lobby-score-list">'+state.players.map((p,i)=>'<div class="yn-score yn-lobby-score '+(p.id===credentials?.player?'me':'')+'"><span>'+(i+1)+'</span><strong>'+esc(p.name)+'</strong><b>'+p.score+' P</b></div>').join('')+'</div>':'<div class="yn-lobby-empty">noch keine Teilnehmer</div>')+'</section>';
+ }
+ function renderLobby(){
+  const allReady=state.players.length>=2&&state.players.every(p=>p.ready);
+  const heading=isHost?'<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><h1 class="studio-title">Ja oder <span>Nein</span></h1></div><div class="studio-actions"><button data-action="participation">Teilnahme</button><button class="yn-lobby-end" data-action="end">Beenden</button></div></header>':'';
+  const main=isHost?'<div class="yn-lobby-main"><button type="button" class="panel yn-lobby-start" data-action="start" '+(!allReady?'disabled':'')+'>Spiel starten</button><section class="panel yn-lobby-rules"><h2>Punkte sammeln</h2>'+rules()+'</section></div>':'<section class="panel yn-lobby-rules"><h2>Wartelobby</h2><p>Du bist dabei. Die Spielleitung gibt gleich die erste Frage frei.</p>'+rules()+'</section>';
+  app.innerHTML=heading+'<div class="yn-lobby-grid'+(!isHost?' yn-lobby-player':'')+'">'+main+'<aside class="'+(isHost?'live-sidebar':'yn-lobby-standings')+'" '+(isHost?'tabindex="0" ':'')+'aria-label="Rangliste">'+lobbyScores()+'</aside></div>';
+  app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));
+ }
  function renderGame(){
+  document.body.classList.toggle('yn-in-lobby',state.phase==='lobby');
+  if(state.phase==='lobby'){renderLobby();return;}
   if(draftRound!==state.round_index){draftRound=state.round_index;draftAnswer=null;draftEstimate=null;}
   if(state.own_answer){draftAnswer=state.own_answer.answer;draftEstimate=state.own_answer.estimate;}
-  const phase=state.phase,terminal=['finished','ended'].includes(phase),me=state.players.find(p=>p.id===credentials?.player),actions=isHost?(phase==='lobby'?'<button data-action="participation">Teilnahme</button>':'')+(!terminal?'<button data-action="end">Spiel beenden</button>':'<a class="btn" href="../index.html">Zum Quiz Studio</a>'):'';
+  const phase=state.phase,terminal=['finished','ended'].includes(phase),actions=isHost?(!terminal?'<button data-action="end">Spiel beenden</button>':'<a class="btn" href="../index.html">Zum Quiz Studio</a>'):'';
   let content='';
-  if(phase==='lobby'){
-   const allReady=state.players.length>=2&&state.players.every(p=>p.ready);
-   content='<h2>'+(isHost?'Gemeinsam starten':'Du bist dabei, '+esc(credentials?.name)+'!')+'</h2>'+(isHost?'<div class="yn-lobby-join"><div class="yn-code">'+esc(state.join_code)+'</div><div class="yn-qr" data-lobby-qr></div></div>':'')+'<p>'+state.round_count+' Runden · '+state.seconds+' Sekunden pro Frage · '+state.players.length+' Personen</p>'+(isHost?participants():'')+
-    (isHost?'<button class="yn-primary" data-action="start" '+(!allReady?'disabled':'')+'>Spiel starten</button>':'<p class="yn-tag" role="status">'+(me?.ready?'✓ Du bist bereit. Warte auf den Spielstart.':'Deine Teilnahme wird vorbereitet …')+'</p>')+rules();
-  }else if(phase==='ended'){
+  if(phase==='ended'){
    content='<h2>Spiel beendet</h2><p>Die bereits vergebenen Punkte bleiben erhalten. Eine abgebrochene Runde wird nicht gewertet.</p>';
   }else{
    const roundLabel='Runde '+(state.round_index+1)+'/'+state.round_count;
@@ -100,7 +110,6 @@
   }
   const showScores=isHost||['result','finished','ended'].includes(phase);
   app.innerHTML=header(state.title,actions)+'<div class="yn-grid'+(showScores?'':' yn-solo')+'"><section class="panel">'+content+'</section>'+(showScores?'<aside class="live-sidebar" tabindex="0" aria-label="Punktestand">'+scoreboard()+'</aside>':'')+'</div>';
-  if(isHost&&phase==='lobby')drawQr(app.querySelector('[data-lobby-qr]'),joinLink());
   app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));bindAnswers();updateClock();
  }
  function bindAnswers(){
@@ -148,7 +157,7 @@
    }
    serverOffset=Date.parse(data.server_now)-(started+Date.now())/2;state=data;
    const next=[data.session_id,data.revision,data.phase,data.round_index].join(':');if(next!==signature){signature=next;renderGame();}
-   setConnectionStatus('ready','Verbunden · Spielstand aktualisiert.');
+   setConnectionStatus('ready',data.phase==='lobby'?'Mit Supabase verbunden':'Verbunden · Spielstand aktualisiert.');
   }catch(err){
    setConnectionStatus('error','Verbindung unterbrochen. Wir versuchen es automatisch erneut.');
    if(!isHost&&err.code==='INVALID_PARTICIPANT_TOKEN'){clearInterval(poll);if(channel)client.removeChannel(channel);room=null;renderJoin();}
