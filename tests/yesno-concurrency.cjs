@@ -14,5 +14,9 @@ function parallel(q){return new Promise((resolve,reject)=>{const p=spawn('psql',
  // All submissions and exact retries arrive on separate PostgreSQL connections.
  const results=await Promise.all([...queries,...queries].map(parallel));assert(results.every(x=>JSON.parse(x).ok));
  const result=JSON.parse(sql('select jsonb_build_object(\'phase\',s.phase,\'answers\',(select count(*) from private.yesno_answers where session_id=s.id),\'points\',(select sum(points) from private.yesno_answers where session_id=s.id)) from private.yesno_sessions s where id='+quote(game.session_id)));
- assert.deepEqual(result,{phase:'finished',answers:3,points:9});console.log('PASS: concurrent Ja/Nein submissions and retries settle once without duplicate scores');
+ assert.deepEqual(result,{phase:'question',answers:3,points:null});
+ const evaluate="select set_config('request.jwt.claim.sub',"+quote(owner)+",false);select public.yesno_host_action("+quote(game.session_id)+",0,'question','evaluate')";
+ const evaluations=await Promise.all([parallel(evaluate),parallel(evaluate)]),parsed=evaluations.map(x=>JSON.parse(x.split('\n').filter(Boolean).at(-1)));assert.equal(parsed.filter(x=>x.ok).length,1);assert.equal(parsed.filter(x=>x.error==='PHASE_CHANGED').length,1);
+ assert.equal(sql('select sum(points) from private.yesno_answers where session_id='+quote(game.session_id)),'9');
+ console.log('PASS: concurrent submissions/retries and simultaneous evaluations score exactly once');
 })().catch(e=>{console.error(e);process.exitCode=1;});

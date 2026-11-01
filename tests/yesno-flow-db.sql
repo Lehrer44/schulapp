@@ -1,0 +1,76 @@
+-- Run only after yesno-db.sql in the dedicated isolated test database.
+\set ON_ERROR_STOP on
+\ir ../supabase/yesno_flow.sql
+do $$declare u uuid:=gen_random_uuid();other uuid:=gen_random_uuid();sid uuid;sid2 uuid;code text;a uuid;b uuid;c uuid;j jsonb;st jsonb;rev bigint;
+begin
+ insert into auth.users values(u),(other);perform set_config('request.jwt.claim.sub',u::text,false);
+ -- Even an old caller requesting the former open mode must explicitly reveal each round.
+ j:=public.yesno_create_configured(gen_random_uuid(),null,2,60,5,2,1,true,null);
+ assert j->>'ok'='true',j::text;sid:=(j->>'session_id')::uuid;code:=j->>'join_code';
+ a:=(public.yesno_join(code,'Ada',repeat('a',64))->>'player_id')::uuid;
+ b:=(public.yesno_join(code,'Ben',repeat('b',64))->>'player_id')::uuid;
+ c:=(public.yesno_join(code,'Cleo',repeat('c',64))->>'player_id')::uuid;
+ perform public.yesno_ready(sid,a,repeat('a',64),true);perform public.yesno_ready(sid,b,repeat('b',64),true);perform public.yesno_ready(sid,c,repeat('c',64),true);
+ assert public.yesno_host_action(sid,0,'lobby','start')->>'ok'='true';
+ assert public.yesno_host_action(sid,0,'question','evaluate')->>'error'='WAITING_FOR_ANSWERS';
+ assert public.yesno_host_action(sid,0,'question','reveal_answers')->>'error'='INVALID_ACTION';
+ assert public.yesno_host_state(sid)->>'can_evaluate'='false';
+ assert public.yesno_submit(sid,a,repeat('a',64),0,true,1)->>'ok'='true';
+ assert public.yesno_submit(sid,b,repeat('b',64),0,false,2)->>'ok'='true';
+ assert public.yesno_submit(sid,c,repeat('c',64),0,false,3)->>'ok'='true';
+ st:=public.yesno_host_state(sid);
+ assert st->>'phase'='question' and st->>'can_evaluate'='true';
+ assert st->'yes_count'='null'::jsonb and st->'results'='[]'::jsonb;
+ assert (select coalesce(sum(points),0)=0 from private.yesno_answers where session_id=sid),'no automatic points';
+ st:=public.yesno_player_state(sid,a,repeat('a',64));assert st->>'phase'='question' and st->'results'='[]'::jsonb;
+ perform set_config('request.jwt.claim.sub',other::text,false);
+ assert public.yesno_host_action(sid,0,'question','evaluate')->>'error'='NOT_OWNER';
+ perform set_config('request.jwt.claim.sub',u::text,false);
+ assert public.yesno_host_action(sid,0,'question','evaluate')->>'ok'='true';
+ st:=public.yesno_host_state(sid);
+ assert st->>'phase'='result' and st->>'yes_count'='1' and st->>'reveal_answers'='false';
+ assert not exists(select 1 from jsonb_array_elements(st->'results') r where r?'answer');
+ assert (select sum(points)=7 from private.yesno_answers where session_id=sid);
+ assert public.yesno_host_action(sid,0,'question','evaluate')->>'error'='PHASE_CHANGED';
+ assert public.yesno_host_action(sid,0,'result','evaluate')->>'error'='INVALID_ACTION';
+ assert (select sum(points)=7 from private.yesno_answers where session_id=sid);
+ st:=public.yesno_player_state(sid,b,repeat('b',64));assert not exists(select 1 from jsonb_array_elements(st->'results') r where r?'answer');
+ perform set_config('request.jwt.claim.sub',other::text,false);
+ assert public.yesno_host_action(sid,0,'result','reveal_answers')->>'error'='NOT_OWNER';
+ perform set_config('request.jwt.claim.sub',u::text,false);
+ assert public.yesno_host_action(sid,0,'result','reveal_answers')->>'ok'='true';
+ st:=public.yesno_player_state(sid,b,repeat('b',64));assert st->>'reveal_answers'='true';
+ assert (select r->>'answer'='true' from jsonb_array_elements(st->'results') r where r->>'id'=a::text);
+ assert (select r->>'answer'='false' from jsonb_array_elements(st->'results') r where r->>'id'=b::text);
+ rev:=(st->>'revision')::bigint;
+ assert public.yesno_host_action(sid,0,'result','reveal_answers')->>'ok'='true';
+ assert (public.yesno_host_state(sid)->>'revision')::bigint=rev;
+ assert public.yesno_host_action(sid,0,'result','next')->>'ok'='true';
+ st:=public.yesno_host_state(sid);assert st->>'phase'='question' and st->>'reveal_answers'='false' and st->'results'='[]'::jsonb;
+ assert public.yesno_submit(sid,a,repeat('a',64),1,false,0)->>'ok'='true';
+ assert public.yesno_submit(sid,b,repeat('b',64),1,false,0)->>'ok'='true';
+ update private.yesno_sessions set deadline=clock_timestamp()-interval '1 second' where id=sid;
+ assert public.yesno_submit(sid,c,repeat('c',64),1,true,1)->>'error'='TIME_EXPIRED';
+ st:=public.yesno_host_state(sid);assert st->>'phase'='question' and st->>'can_evaluate'='true' and st->'results'='[]'::jsonb;
+ assert public.yesno_host_action(sid,1,'question','evaluate')->>'ok'='true';
+ st:=public.yesno_host_state(sid);assert st->>'phase'='result' and st->>'yes_count'='0' and st->>'no_count'='2';
+ assert (select r->'estimate'='null'::jsonb and r->>'points'='0' from jsonb_array_elements(st->'results') r where r->>'id'=c::text);
+ assert public.yesno_host_action(sid,1,'result','reveal_answers')->>'ok'='true';
+ assert (select r->'answer'='null'::jsonb from jsonb_array_elements(public.yesno_host_state(sid)->'results') r where r->>'id'=c::text);
+ assert public.yesno_host_action(sid,1,'result','next')->>'ok'='true';
+ st:=public.yesno_host_state(sid);assert st->>'phase'='finished' and st->'results'='[]'::jsonb and st->'question'='null'::jsonb;
+ assert (select sum(points)=17 from private.yesno_answers where session_id=sid);
+ assert public.yesno_host_action(sid,1,'finished','next')->>'error'='INVALID_ACTION';
+ -- Zero submissions can be evaluated after timeout and still show 0 points.
+ j:=public.yesno_create_configured(gen_random_uuid(),null,1,5,3,1,1,false,null);sid2:=(j->>'session_id')::uuid;code:=j->>'join_code';
+ a:=(public.yesno_join(code,'One',repeat('a',64))->>'player_id')::uuid;b:=(public.yesno_join(code,'Two',repeat('b',64))->>'player_id')::uuid;
+ perform public.yesno_ready(sid2,a,repeat('a',64),true);perform public.yesno_ready(sid2,b,repeat('b',64),true);perform public.yesno_host_action(sid2,0,'lobby','start');
+ update private.yesno_sessions set deadline=clock_timestamp()-interval '1 second' where id=sid2;
+ assert public.yesno_host_action(sid2,0,'question','evaluate')->>'ok'='true';
+ st:=public.yesno_host_state(sid2);assert st->>'yes_count'='0' and st->>'no_count'='0';
+ assert not exists(select 1 from jsonb_array_elements(st->'results') r where r->>'points'<>'0');
+ perform public.yesno_host_action(sid2,0,'result','next');assert public.yesno_host_state(sid2)->>'phase'='finished';
+ assert not has_function_privilege('anon','public.yesno_host_action(uuid,integer,text,text)','EXECUTE');
+ assert not has_table_privilege('anon','private.yesno_answers','SELECT');
+end;$$;
+select 'PASS: manual evaluation, deadlines, answer privacy/reveal, ownership, zero votes and separate final ranking';

@@ -18,7 +18,7 @@ function fixtures(){
  const qs={id:'quiz-session',owner_id:owner,quiz_title:title,quiz_snapshot:quiz,current_index:0,status:'running',join_code:'ABCDE',question_states:[{locked:false,revealed:false,mode:'classic'}],updated_at:'initial'};
  const players=[{id:'player',name:'Alexandra mit einem längeren Namen',score:3,ready:true,submitted:false},{id:'other',name:'Ben',score:1,ready:true,submitted:false}];
  const bluff={ok:true,session_id:'room',join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,reveal_count:phase==='leaderboard'?2:0,deadline:null,server_now:new Date().toISOString(),question:'Wozu wird die Energie beim Bremsen umgewandelt?',players,options:['answers','vote','leaderboard'].includes(phase)?[{id:'o1',answer:'WÄRME DURCH DIE REIBUNG ZWISCHEN DEN BREMSBELÄGEN UND DEM RAD',own:false,revealed:phase==='leaderboard',is_truth:phase==='leaderboard',authors:[],voters:[players[0],players[1]]},{id:'o2',answer:'LICHT',own:true,revealed:phase==='leaderboard',is_truth:false,authors:[players[0],players[1]],voters:[]}]:[],entries:[],own_entry:null,own_vote:null};
- const yn={ok:true,session_id:'room',title,join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,deadline:new Date(Date.now()+60000).toISOString(),server_now:new Date().toISOString(),question:'Fährst du regelmäßig mit dem Fahrrad zur Schule?',players,player_count:2,seconds:60,exact_points:3,near_points:1,tolerance:1,reveal_answers:false,own_answer:null,yes_count:1,no_count:1,results:players.map(p=>({...p,estimate:1,points:3,exact:true}))};
+ const yn={ok:true,session_id:'room',title,join_code:'ABCDE',phase,round_index:0,round_count:3,revision:1,deadline:new Date(Date.now()+60000).toISOString(),server_now:new Date().toISOString(),question:'Fährst du regelmäßig mit dem Fahrrad zur Schule?',players,player_count:2,seconds:60,exact_points:3,near_points:1,tolerance:1,reveal_answers:false,can_evaluate:false,own_answer:null,yes_count:1,no_count:1,results:players.map(p=>({...p,estimate:1,points:3,exact:true}))};
  if(active){
   const credentials={session:'room',player:'player',token:'a'.repeat(64),name:players[0].name,code:'ABCDE'};
   sessionStorage.setItem('bluff.credentials.v1',JSON.stringify(credentials));
@@ -72,8 +72,8 @@ const views=[
  ['yesno-editor','apps/quiz-studio/yesno/index.html','#ynQuestionRows',async p=>{await p.locator('[data-action="new-question"]').click();}],
  ['yesno-join','apps/quiz-studio/yesno/student.html','#ynJoinForm'],
 ];
-for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(const phase of format==='bluff'?['lobby','bluff','answers','vote','leaderboard','ended']:['lobby','question','result','finished']){
- views.push([`${format}-${mode}-${phase}`,`apps/quiz-studio/${format}/${mode==='host'?'live':'student'}.html?session=room&code=ABCDE&fixture=active&phase=${phase}`,format==='bluff'?(phase==='ended'?'.bluff-final-ranking':'.ranking-panel'):phase==='lobby'?'.yn-lobby-grid':'.yn-grid']);
+for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(const phase of format==='bluff'?['lobby','bluff','answers','vote','leaderboard','ended']:['lobby','question','result','finished','ended']){
+ views.push([`${format}-${mode}-${phase}`,`apps/quiz-studio/${format}/${mode==='host'?'live':'student'}.html?session=room&code=ABCDE&fixture=active&phase=${phase}`,format==='bluff'?(phase==='ended'?'.bluff-final-ranking':'.ranking-panel'):['finished','ended'].includes(phase)?'.yn-final-ranking':phase==='lobby'?'.yn-lobby-grid':'.yn-grid']);
 }
 (async()=>{
  fs.mkdirSync(output,{recursive:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -90,17 +90,18 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
      await page.goto(`http://127.0.0.1:${server.address().port}/${url}`);await page.locator(ready).first().waitFor({state:'visible',timeout:10000});
      if(setup)await setup(page);
      if(/^yesno-(host|player)-/.test(name)){
-      const host=name.startsWith('yesno-host-'),question=name.endsWith('-question');
+      const host=name.startsWith('yesno-host-'),question=name.endsWith('-question'),terminal=/-finished$|-ended$/.test(name);
       assert.equal(await page.locator('.studio-header').count(),host?1:0,'Only the host sees the game header');
       if(host)assert.equal(await page.locator('.studio-title').innerText(),'Ja oder Nein');
-      assert.equal(await page.getByRole('heading',{name:'Rangliste',exact:true}).count(),1,'Every phase has the shared ranking');
+      assert.equal(await page.getByRole('heading',{name:'Rangliste',exact:true}).count(),terminal?0:1,'Every phase has the shared ranking');
       assert.equal(await page.getByRole('heading',{name:'Punktestand',exact:true}).count(),0);
       assert.equal(await page.locator('.yn-player').count(),0,'No separate participant chips under the question');
+      if(terminal){assert.equal(await page.getByRole('heading',{name:'Endplatzierung',exact:true}).count(),1);assert.equal(await page.locator('.yn-result-row,.yn-podium').count(),0);}
       if(!host){
        assert.equal(await page.locator('h1').count(),0);
        if(!question)assert.equal(await page.locator('.yn-question').count(),0,'Player results omit the question');
        assert.equal(await page.getByText(/Bitte wählen|Erst beide Eingaben auswählen|0 bis \d+ Personen|Persönliche Ja\/Nein-Antworten werden nicht veröffentlicht\.|Die Spielleitung startet die nächste Runde\./).count(),0);
-       if(!name.endsWith('-lobby'))assert(await page.locator('.yn-grid').evaluate(el=>el.lastElementChild.getBoundingClientRect().top>=el.firstElementChild.getBoundingClientRect().bottom),'Player ranking stays below the game card');
+       if(!terminal&&!name.endsWith('-lobby'))assert(await page.locator('.yn-grid').evaluate(el=>el.lastElementChild.getBoundingClientRect().top>=el.firstElementChild.getBoundingClientRect().bottom),'Player ranking stays below the game card');
       }
      }
      if(name.startsWith('bluff-')){

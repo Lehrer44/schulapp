@@ -48,6 +48,7 @@ jobs:
           PGDATABASE=bluff_tests psql -v ON_ERROR_STOP=1 -f tests/external-links-db.sql
           createdb yesno_tests
           PGDATABASE=yesno_tests psql -v ON_ERROR_STOP=1 -f tests/yesno-db.sql
+          PGDATABASE=yesno_tests psql -v ON_ERROR_STOP=1 -f tests/yesno-flow-db.sql
           PGDATABASE=yesno_tests node tests/yesno-concurrency.cjs
           createdb rather_tests
           PGDATABASE=rather_tests psql -v ON_ERROR_STOP=1 -f tests/rather-db.sql
