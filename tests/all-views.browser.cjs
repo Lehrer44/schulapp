@@ -89,6 +89,20 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
     try{
      await page.goto(`http://127.0.0.1:${server.address().port}/${url}`);await page.locator(ready).first().waitFor({state:'visible',timeout:10000});
      if(setup)await setup(page);
+     if(/^yesno-(host|player)-/.test(name)){
+      const host=name.startsWith('yesno-host-'),question=name.endsWith('-question');
+      assert.equal(await page.locator('.studio-header').count(),host?1:0,'Only the host sees the game header');
+      if(host)assert.equal(await page.locator('.studio-title').innerText(),'Ja oder Nein');
+      assert.equal(await page.getByRole('heading',{name:'Rangliste',exact:true}).count(),1,'Every phase has the shared ranking');
+      assert.equal(await page.getByRole('heading',{name:'Punktestand',exact:true}).count(),0);
+      assert.equal(await page.locator('.yn-player').count(),0,'No separate participant chips under the question');
+      if(!host){
+       assert.equal(await page.locator('h1').count(),0);
+       if(!question)assert.equal(await page.locator('.yn-question').count(),0,'Player results omit the question');
+       assert.equal(await page.getByText(/Bitte wählen|Erst beide Eingaben auswählen|0 bis \d+ Personen|Persönliche Ja\/Nein-Antworten werden nicht veröffentlicht\.|Die Spielleitung startet die nächste Runde\./).count(),0);
+       if(!name.endsWith('-lobby'))assert(await page.locator('.yn-grid').evaluate(el=>el.lastElementChild.getBoundingClientRect().top>=el.firstElementChild.getBoundingClientRect().bottom),'Player ranking stays below the game card');
+      }
+     }
      if(name.startsWith('bluff-')){
       assert.equal(await page.getByText(/haben eine Antwort eingegeben|Anonyme Antwort \d|haben abgestimmt|Punkte vergeben|Gewählt von|Keine Stimmen/).count(),0,'Removed phase helper text');
       for(const card of await page.locator('.manipulation-option').all()){

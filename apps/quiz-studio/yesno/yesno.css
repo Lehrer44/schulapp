@@ -28,10 +28,10 @@ body.yn-student.yn-in-lobby #app.yn-main{max-width:none}
 .yn-lobby-player{grid-template-columns:minmax(0,1fr)}
 .yn-lobby-main{display:grid;gap:var(--space-4)}
 body.yn-in-lobby #app .yn-lobby-grid .panel{margin:0}
-body.yn-in-lobby #app .yn-lobby-ranking h2{font-size:18px}
+body.yn-in-game #app .yn-lobby-ranking h2{font-size:18px}
 .yn-lobby-score-list{display:grid;gap:10px}
-body.yn-in-lobby #app .yn-lobby-score{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:var(--space-2) var(--space-3);margin-top:8px;border:1px solid #ddd7ca;border-radius:11px;background:#faf8f1}
-body.yn-in-lobby #app .yn-lobby-score.me{border-color:#aa8dbd;background:#f2eaf6}
+body.yn-in-game #app .yn-lobby-score{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:var(--space-2) var(--space-3);margin-top:8px;border:1px solid #ddd7ca;border-radius:11px;background:#faf8f1}
+body.yn-in-game #app .yn-lobby-score.me{border-color:#aa8dbd;background:#f2eaf6}
 .yn-lobby-empty{padding:20px;border:1px dashed #cfc6b5;border-radius:12px;color:#686456}
 body.yn-in-lobby #app :is(button,a.btn),.yn-lobby-dialog :is(button,a.btn){background:#fff;color:#344451;border:1px solid #d5dfe5;border-radius:12px;box-shadow:0 2px 5px #23384a08;font-weight:600}
 body.yn-in-lobby #app :is(button,a.btn):hover:not(:disabled),.yn-lobby-dialog :is(button,a.btn):hover:not(:disabled){background:#f4f8fb;border-color:#afc4d2;color:#253f51;transform:none;filter:none;box-shadow:0 3px 10px #23384a0d}
@@ -52,3 +52,19 @@ body.yn-in-lobby #connectionStatus{border:0;background:transparent;box-shadow:no
 body.yn-in-lobby #connectionStatus[data-state="error"]{color:#a23628;font-weight:650}
 @media(max-width:850px){.yn-lobby-grid{grid-template-columns:minmax(0,1fr)}body.yn-in-lobby .yn-lobby-grid>.live-sidebar{order:1;max-height:40dvh}}
 
+
+/* One header and ranking in every phase; player standings follow the game card. */
+body.yn-in-game .studio-header{--studio-accent:#80682f;--studio-tint:#eee7d5}
+body.yn-in-game #app .studio-header :is(button,a.btn){background:#fff;color:#344451;border:1px solid #d5dfe5;border-radius:12px;box-shadow:0 2px 5px #23384a08;font-weight:600}
+body.yn-in-game #app .studio-header :is(button,a.btn):hover:not(:disabled){background:#f4f8fb;border-color:#afc4d2}
+body.yn-in-game #app .studio-header .yn-lobby-end{color:#a34040;border-color:#e7d4d4;background:#fffafa}
+body.yn-in-game #app .yn-grid{grid-template-columns:minmax(0,1fr) 310px;align-items:start}
+body.yn-in-game #app .yn-grid>.panel,body.yn-in-game #app .yn-grid>aside>.panel{margin:0}
+body.yn-in-game #app .yn-grid.yn-player-grid{grid-template-columns:minmax(0,1fr)}
+body.yn-student.yn-in-game #app.yn-main{max-width:none}
+.yn-player-standings{position:static;max-height:none;overflow:visible;min-width:0}
+.yn-player-standings>.panel{max-height:none;overflow:visible}
+.yn-score-name{display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere}
+body.yn-in-game #app .yn-lobby-score.has-vote{background:#e5f1e8;border-color:#8fbf9c}
+.yn-vote-mark{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#386449;color:#fff;font-size:15px;line-height:1}
+@media(max-width:850px){body.yn-in-game #app .yn-grid{grid-template-columns:minmax(0,1fr)}}
