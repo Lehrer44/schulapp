@@ -68,3 +68,60 @@ body.yn-student.yn-in-game #app.yn-main{max-width:none}
 body.yn-in-game #app .yn-lobby-score.has-vote{background:#e5f1e8;border-color:#8fbf9c}
 .yn-vote-mark{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#386449;color:#fff;font-size:15px;line-height:1}
 @media(max-width:850px){body.yn-in-game #app .yn-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Compact setup windows from Layout1: saved games use their complete question set. */
+.yn-dialog.yn-setup-dialog{max-width:480px;padding:12px;border:1px solid #929292;border-radius:12px;background:#fff;color:#484848;box-shadow:0 2px 5px #0003;font:14px/1.45 system-ui,sans-serif}
+.yn-setup-dialog>.yn-heading{margin:0 0 16px;gap:12px;align-items:center}
+.yn-setup-dialog>.yn-heading h2{font-size:18px;margin:0}
+.yn-dialog.yn-setup-dialog .yn-heading [data-close]{display:grid;place-items:center;width:30px;height:30px;min-height:30px;padding:0;border:1px solid #a1a1a1;border-radius:5px;background:#fff;color:#444;font-size:20px;box-shadow:0 1px 3px #0002}
+.yn-setup-dialog #ynGameForm{display:flex;flex-direction:column;gap:12px;min-width:0}
+.yn-setup-saved #ynGameForm{min-height:210px}
+.yn-setup-dialog #ynGameForm .yn-setup-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;min-height:46px;padding:7px 9px;border:1px solid #a2a2a2;border-radius:8px;background:#fff;box-shadow:0 1px 3px #0002;box-sizing:border-box;margin:0}
+.yn-setup-dialog #ynGameForm label{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;line-height:1.35;margin:0;min-width:0}
+.yn-setup-dialog #ynGameForm strong{font-size:12px;font-weight:600}
+.yn-setup-dialog #ynGameForm input[type="number"]{box-sizing:border-box;flex:0 0 36px;width:36px;min-width:0;height:32px;padding:3px;border:1px solid #969696;border-radius:5px;background:#fff;text-align:center;color:#3d5d28;font:13px/1.3 system-ui,sans-serif;box-shadow:0 1px 3px #0002;appearance:textfield}
+.yn-setup-dialog #ynGameForm input[type="number"]::-webkit-inner-spin-button,.yn-setup-dialog #ynGameForm input[type="number"]::-webkit-outer-spin-button{appearance:none;margin:0}
+.yn-setup-scoring{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:8px}
+.yn-setup-dialog #ynGameForm .yn-setup-points{gap:5px}
+.yn-setup-dialog #ynGameForm .yn-setup-points label,.yn-setup-dialog #ynGameForm .yn-setup-tolerance label{font-size:10px}
+.yn-setup-dialog #ynGameForm .yn-setup-packs{justify-content:flex-start;gap:18px}
+.yn-setup-dialog #ynGameForm .yn-packs{gap:8px 14px;min-width:0}
+.yn-setup-dialog #ynGameForm .yn-packs label{font-weight:400;overflow-wrap:anywhere}
+.yn-setup-dialog #ynGameForm .yn-packs input{width:16px;height:16px;flex:none;margin:0;accent-color:#6c8954}
+.yn-setup-dialog .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.yn-setup-dialog #ynGameForm .yn-error:empty{display:none}
+.yn-setup-dialog #ynGameForm .studio-actions{margin-top:auto;padding-top:6px;justify-content:flex-end;gap:10px}
+.yn-setup-dialog #ynGameForm button{padding:5px 8px;min-height:32px;border:1px solid #969696;border-radius:6px;background:#fff;color:#484848;font:13px/1.4 system-ui,sans-serif;box-shadow:0 1px 3px #0002}
+.yn-setup-dialog #ynGameForm button.studio-primary{background:#e0edd7}
+.yn-setup-dialog #ynGameForm button{transition:none}
+.yn-setup-dialog #ynGameForm button:hover:not(:disabled){background:#f1f5ec}
+/* Layout2: one Ja total, aligned estimates, optional answer badges and points. */
+.yn-round-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.yn-round-label{font-size:12px;font-weight:500}
+body[data-dashboard-view="yesno"] #app .yn-results-main .yn-question{font-size:21px;line-height:1.35;letter-spacing:0;margin:8px 0 24px}
+.yn-result-total{display:flex;align-items:center;justify-content:center;gap:12px;width:max-content;max-width:100%;margin:24px auto 18px;padding:6px 10px;border:1px solid #98a488;border-radius:8px;background:#cfe2bc;color:#52634a;font-size:18px;font-weight:650;box-shadow:0 1px 3px #0002}
+.yn-result-total .yn-total{display:grid;place-items:center;min-width:36px;min-height:30px;padding:2px 6px;box-sizing:border-box;border:1px solid #9a9a9a;border-radius:5px;background:#fff;color:#568036;font-size:20px;line-height:1.2;font-weight:650;box-shadow:0 1px 3px #0002}
+.yn-results-main .yn-result-row{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(72px,1fr) 60px 38px;gap:12px;align-items:center;min-height:44px;margin:10px 0;padding:7px 10px;border:1px solid #999;border-radius:8px;background:#fff;color:#484848;box-shadow:0 1px 3px #0002;font-size:14px}
+body.yn-in-game:not(.yn-student) #app .yn-results-main{width:100%;max-width:600px;justify-self:end;box-sizing:border-box}
+.yn-results-main .yn-result-name{font-weight:500;min-width:0;overflow-wrap:anywhere}
+.yn-result-estimate{display:flex;gap:6px;align-items:center;justify-content:center;font-size:12px}
+.yn-estimate-chip{display:inline-grid;place-items:center;min-width:28px;min-height:28px;padding:2px 4px;box-sizing:border-box;border:1px solid #969696;border-radius:5px;background:#fff;color:#456932;font-size:14px;box-shadow:0 1px 3px #0002}
+.yn-result-answer{display:flex;justify-content:center;min-width:0}
+.yn-results-main .yn-revealed-answer{display:inline-grid;place-items:center;box-sizing:border-box;min-width:50px;min-height:28px;padding:2px 5px;border:1px solid #9b9b9b;border-radius:5px;font-size:14px;font-weight:650;line-height:1.3;box-shadow:0 1px 3px #0002}
+.yn-results-main .yn-revealed-answer.is-yes{background:#cfe2bc;color:#52634a}
+.yn-results-main .yn-revealed-answer.is-no{background:#ffb4b4;color:#775858}
+.yn-results-main .yn-result-row .yn-points{font-size:12px;font-weight:400;color:#484848;text-align:right;white-space:nowrap}
+body.yn-in-game #app .yn-round-actions button{min-height:34px;padding:6px 10px;border:1px solid #999;border-radius:6px;background:#fff;color:#484848;box-shadow:0 1px 3px #0002;font-size:14px;font-weight:400}
+body.yn-in-game #app .yn-round-actions button.yn-flow-primary{background:#d6e6c6}
+body.yn-in-game #app .yn-round-actions button:disabled{opacity:.5;cursor:default}
+body.yn-in-game #app .yn-round-actions button:hover:not(:disabled){background:#edf3e8}
+.yn-final-ranking{width:min(100%,900px);margin:auto}
+body.yn-in-game #app .yn-final-title{font-size:clamp(23px,3.2vw,38px);line-height:1.25;letter-spacing:-.035em;margin:var(--question-gap) 0}
+body.yn-in-game #app .yn-final-ranking .yn-lobby-score{padding:15px 18px;background:linear-gradient(120deg,#fffefa,#f5f0e6);font-size:18px}
+.yn-final-ranking .yn-score>span:first-child{display:grid;place-items:center;min-width:30px;height:34px;border-radius:10px;background:#eee7d5;font-weight:800;color:#80682f}
+body.yn-in-game #app .yn-final-ranking .yn-lobby-score.me{background:#d9efdf;border-color:#47815e;color:#234c32}
+body.yn-in-final{min-height:100dvh}
+body.yn-in-final #connectionStatus{border:0;background:transparent;box-shadow:none;width:min(1224px,calc(100% - 40px));margin:auto auto 18px;padding:0;text-align:center;color:#686456;font-size:13px;font-weight:400;line-height:1.6}
+body.yn-in-final #connectionStatus[data-state="error"]{color:#a23628;font-weight:650}
+@media(max-width:850px){body.yn-in-game:not(.yn-student) #app .yn-results-main{justify-self:center}}
+@media(max-width:520px){.yn-setup-scoring{grid-template-columns:minmax(0,1fr)}.yn-results-main .yn-result-row{grid-template-columns:minmax(0,1fr) 64px 46px 30px;gap:8px;padding:7px 8px}.yn-results-main .yn-revealed-answer{min-width:44px}.yn-results-main .yn-result-name{font-size:13px}body.yn-in-game #app .yn-round-actions button{min-height:44px}}
