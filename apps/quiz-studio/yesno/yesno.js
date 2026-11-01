@@ -34,9 +34,9 @@
   d.querySelector('form').onsubmit=async e=>{e.preventDefault();if(saving)return;saving=true;e.submitter.disabled=true;try{const f=e.target;await call('yesno_question_save',{p_id:editing?.id||null,p_question:f.elements.question.value.trim(),p_pack:f.elements.pack.value.trim()});d.close();await loadQuestions();say('Frage gespeichert.',true);}catch(err){d.querySelector('[role="status"]').textContent=error(err);}finally{saving=false;e.submitter.disabled=false;}};
  }
  function renderJoin(){
-  document.body.classList.remove('yn-in-lobby');
+  document.body.classList.remove('yn-in-lobby','yn-in-game');
   const code=(params.get('code')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5),saved=readCredentials(code);
-  app.innerHTML=header('Wie gut kennst du die Gruppe?')+'<section class="panel"><h2>Dem Spiel beitreten</h2><form id="ynJoinForm"><label>Raum-Code<input name="code" value="'+esc(code)+'" minlength="5" maxlength="5" pattern="[A-Za-z0-9]{5}" autocapitalize="characters" autocomplete="off" required></label><label>Dein Name<input name="playerName" maxlength="40" autocomplete="nickname" value="'+esc(saved?.name||'')+'" required></label><button class="yn-primary yn-submit" type="submit">Beitreten</button></form><p class="muted">'+(state?'':'Antworte geheim mit Ja oder Nein und schätze, wie viele in der Gruppe Ja sagen.')+'</p></section>';
+  app.innerHTML='<section class="panel"><h2>Dem Spiel beitreten</h2><form id="ynJoinForm"><label>Raum-Code<input name="code" value="'+esc(code)+'" minlength="5" maxlength="5" pattern="[A-Za-z0-9]{5}" autocapitalize="characters" autocomplete="off" required></label><label>Dein Name<input name="playerName" maxlength="40" autocomplete="nickname" value="'+esc(saved?.name||'')+'" required></label><button class="yn-primary yn-submit" type="submit">Beitreten</button></form><p class="muted">'+(state?'':'Antworte geheim mit Ja oder Nein und schätze, wie viele in der Gruppe Ja sagen.')+'</p></section>';
   const form=app.querySelector('form');form.elements.code.oninput=e=>e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);
   form.onsubmit=async e=>{
    e.preventDefault();if(actionBusy)return;actionBusy=true;e.submitter.disabled=true;say('');
@@ -49,11 +49,6 @@
    }catch(err){say(error(err));}finally{actionBusy=false;e.submitter.disabled=false;}
   };
  }
- function scoreboard(){
-  const rows=state.players;let rank=0,last=null;
-  return '<section class="panel"><h2>Punktestand</h2>'+rows.map((p,i)=>{if(p.score!==last){rank=i+1;last=p.score;}return '<div class="yn-score '+(p.id===credentials?.player?'me':'')+'"><span>'+rank+'.</span><strong>'+esc(p.name)+'</strong><span>'+p.score+' P.</span></div>';}).join('')+'</section>';
- }
- function participants(){return '<div class="yn-players">'+state.players.map(p=>'<span class="yn-player '+((state.phase==='lobby'?p.ready:p.submitted)?'done':'')+'">'+esc(p.name)+(state.phase==='lobby'?(p.ready?' · bereit':' · wartet'):(p.submitted?' · ✓ abgegeben':' · …'))+'</span>').join('')+'</div>';}
  function joinLink(){const u=new URL('../../../join.html',location.href);u.searchParams.set('kind','yesno');u.searchParams.set('code',state.join_code);return u.href;}
  function participation(){
   const url=joinLink(),d=dialog('Teilnahme','<div class="yn-code">'+esc(state.join_code)+'</div><div class="yn-qr"></div><p class="yn-participation-link"><a class="btn yn-join-link" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">Teilnahmeseite öffnen</a></p>');
@@ -67,37 +62,45 @@
  function answerForm(){
   if(state.own_answer)return '<div class="yn-tag">✓ Deine Antwort wurde gespeichert</div><p>Nur für dich: <strong>'+ (state.own_answer.answer?'JA':'NEIN')+'</strong> · Schätzung: <strong>'+state.own_answer.estimate+'</strong></p><p class="muted">Warte auf die Auswertung. Die Abgabe ist verbindlich.</p>';
   const n=state.player_count;
-  return '<form id="ynAnswerForm"><div class="yn-answer-buttons" role="group" aria-label="Deine geheime Antwort"><button type="button" class="yn-answer" data-answer="yes" aria-pressed="'+(draftAnswer===true)+'">JA</button><button type="button" class="yn-answer" data-answer="no" aria-pressed="'+(draftAnswer===false)+'">NEIN</button></div><fieldset class="yn-estimate"><legend>Wie viele sagen JA?</legend><p class="muted">0 bis '+n+' Personen – inklusive dir selbst.</p><output id="ynEstimateValue" aria-live="polite">'+(draftEstimate===null?'Bitte wählen':draftEstimate)+'</output>'+
+  return '<form id="ynAnswerForm"><div class="yn-answer-buttons" role="group" aria-label="Deine geheime Antwort"><button type="button" class="yn-answer" data-answer="yes" aria-pressed="'+(draftAnswer===true)+'">JA</button><button type="button" class="yn-answer" data-answer="no" aria-pressed="'+(draftAnswer===false)+'">NEIN</button></div><fieldset class="yn-estimate"><legend>Wie viele sagen JA?</legend><output id="ynEstimateValue" aria-label="Deine Schätzung" aria-live="polite" '+(draftEstimate===null?'hidden':'')+'>'+(draftEstimate??'')+'</output>'+
    '<div class="yn-numbers" role="group" aria-label="Geschätzte Anzahl der Ja-Stimmen">'+Array.from({length:n+1},(_,i)=>'<button type="button" data-estimate="'+i+'" aria-pressed="'+(draftEstimate===i)+'">'+i+'</button>').join('')+'</div>'+
-   '</fieldset><button class="yn-primary yn-submit" type="submit" disabled>Geheim abgeben</button><p class="muted">Erst beide Eingaben auswählen. Nach dem Absenden kannst du sie nicht mehr ändern.</p></form>';
+   '</fieldset><button class="yn-primary yn-submit" type="submit" disabled>Geheim abgeben</button></form>';
  }
  function results(){
   const n=state.player_count,yes=state.yes_count,no=state.no_count,missing=n-yes-no;
-  return '<div class="yn-result-hero yn-pop"><span class="yn-total">'+yes+'</span><strong>von '+n+' sagen JA</strong><div class="yn-distribution yn-bar-enter" role="img" aria-label="'+yes+' Ja, '+no+' Nein, '+missing+' ohne Abgabe"><span class="yes" style="width:'+100*yes/n+'%"></span><span class="no" style="width:'+100*no/n+'%"></span><span class="missing" style="width:'+100*missing/n+'%"></span></div><div class="yn-legend"><span>● JA: '+yes+'</span><span>● NEIN: '+no+'</span>'+(missing?'<span>Ohne Abgabe: '+missing+'</span>':'')+'</div></div><h2>Die Schätzungen</h2>'+state.results.map(r=>'<div class="yn-result-row '+(r.exact?'exact yn-pop':'')+'"><strong>'+esc(r.name)+(state.reveal_answers&&typeof r.answer==='boolean'?' <span class="yn-revealed-answer '+(r.answer?'is-yes':'is-no')+'">('+(r.answer?'JA':'NEIN')+')</span>':'')+(r.exact?' · Volltreffer!':'')+'</strong><span>'+(r.estimate===null?'Keine Abgabe':'Tipp: '+r.estimate)+'</span><span class="yn-points">+'+r.points+'</span></div>').join('')+(state.reveal_answers?'':'<p class="muted">Persönliche Ja/Nein-Antworten werden nicht veröffentlicht.</p>');
+  return '<div class="yn-result-hero yn-pop"><span class="yn-total">'+yes+'</span><strong>von '+n+' sagen JA</strong><div class="yn-distribution yn-bar-enter" role="img" aria-label="'+yes+' Ja, '+no+' Nein, '+missing+' ohne Abgabe"><span class="yes" style="width:'+100*yes/n+'%"></span><span class="no" style="width:'+100*no/n+'%"></span><span class="missing" style="width:'+100*missing/n+'%"></span></div><div class="yn-legend"><span>● JA: '+yes+'</span><span>● NEIN: '+no+'</span>'+(missing?'<span>Ohne Abgabe: '+missing+'</span>':'')+'</div></div><h2>Die Schätzungen</h2>'+state.results.map(r=>'<div class="yn-result-row '+(r.exact?'exact yn-pop':'')+'"><strong>'+esc(r.name)+(state.reveal_answers&&typeof r.answer==='boolean'?' <span class="yn-revealed-answer '+(r.answer?'is-yes':'is-no')+'">('+(r.answer?'JA':'NEIN')+')</span>':'')+(r.exact?' · Volltreffer!':'')+'</strong><span>'+(r.estimate===null?'Keine Abgabe':'Tipp: '+r.estimate)+'</span><span class="yn-points">+'+r.points+'</span></div>').join('')+(isHost&&!state.reveal_answers?'<p class="muted">Persönliche Ja/Nein-Antworten werden nicht veröffentlicht.</p>':'');
  }
- function lobbyScores(){
-  return '<section class="panel yn-lobby-ranking"><h2>Rangliste</h2>'+(state.players.length?'<div class="yn-lobby-score-list">'+state.players.map((p,i)=>'<div class="yn-score yn-lobby-score '+(p.id===credentials?.player?'me':'')+'"><span>'+(i+1)+'</span><strong>'+esc(p.name)+'</strong><b>'+p.score+' P</b></div>').join('')+'</div>':'<div class="yn-lobby-empty">noch keine Teilnehmer</div>')+'</section>';
+ function scoreboard(){
+  const terminal=['finished','ended'].includes(state.phase);
+  const rows=state.players.map((p,i)=>{
+   const submitted=state.phase==='question'&&p.submitted;
+   const rank=terminal?1+state.players.filter(other=>Number(other.score)>Number(p.score)).length:i+1;
+   return '<div class="yn-score yn-lobby-score '+(p.id===credentials?.player?'me ':'')+(submitted?'has-vote':'')+'" data-player-id="'+esc(p.id)+'"><span>'+rank+'</span><strong class="yn-score-name">'+esc(p.name)+(submitted?'<span class="yn-vote-mark" role="img" aria-label="Stimme abgegeben" title="Stimme abgegeben">✓</span>':'')+'</strong><b>'+p.score+' P</b></div>';
+  }).join('');
+  return '<section class="panel yn-lobby-ranking"><h2>Rangliste</h2>'+(rows?'<div class="yn-lobby-score-list">'+rows+'</div>':'<div class="yn-lobby-empty">noch keine Teilnehmer</div>')+'</section>';
  }
+ function gameHeader(actions){return isHost?'<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><h1 class="studio-title">Ja oder <span>Nein</span></h1></div><div class="studio-actions">'+actions+'</div></header>':'';}
  function renderLobby(){
   const allReady=state.players.length>=2&&state.players.every(p=>p.ready);
-  const heading=isHost?'<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><h1 class="studio-title">Ja oder <span>Nein</span></h1></div><div class="studio-actions"><button data-action="participation">Teilnahme</button><button class="yn-lobby-end" data-action="end">Beenden</button></div></header>':'';
+  const heading=gameHeader('<button data-action="participation">Teilnahme</button><button class="yn-lobby-end" data-action="end">Beenden</button>');
   const main=isHost?'<div class="yn-lobby-main"><button type="button" class="panel yn-lobby-start" data-action="start" '+(!allReady?'disabled':'')+'>Spiel starten</button><section class="panel yn-lobby-rules"><h2>Punkte sammeln</h2>'+rules()+'</section></div>':'<section class="panel yn-lobby-rules"><h2>Wartelobby</h2><p>Du bist dabei. Die Spielleitung gibt gleich die erste Frage frei.</p>'+rules()+'</section>';
-  app.innerHTML=heading+'<div class="yn-lobby-grid'+(!isHost?' yn-lobby-player':'')+'">'+main+'<aside class="'+(isHost?'live-sidebar':'yn-lobby-standings')+'" '+(isHost?'tabindex="0" ':'')+'aria-label="Rangliste">'+lobbyScores()+'</aside></div>';
+  app.innerHTML=heading+'<div class="yn-lobby-grid'+(!isHost?' yn-lobby-player':'')+'">'+main+'<aside class="'+(isHost?'live-sidebar':'yn-lobby-standings')+'" '+(isHost?'tabindex="0" ':'')+'aria-label="Rangliste">'+scoreboard()+'</aside></div>';
   app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));
  }
  function renderGame(){
+  document.body.classList.add('yn-in-game');
   document.body.classList.toggle('yn-in-lobby',state.phase==='lobby');
   if(state.phase==='lobby'){renderLobby();return;}
   if(draftRound!==state.round_index){draftRound=state.round_index;draftAnswer=null;draftEstimate=null;}
   if(state.own_answer){draftAnswer=state.own_answer.answer;draftEstimate=state.own_answer.estimate;}
-  const phase=state.phase,terminal=['finished','ended'].includes(phase),actions=isHost?(!terminal?'<button data-action="end">Spiel beenden</button>':'<a class="btn" href="../index.html">Zum Quiz Studio</a>'):'';
+  const phase=state.phase,terminal=['finished','ended'].includes(phase),actions=!terminal?'<button class="yn-lobby-end" data-action="end">Beenden</button>':'<a class="btn" href="../index.html">Quiz Studio</a>';
   let content='';
   if(phase==='ended'){
    content='<h2>Spiel beendet</h2><p>Die bereits vergebenen Punkte bleiben erhalten. Eine abgebrochene Runde wird nicht gewertet.</p>';
   }else{
    const roundLabel='Runde '+(state.round_index+1)+'/'+state.round_count;
-   content='<div class="yn-heading"><span class="yn-tag">'+roundLabel+'</span>'+(phase==='question'?'<span class="yn-clock" id="ynCountdown" role="timer" aria-label="Verbleibende Zeit"></span>':'<span class="yn-tag">Auswertung</span>')+'</div><h2 class="yn-question">'+esc(state.question)+'</h2>';
-   if(phase==='question')content+=(isHost?participants():answerForm());
+   content='<div class="yn-heading"><span class="yn-tag">'+roundLabel+'</span>'+(phase==='question'?'<span class="yn-clock" id="ynCountdown" role="timer" aria-label="Verbleibende Zeit"></span>':'<span class="yn-tag">Auswertung</span>')+'</div>'+((isHost||phase==='question')?'<h2 class="yn-question">'+esc(state.question)+'</h2>':'');
+   if(phase==='question'){if(!isHost)content+=answerForm();}
    else{
     if(phase==='finished'){
      const top=state.players[0]?.score??0,winners=state.players.filter(p=>p.score===top);
@@ -105,11 +108,9 @@
     }
     content+=results();
     if(isHost&&phase==='result')content+='<div class="yn-actions"><button class="yn-primary" data-action="next">Nächste Runde</button></div>';
-    if(!isHost&&phase==='result')content+='<p class="muted">Die Spielleitung startet die nächste Runde.</p>';
    }
   }
-  const showScores=isHost||['result','finished','ended'].includes(phase);
-  app.innerHTML=header(state.title,actions)+'<div class="yn-grid'+(showScores?'':' yn-solo')+'"><section class="panel">'+content+'</section>'+(showScores?'<aside class="live-sidebar" tabindex="0" aria-label="Punktestand">'+scoreboard()+'</aside>':'')+'</div>';
+  app.innerHTML=gameHeader(actions)+'<div class="yn-grid'+(!isHost?' yn-player-grid':'')+'"><section class="panel yn-game-main">'+content+'</section><aside class="'+(isHost?'live-sidebar':'yn-player-standings')+'" '+(isHost?'tabindex="0" ':'')+'aria-label="Rangliste">'+scoreboard()+'</aside></div>';
   app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));bindAnswers();updateClock();
  }
  function bindAnswers(){
@@ -118,7 +119,7 @@
   function update(){
    form.querySelectorAll('[data-answer]').forEach(b=>b.setAttribute('aria-pressed',String(draftAnswer===(b.dataset.answer==='yes'))));
    form.querySelectorAll('[data-estimate]').forEach(b=>b.setAttribute('aria-pressed',String(draftEstimate===Number(b.dataset.estimate))));
-   output.textContent=draftEstimate===null?'Bitte wählen':draftEstimate;
+   output.hidden=draftEstimate===null;output.textContent=draftEstimate??'';
    submit.disabled=actionBusy||draftAnswer===null||draftEstimate===null||secondsLeft()<=0;
   }
   const estimate=v=>{const n=Number(v);draftEstimate=v!==''&&Number.isInteger(n)&&n>=0&&n<=state.player_count?n:null;update();};

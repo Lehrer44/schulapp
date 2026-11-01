@@ -10,7 +10,7 @@ const cases=[
  ['bluff','apps/quiz-studio/bluff/live.html','bluff-grid','panel','bluff-stack','panel'],
  ['bluff-student','apps/quiz-studio/bluff/student.html','bluff-grid bluff-player-grid','panel bluff-player-main','bluff-stack bluff-player-standings','panel'],
  ['yesno','apps/quiz-studio/yesno/live.html','yn-grid','panel','','panel'],
- ['yesno-student','apps/quiz-studio/yesno/student.html','yn-grid','panel','','panel'],
+ ['yesno-student','apps/quiz-studio/yesno/student.html','yn-grid yn-player-grid','panel yn-game-main','yn-player-standings','panel'],
  ['survey','apps/umfrage/live.html','session','main','participants','']
 ];
 (async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox']});try{
@@ -20,14 +20,15 @@ const cases=[
    const rows=Array.from({length:count},(_,i)=>'<div style="padding:12px;border-bottom:1px solid #ccc">Person '+(i+1)+'</div>').join('');
    const ranking=card?'<section class="'+card+'"><h2>Punktestand</h2>'+rows+'</section>':'<h2>Teilnehmer</h2><div class="participantList">'+rows+'</div>';
    const extra=['bluff','speed','buzzer'].includes(name)?'<section class="panel"><h2>Spielstatus</h2><p>Weitere Informationen</p></section>':'';
-   await page.setContent('<html><head><style>'+css+'</style></head><body '+body+'><div id="app" class="wrap yn-main"><header style="height:180px">Spiel</header><div class="'+grid+'"><section class="'+main+'" style="min-height:2400px">Frage</section><aside class="'+side+(name==='bluff-student'?'':' live-sidebar')+'" tabindex="0">'+ranking+extra+'</aside></div></div><footer style="height:200px"></footer></body></html>');
+   await page.setContent('<html><head><style>'+css+'</style></head><body '+body+'><div id="app" class="wrap yn-main"><header style="height:180px">Spiel</header><div class="'+grid+'"><section class="'+main+'" style="min-height:2400px">Frage</section><aside class="'+side+(['bluff-student','yesno-student'].includes(name)?'':' live-sidebar')+'" tabindex="0">'+ranking+extra+'</aside></div></div><footer style="height:200px"></footer></body></html>');
+   if(name.startsWith('yesno'))await page.evaluate(()=>document.body.classList.add('yn-in-game'));
 
-   if(name==='bluff-student'||name==='classic-student'&&width<=740){
-    const aside=page.locator(name==='bluff-student'?'.bluff-player-standings':'.side.live-sidebar'),card=aside.locator('section').first();
+   if(['bluff-student','yesno-student'].includes(name)||name==='classic-student'&&width<=740){
+    const aside=page.locator(name==='bluff-student'?'.bluff-player-standings':name==='yesno-student'?'.yn-player-standings':'.side.live-sidebar'),card=aside.locator('section').first();
     assert.equal(await aside.evaluate(el=>getComputedStyle(el).position),'static','Player list follows page scrolling');
     assert(await card.evaluate(el=>el.scrollHeight<=el.clientHeight+1),'All player names fit naturally at '+width);
     const order=await page.evaluate(()=>{
-     const question=document.querySelector('.bluff-player-main,.layout>.main').getBoundingClientRect(),list=document.querySelector('.bluff-player-standings,.layout>.side').getBoundingClientRect();
+     const question=document.querySelector('.bluff-player-main,.yn-game-main,.layout>.main').getBoundingClientRect(),list=document.querySelector('.bluff-player-standings,.yn-player-standings,.layout>.side').getBoundingClientRect();
      return list.top>=question.bottom;
     });
     assert(order,'Active player card comes before standings');
