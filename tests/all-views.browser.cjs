@@ -73,7 +73,7 @@ const views=[
  ['yesno-join','apps/quiz-studio/yesno/student.html','#ynJoinForm'],
 ];
 for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(const phase of format==='bluff'?['lobby','bluff','answers','vote','leaderboard','ended']:['lobby','question','result','finished']){
- views.push([`${format}-${mode}-${phase}`,`apps/quiz-studio/${format}/${mode==='host'?'live':'student'}.html?session=room&code=ABCDE&fixture=active&phase=${phase}`,format==='bluff'?(phase==='ended'?'.bluff-final-ranking':'.ranking-panel'):'.yn-grid']);
+ views.push([`${format}-${mode}-${phase}`,`apps/quiz-studio/${format}/${mode==='host'?'live':'student'}.html?session=room&code=ABCDE&fixture=active&phase=${phase}`,format==='bluff'?(phase==='ended'?'.bluff-final-ranking':'.ranking-panel'):phase==='lobby'?'.yn-lobby-grid':'.yn-grid']);
 }
 (async()=>{
  fs.mkdirSync(output,{recursive:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));

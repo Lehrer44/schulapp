@@ -20,3 +20,35 @@ body.yn-student #app.yn-main{max-width:800px}
 
 .yn-revealed-answer.is-yes{color:#237344}.yn-revealed-answer.is-no{color:#b22c32}
 
+/* Lobby follows Wer würde eher: start card, quiet controls, standings and QR dialog. */
+body[data-dashboard-view="yesno"][data-studio="quiz"].yn-in-lobby{--studio-accent:#80682f;--studio-tint:#eee7d5;line-height:1.5;min-height:100dvh}
+body.yn-student.yn-in-lobby #app.yn-main{max-width:none}
+.yn-lobby-grid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:var(--space-4);align-items:start}
+.yn-lobby-grid>*,.yn-lobby-main{min-width:0}
+.yn-lobby-player{grid-template-columns:minmax(0,1fr)}
+.yn-lobby-main{display:grid;gap:var(--space-4)}
+body.yn-in-lobby #app .yn-lobby-grid .panel{margin:0}
+body.yn-in-lobby #app .yn-lobby-ranking h2{font-size:18px}
+.yn-lobby-score-list{display:grid;gap:10px}
+body.yn-in-lobby #app .yn-lobby-score{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:var(--space-2) var(--space-3);margin-top:8px;border:1px solid #ddd7ca;border-radius:11px;background:#faf8f1}
+body.yn-in-lobby #app .yn-lobby-score.me{border-color:#aa8dbd;background:#f2eaf6}
+.yn-lobby-empty{padding:20px;border:1px dashed #cfc6b5;border-radius:12px;color:#686456}
+body.yn-in-lobby #app :is(button,a.btn),.yn-lobby-dialog :is(button,a.btn){background:#fff;color:#344451;border:1px solid #d5dfe5;border-radius:12px;box-shadow:0 2px 5px #23384a08;font-weight:600}
+body.yn-in-lobby #app :is(button,a.btn):hover:not(:disabled),.yn-lobby-dialog :is(button,a.btn):hover:not(:disabled){background:#f4f8fb;border-color:#afc4d2;color:#253f51;transform:none;filter:none;box-shadow:0 3px 10px #23384a0d}
+body.yn-in-lobby #app button:focus-visible,.yn-lobby-dialog :is(button,a.btn):focus-visible{outline:3px solid #597e99;outline-offset:3px}
+body.yn-in-lobby #app button:disabled{opacity:.65}
+body.yn-in-lobby #app button.yn-lobby-end{color:#a34040;border-color:#e7d4d4;background:#fffafa}
+body.yn-in-lobby #app button.yn-lobby-start{display:grid;place-items:center;width:100%;min-height:220px;margin:0;border-radius:18px;font-size:clamp(24px,3vw,32px);font-weight:750;letter-spacing:-.025em}
+.yn-lobby-rules .yn-rules{margin:0;padding-left:22px;font-size:14px;line-height:1.9}
+.yn-lobby-rules .muted{margin-top:0}
+.yn-lobby-standings{position:static;max-height:none;overflow:visible}
+.yn-lobby-dialog{max-width:640px;border-color:#ddd7ca}
+.yn-lobby-dialog .yn-heading{align-items:center}
+.yn-lobby-dialog h2{font-size:20px;margin:0}
+.yn-lobby-dialog .yn-code{font-size:40px;letter-spacing:.16em;color:#34382f}
+.yn-participation-link{text-align:center}
+.yn-lobby-dialog .yn-join-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;max-width:100%}
+body.yn-in-lobby #connectionStatus{border:0;background:transparent;box-shadow:none;width:min(1224px,calc(100% - 40px));margin: auto auto 18px;padding:0;text-align:center;color:#686456;font-size:13px;font-weight:400;line-height:1.6}
+body.yn-in-lobby #connectionStatus[data-state="error"]{color:#a23628;font-weight:650}
+@media(max-width:850px){.yn-lobby-grid{grid-template-columns:minmax(0,1fr)}body.yn-in-lobby .yn-lobby-grid>.live-sidebar{order:1;max-height:40dvh}}
+
