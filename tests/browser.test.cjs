@@ -87,7 +87,7 @@ async function fixtures(){
   await context.setOffline(true);
   await controls.waitForFunction(()=>document.querySelector('#cloudStatus').dataset.state==='error');
   assert((await controls.locator('#cloudStatus').innerText()).includes('Offline'));
-  assert.equal(await controls.locator('#cloudStatus').evaluate(el=>getComputedStyle(el).color),'rgb(162, 54, 40)');
+  assert.equal(await controls.locator('#cloudStatus').evaluate(el=>getComputedStyle(el).color),'rgb(190, 18, 60)');
   assert.equal(await controls.locator('#connectionStatus').count(),0);
   await context.setOffline(false);
   // Coming online alone must not claim synchronization succeeded.

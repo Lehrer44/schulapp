@@ -1,13 +1,13 @@
 /* Team board follows the four-phase layout reference. */
-body[data-studio="quiz"] #app[data-same-phase] :is(.bluff-host-main,.ranking-panel){border-color:#244578;border-radius:14px}
-body[data-studio="quiz"] #app[data-same-phase] .bluff-controls .bluff-primary{background:#f8fbff;color:#244578;border:1px solid #244578;border-radius:8px;box-shadow:0 2px 3px #223e7240;font-size:18px;font-weight:500;padding:10px 14px}
-body[data-studio="quiz"] #app[data-same-phase] .bluff-controls .bluff-primary:hover:not(:disabled){background:#deebf7;color:#244578}
+body[data-studio="quiz"] #app[data-same-phase] :is(.bluff-host-main,.ranking-panel){border-radius:16px}
+body[data-studio="quiz"] #app[data-same-phase] .bluff-controls .bluff-primary{background:#4f46e5;color:#fff;border:1px solid #4f46e5;border-radius:8px;box-shadow:0 2px 3px #0f172a40;font-size:18px;font-weight:500;padding:10px 14px}
+body[data-studio="quiz"] #app[data-same-phase] .bluff-controls .bluff-primary:hover:not(:disabled){background:#4338ca;color:#fff}
 .same-teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:28px;margin:22px 0 8px;border-top:1px solid var(--studio-line);padding-top:18px;align-items:start}
 .same-team{min-width:0}.same-unassigned{grid-column:1/-1}
 .same-team-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:22px;min-height:44px}
 .same-team-heading h3{margin:0;font-size:clamp(19px,2vw,25px);font-weight:500;line-height:1.4;overflow-wrap:anywhere}
 .same-round-points{white-space:normal}.same-members{display:grid;gap:18px}
-.same-person{display:flex;align-items:center;justify-content:center;min-height:68px;box-sizing:border-box;min-width:0;border:1px solid var(--team-color);border-radius:11px;padding:12px;background:#fff;color:var(--team-ink);box-shadow:0 2px 3px #223e7226;overflow-wrap:anywhere;text-align:center;transition:background .2s}
+.same-person{display:flex;align-items:center;justify-content:center;min-height:68px;box-sizing:border-box;min-width:0;border:1px solid var(--team-color);border-radius:11px;padding:12px;background:#fff;color:var(--team-ink);box-shadow:0 2px 3px #0f172a1f;overflow-wrap:anywhere;text-align:center;transition:background .2s}
 .same-person.has-answer{background:var(--team-tint)}
 .same-person .same-name,.same-answer{margin:0;font-size:clamp(18px,2.3vw,30px);font-weight:500;line-height:1.35;min-width:0;overflow-wrap:anywhere}
 .same-answer{font-weight:750}
@@ -16,10 +16,10 @@ body[data-studio="quiz"] #app .same-person>button.same-name:hover{background:var
 .same-person label{display:flex;align-items:center;gap:8px;font-size:13px}.same-person select{width:auto;max-width:150px}
 #app[data-same-phase="lobby"] .same-person{justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:17px}
 .same-point-actions{display:flex;gap:7px;flex-wrap:wrap}
-body[data-studio="quiz"] #app .same-point-actions button{border-color:var(--team-color);color:var(--team-ink);border-radius:6px;padding:5px 9px;min-height:40px;background:#fff;box-shadow:0 2px 3px #223e7220;font-size:17px;font-weight:500}
+body[data-studio="quiz"] #app .same-point-actions button{border-color:var(--team-color);color:var(--team-ink);border-radius:6px;padding:5px 9px;min-height:40px;background:#fff;box-shadow:0 2px 3px #0f172a1f;font-size:17px;font-weight:500}
 body[data-studio="quiz"] #app .same-point-actions button:hover{background:var(--team-tint)}
 .same-score .same-score-team{min-width:0}.same-score-team strong{display:block;font-size:19px;font-weight:500}.same-score-team p{margin:3px 0 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
-body[data-studio="quiz"] #app .same-score{grid-template-columns:22px minmax(0,1fr) auto;border-color:#244578;border-radius:6px;background:#f8fbff;color:#244578;padding:10px 12px;box-shadow:0 2px 4px #223e7224;margin-top:0;font-size:18px}
+body[data-studio="quiz"] #app .same-score{grid-template-columns:22px minmax(0,1fr) auto;border-color:#e2e8f0;border-radius:10px;background:#f8fafc;color:#1e293b;padding:10px 12px;box-shadow:0 2px 4px #0f172a1f;margin-top:0;font-size:18px}
 .same-score b{font-weight:500}.same-score>span{font-weight:500}
 #answerForm{display:grid;gap:12px;margin:16px 0}#settingsForm{align-items:end}#settingsForm label{min-width:0}#settingsForm button{justify-self:start}
 .same-person.same-new .same-answer{animation:same-flip .45s ease both}

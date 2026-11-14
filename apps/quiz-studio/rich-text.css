@@ -2,11 +2,11 @@
 .quiz-rich-center{text-align:center}
 .quiz-rich-line{display:block;min-height:1.35em}
 .quiz-rich strong,.rich-input strong,.rich-input b{font-weight:850}
-.rich-editor{min-width:0;width:100%;border:1px solid var(--line);border-radius:11px;background:#fffefa;overflow:hidden}
-.rich-editor:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(136,120,79,.12)}
-.rich-toolbar{display:flex;gap:3px;padding:5px 7px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--soft,#f6f4ee)}
+.rich-editor{min-width:0;width:100%;border:1px solid var(--line);border-radius:11px;background:#ffffff;overflow:hidden}
+.rich-editor:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.14)}
+.rich-toolbar{display:flex;gap:3px;padding:5px 7px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--soft,#f8fafc)}
 .rich-toolbar button{display:grid;place-items:center;min-width:32px;min-height:30px;padding:3px 7px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--text);font:inherit;cursor:pointer;line-height:1}
-.rich-toolbar button:hover,.rich-toolbar button[aria-pressed=true]{background:var(--accent-soft,#eee6d4);border-color:var(--line)}
+.rich-toolbar button:hover,.rich-toolbar button[aria-pressed=true]{background:var(--accent-soft,#eef2ff);border-color:var(--line)}
 .rich-toolbar button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .rich-toolbar svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 .rich-input.qtext,.rich-input.opt-text{display:block;width:100%;min-height:48px;border:0;border-radius:0;box-shadow:none;resize:none;white-space:pre-wrap;font-weight:400}

@@ -1,0 +1,54 @@
+/* Quiz Studio theme: cool neutral surfaces, one indigo accent, green/red only for results.
+   Loaded last on every Quiz Studio page; overrides the warm defaults of the shared studio CSS
+   without changing Umfrage or Jeopardy. */
+:root{
+  color-scheme:light;
+  --qs-bg:#f5f7fb;--qs-surface:#fff;--qs-soft:#f8fafc;--qs-muted-bg:#f1f5f9;
+  --qs-line:#e2e8f0;--qs-line-strong:#cbd5e1;
+  --qs-text:#1e293b;--qs-muted:#64748b;
+  --qs-accent:#4f46e5;--qs-accent-hover:#4338ca;--qs-tint:#eef2ff;--qs-tint-line:#c7d2fe;
+  --qs-ok:#047857;--qs-ok-soft:#ecfdf5;--qs-ok-line:#a7f3d0;--qs-ok-ink:#065f46;
+  --qs-danger:#be123c;--qs-danger-soft:#fff1f2;--qs-danger-line:#fecdd3;--qs-danger-ink:#9f1239;
+  --qs-shadow:0 1px 2px rgb(15 23 42 / .04),0 4px 16px rgb(15 23 42 / .04);
+  /* Legacy names used by the editor, live and player pages. */
+  --bg:var(--qs-bg);--surface:var(--qs-surface);--soft:var(--qs-soft);--surface-soft:var(--qs-soft);
+  --surface-muted:var(--qs-muted-bg);--muted-bg:var(--qs-muted-bg);
+  --line:var(--qs-line);--line-strong:var(--qs-line-strong);--text:var(--qs-text);--muted:var(--qs-muted);
+  --accent:var(--qs-accent);--accent-dark:var(--qs-accent);--dark:var(--qs-accent);--accent-soft:var(--qs-tint);
+  --primary:var(--qs-accent);--primary-600:var(--qs-accent-hover);--primary-soft:var(--qs-tint);
+  --danger:var(--qs-danger);--danger-soft:var(--qs-danger-soft);--ok:var(--qs-ok);--ok-soft:var(--qs-ok-soft);
+  --shadow:var(--qs-shadow);--shadow-soft:0 1px 2px rgb(15 23 42 / .04);
+}
+body[data-studio="quiz"],body[data-quiz-player]{background:var(--qs-bg);color:var(--qs-text)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]){
+  --studio-bg:var(--qs-bg);--studio-surface:var(--qs-surface);--studio-soft:var(--qs-soft);
+  --studio-line:var(--qs-line);--studio-text:var(--qs-text);--studio-muted:var(--qs-muted);
+  --studio-accent:var(--qs-accent);--studio-tint:var(--qs-tint);
+  background:var(--qs-bg);color:var(--qs-text);
+}
+
+/* Controls */
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button,.btn):hover:not(:disabled){background:var(--qs-soft);border-color:var(--qs-line-strong)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.studio-primary,.btn.primary,.btn.accent,.btn.gold){box-shadow:0 1px 2px rgb(79 70 229 / .25)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.studio-primary,.btn.primary,.btn.accent,.btn.gold):hover:not(:disabled){background:var(--qs-accent-hover);border-color:var(--qs-accent-hover);color:#fff;filter:none}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button.danger,.btn.danger){background:var(--qs-danger-soft);border-color:var(--qs-danger-line);color:var(--qs-danger)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button.danger,.btn.danger):hover:not(:disabled){background:#ffe4e6;border-color:#fda4af;color:var(--qs-danger-ink)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) button.end-quiz.danger{background:#e11d48;border-color:#be123c;color:#fff}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) button.end-quiz.danger:hover:not(:disabled){background:#be123c;border-color:#be123c;color:#fff}
+body[data-studio="quiz"] :focus-visible,body[data-quiz-player] :focus-visible{outline-color:var(--qs-accent)!important}
+
+/* Surfaces */
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) .panel{border-color:var(--qs-line);box-shadow:var(--qs-shadow)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.item,.qzcard,.game-card){background:var(--qs-surface)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.item,.qzcard,.game-card):hover{border-color:var(--qs-line-strong)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) .empty{border-color:var(--qs-line-strong)}
+body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) .modalbox{box-shadow:0 24px 64px rgb(15 23 42 / .16)}
+body[data-studio="quiz"] dialog::backdrop{background:rgb(15 23 42 / .4);backdrop-filter:blur(3px)}
+body[data-studio="quiz"] .pinCoordinates input{border-color:var(--qs-line-strong);background:#fff;color:var(--qs-text)}
+
+/* Live answers and connection notices use the semantic colors. */
+body[data-studio="quiz"][data-dashboard-view="live"] :is(.answer-board.correct,.rank-item.answered,.response-row.correct){background:var(--qs-ok-soft);border-color:var(--qs-ok-line)}
+body[data-studio="quiz"][data-dashboard-view="live"] .response-row.wrong{background:var(--qs-danger-soft);border-color:var(--qs-danger-line)}
+body[data-studio="quiz"] .connection-status{border-color:var(--qs-ok-line);background:var(--qs-ok-soft);color:var(--qs-ok-ink)}
+body[data-studio="quiz"] .connection-status[data-state="waiting"]{border-color:#fcd34d;background:#fffbeb;color:#92400e}
+body[data-studio="quiz"] .connection-status[data-state="error"]{border-color:var(--qs-danger-line);background:var(--qs-danger-soft);color:var(--qs-danger-ink)}

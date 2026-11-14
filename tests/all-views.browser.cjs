@@ -117,7 +117,7 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
      if(name==='bluff-host-leaderboard'||name==='bluff-player-leaderboard'){
       const styles=await page.locator('.bluff-author').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return [s.backgroundColor,s.color,s.fontSize,s.padding,s.borderRadius];}));
       assert.equal(styles.length,2);assert.deepEqual(styles[0],styles[1],'Authors use uniform name badges');
-      assert.equal(styles[0][0],'rgb(49, 89, 148)');assert.equal(await page.locator('.manipulation-option .bluff-avatar').count(),0);
+      assert.equal(styles[0][0],'rgb(79, 70, 229)');assert.equal(await page.locator('.manipulation-option .bluff-avatar').count(),0);
       for(const badge of await page.locator('.bluff-author').all()){
        assert(await badge.evaluate(el=>{
         const outer=el.getBoundingClientRect(),text=el.firstElementChild.getBoundingClientRect();
@@ -144,7 +144,7 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
       assert.equal(await choice.isChecked(),true);assert.equal(await choice.isDisabled(),true);
       assert.equal((await own.innerText()).trim(),'LICHT','Own answer stays free of vote comments');
      }
-     if(name==='bluff-player-ended')assert.equal(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(217, 239, 223)');
+     if(name==='bluff-player-ended')assert.equal(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(209, 250, 229)');
      await page.evaluate(()=>document.fonts.ready);
      const overflow=await page.evaluate(()=>({width:document.documentElement.scrollWidth,viewport:innerWidth}));
      assert(overflow.width<=width+1,`${name} at ${width}: page overflow ${overflow.width}`);

@@ -134,7 +134,7 @@ function fixture(){
   await page.waitForFunction(()=>document.querySelector('#saveStatus').dataset.state==='ready');
   await page.evaluate(async()=>{window.__fixture.failSync=true;await refresh(true);});
   assert.equal(await page.locator('#saveStatus').getAttribute('data-state'),'error');
-  assert.equal(await page.locator('#saveStatus').evaluate(el=>getComputedStyle(el).color),'rgb(162, 54, 40)');
+  assert.equal(await page.locator('#saveStatus').evaluate(el=>getComputedStyle(el).color),'rgb(190, 18, 60)');
   assert((await page.locator('#saveStatus').innerText()).includes('Synchronisation fehlgeschlagen'));
   await ctx.setOffline(true);await page.waitForFunction(()=>document.querySelector('#saveStatus').textContent.includes('Offline'));
   await ctx.setOffline(false);
@@ -219,7 +219,7 @@ function fixture(){
   await player.locator('#shortAnswer').fill('Entwurf bleibt erhalten');
   await ctx.setOffline(true);await player.waitForFunction(()=>document.querySelector('#playerSyncStatus').dataset.state==='error');
   assert((await player.locator('#playerSyncStatus').innerText()).includes('Offline'));
-  assert.equal(await player.locator('#playerSyncStatus').evaluate(el=>getComputedStyle(el).color),'rgb(162, 54, 40)');
+  assert.equal(await player.locator('#playerSyncStatus').evaluate(el=>getComputedStyle(el).color),'rgb(190, 18, 60)');
   assert.equal(await player.locator('#shortAnswer').inputValue(),'Entwurf bleibt erhalten');
   await player.evaluate(()=>window.__fixture.failSync=true);await ctx.setOffline(false);
   await player.waitForFunction(()=>document.querySelector('#playerSyncStatus').dataset.state==='error');
