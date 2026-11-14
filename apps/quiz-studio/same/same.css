@@ -1,13 +1,10 @@
-/* Team board follows the four-phase layout reference. */
-body[data-studio="quiz"] #app[data-same-phase] :is(.bluff-host-main,.ranking-panel){border-radius:16px}
-body[data-studio="quiz"] #app[data-same-phase] .bluff-controls .bluff-primary{background:#4f46e5;color:#fff;border:1px solid #4f46e5;border-radius:8px;box-shadow:0 2px 3px #0f172a40;font-size:18px;font-weight:500;padding:10px 14px}
-body[data-studio="quiz"] #app[data-same-phase] .bluff-controls .bluff-primary:hover:not(:disabled){background:#4338ca;color:#fff}
+/* Team board follows the four-phase layout reference; buttons and panels use the shared theme. */
 .same-teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:28px;margin:22px 0 8px;border-top:1px solid var(--studio-line);padding-top:18px;align-items:start}
 .same-team{min-width:0}.same-unassigned{grid-column:1/-1}
 .same-team-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:22px;min-height:44px}
 .same-team-heading h3{margin:0;font-size:clamp(19px,2vw,25px);font-weight:500;line-height:1.4;overflow-wrap:anywhere}
 .same-round-points{white-space:normal}.same-members{display:grid;gap:18px}
-.same-person{display:flex;align-items:center;justify-content:center;min-height:68px;box-sizing:border-box;min-width:0;border:1px solid var(--team-color);border-radius:11px;padding:12px;background:#fff;color:var(--team-ink);box-shadow:0 2px 3px #0f172a1f;overflow-wrap:anywhere;text-align:center;transition:background .2s}
+.same-person{display:flex;align-items:center;justify-content:center;min-height:68px;box-sizing:border-box;min-width:0;border:1px solid var(--team-color);border-radius:var(--qs-radius);padding:12px;background:var(--qs-surface);color:var(--team-ink);box-shadow:var(--qs-shadow-xs);overflow-wrap:anywhere;text-align:center;transition:background .2s}
 .same-person.has-answer{background:var(--team-tint)}
 .same-person .same-name,.same-answer{margin:0;font-size:clamp(18px,2.3vw,30px);font-weight:500;line-height:1.35;min-width:0;overflow-wrap:anywhere}
 .same-answer{font-weight:750}
@@ -16,17 +13,17 @@ body[data-studio="quiz"] #app .same-person>button.same-name:hover{background:var
 .same-person label{display:flex;align-items:center;gap:8px;font-size:13px}.same-person select{width:auto;max-width:150px}
 #app[data-same-phase="lobby"] .same-person{justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:17px}
 .same-point-actions{display:flex;gap:7px;flex-wrap:wrap}
-body[data-studio="quiz"] #app .same-point-actions button{border-color:var(--team-color);color:var(--team-ink);border-radius:6px;padding:5px 9px;min-height:40px;background:#fff;box-shadow:0 2px 3px #0f172a1f;font-size:17px;font-weight:500}
-body[data-studio="quiz"] #app .same-point-actions button:hover{background:var(--team-tint)}
+body[data-studio="quiz"] #app .same-point-actions button{border-color:var(--team-color);color:var(--team-ink);padding:5px 12px;background:var(--qs-surface);font-size:17px}
+body[data-studio="quiz"] #app .same-point-actions button:hover:not(:disabled){border-color:var(--team-color);background:var(--team-tint);color:var(--team-ink)}
 .same-score .same-score-team{min-width:0}.same-score-team strong{display:block;font-size:19px;font-weight:500}.same-score-team p{margin:3px 0 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
-body[data-studio="quiz"] #app .same-score{grid-template-columns:22px minmax(0,1fr) auto;border-color:#e2e8f0;border-radius:10px;background:#f8fafc;color:#1e293b;padding:10px 12px;box-shadow:0 2px 4px #0f172a1f;margin-top:0;font-size:18px}
+body[data-studio="quiz"] #app .same-score{grid-template-columns:22px minmax(0,1fr) auto;padding:10px 12px;margin-top:0;font-size:18px}
 .same-score b{font-weight:500}.same-score>span{font-weight:500}
 #answerForm{display:grid;gap:12px;margin:16px 0}#settingsForm{align-items:end}#settingsForm label{min-width:0}#settingsForm button{justify-self:start}
 .same-person.same-new .same-answer{animation:same-flip .45s ease both}
 @keyframes same-flip{from{opacity:0;transform:perspective(500px) rotateX(90deg)}to{opacity:1;transform:perspective(500px) rotateX(0)}}
 @media(prefers-reduced-motion:reduce){.same-person.same-new .same-answer{animation:none}.same-person{transition:none}}
 @media(max-width:850px){body[data-bluff-mode="host"] .bluff-grid>.live-sidebar{position:static;order:0;max-height:none}}
-@media(max-width:520px){.same-teams{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.same-team-heading{align-items:flex-start;margin-bottom:14px}.same-team-heading h3{font-size:18px}.same-members{gap:14px}.same-person{min-height:62px;padding:10px}.same-person .same-name,.same-answer,body[data-studio="quiz"] #app .same-person>button.same-name{font-size:18px}.same-point-actions{gap:5px}body[data-studio="quiz"] #app .same-point-actions button{min-height:44px;padding:5px 9px}.same-person label{flex-wrap:wrap}.same-person select{max-width:100%}body[data-studio="quiz"] #app .same-person>button.same-name{padding:10px;margin:-10px}}
+@media(max-width:520px){.same-teams{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.same-team-heading{align-items:flex-start;margin-bottom:14px}.same-team-heading h3{font-size:18px}.same-members{gap:14px}.same-person{min-height:62px;padding:10px}.same-person .same-name,.same-answer,body[data-studio="quiz"] #app .same-person>button.same-name{font-size:18px}.same-point-actions{gap:5px}.same-person label{flex-wrap:wrap}.same-person select{max-width:100%}body[data-studio="quiz"] #app .same-person>button.same-name{padding:10px;margin:-10px}}
 
 /* Keep the heading clear of the first tile and use the same blue rank typography
    for the final results as for the in-game standings. */

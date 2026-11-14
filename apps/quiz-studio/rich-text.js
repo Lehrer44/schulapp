@@ -50,6 +50,6 @@
   walk(element,{});
   return {text,textFormat:{align:element.dataset.align==='center'?'center':'left',ranges}};
  }
- root.QuizRichText={escape,normalise,render,read};
+ root.QuizRichText={normalise,render,read};
  if(typeof module!=='undefined')module.exports=root.QuizRichText;
 })(typeof window!=='undefined'?window:globalThis);

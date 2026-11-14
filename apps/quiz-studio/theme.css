@@ -1,15 +1,25 @@
-/* Quiz Studio theme: cool neutral surfaces, one indigo accent, green/red only for results.
-   Loaded last on every Quiz Studio page; overrides the warm defaults of the shared studio CSS
-   without changing Umfrage or Jeopardy. */
+/* Quiz Studio design system.
+   Loaded last on every Quiz Studio page: library, editor, live views and the player pages of all
+   five games. It defines the tokens and one shared look for buttons, surfaces, dialogs and status
+   colours. Every rule is scoped to Quiz Studio bodies, so Umfrage and Jeopardy stay unchanged.
+   Components keep their own layout (sizes, grids); colours, corners, shadows and button states
+   come from here. */
 :root{
   color-scheme:light;
+  /* Palette: cool neutrals, one indigo accent; green/red only for results and destructive actions. */
   --qs-bg:#f5f7fb;--qs-surface:#fff;--qs-soft:#f8fafc;--qs-muted-bg:#f1f5f9;
   --qs-line:#e2e8f0;--qs-line-strong:#cbd5e1;
-  --qs-text:#1e293b;--qs-muted:#64748b;
-  --qs-accent:#4f46e5;--qs-accent-hover:#4338ca;--qs-tint:#eef2ff;--qs-tint-line:#c7d2fe;
+  --qs-text:#1e293b;--qs-text-soft:#334155;--qs-muted:#64748b;
+  --qs-accent:#4f46e5;--qs-accent-hover:#4338ca;--qs-tint:#eef2ff;--qs-tint-hover:#e0e7ff;--qs-tint-line:#c7d2fe;
   --qs-ok:#047857;--qs-ok-soft:#ecfdf5;--qs-ok-line:#a7f3d0;--qs-ok-ink:#065f46;
-  --qs-danger:#be123c;--qs-danger-soft:#fff1f2;--qs-danger-line:#fecdd3;--qs-danger-ink:#9f1239;
-  --qs-shadow:0 1px 2px rgb(15 23 42 / .04),0 4px 16px rgb(15 23 42 / .04);
+  --qs-danger:#be123c;--qs-danger-solid:#e11d48;--qs-danger-soft:#fff1f2;--qs-danger-hover:#ffe4e6;--qs-danger-line:#fecdd3;--qs-danger-ink:#9f1239;
+  /* Shape and elevation */
+  --qs-radius-xs:6px;--qs-radius-sm:8px;--qs-radius:12px;--qs-radius-lg:20px;
+  --qs-shadow-xs:0 1px 2px rgb(15 23 42 / .05);
+  --qs-shadow:0 1px 2px rgb(15 23 42 / .04),0 6px 20px rgb(15 23 42 / .05);
+  --qs-shadow-lg:0 24px 64px rgb(15 23 42 / .18);
+  --qs-shadow-accent:0 1px 2px rgb(79 70 229 / .24),0 4px 12px rgb(79 70 229 / .18);
+  --qs-ease:.16s ease;
   /* Legacy names used by the editor, live and player pages. */
   --bg:var(--qs-bg);--surface:var(--qs-surface);--soft:var(--qs-soft);--surface-soft:var(--qs-soft);
   --surface-muted:var(--qs-muted-bg);--muted-bg:var(--qs-muted-bg);
@@ -17,36 +27,86 @@
   --accent:var(--qs-accent);--accent-dark:var(--qs-accent);--dark:var(--qs-accent);--accent-soft:var(--qs-tint);
   --primary:var(--qs-accent);--primary-600:var(--qs-accent-hover);--primary-soft:var(--qs-tint);
   --danger:var(--qs-danger);--danger-soft:var(--qs-danger-soft);--ok:var(--qs-ok);--ok-soft:var(--qs-ok-soft);
-  --shadow:var(--qs-shadow);--shadow-soft:0 1px 2px rgb(15 23 42 / .04);
+  --shadow:var(--qs-shadow);--shadow-soft:var(--qs-shadow-xs);
 }
-body[data-studio="quiz"],body[data-quiz-player]{background:var(--qs-bg);color:var(--qs-text)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]){
+
+/* Page */
+body[data-studio="quiz"],body[data-quiz-player]{
+  background:radial-gradient(1100px 520px at 50% -260px,var(--qs-tint),transparent 72%) no-repeat,var(--qs-bg);
+  color:var(--qs-text);
+}
+body[data-studio="quiz"][data-dashboard-view]{
   --studio-bg:var(--qs-bg);--studio-surface:var(--qs-surface);--studio-soft:var(--qs-soft);
   --studio-line:var(--qs-line);--studio-text:var(--qs-text);--studio-muted:var(--qs-muted);
   --studio-accent:var(--qs-accent);--studio-tint:var(--qs-tint);
-  background:var(--qs-bg);color:var(--qs-text);
 }
-
-/* Controls */
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button,.btn):hover:not(:disabled){background:var(--qs-soft);border-color:var(--qs-line-strong)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.studio-primary,.btn.primary,.btn.accent,.btn.gold){box-shadow:0 1px 2px rgb(79 70 229 / .25)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.studio-primary,.btn.primary,.btn.accent,.btn.gold):hover:not(:disabled){background:var(--qs-accent-hover);border-color:var(--qs-accent-hover);color:#fff;filter:none}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button.danger,.btn.danger){background:var(--qs-danger-soft);border-color:var(--qs-danger-line);color:var(--qs-danger)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(button.danger,.btn.danger):hover:not(:disabled){background:#ffe4e6;border-color:#fda4af;color:var(--qs-danger-ink)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) button.end-quiz.danger{background:#e11d48;border-color:#be123c;color:#fff}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) button.end-quiz.danger:hover:not(:disabled){background:#be123c;border-color:#be123c;color:#fff}
 body[data-studio="quiz"] :focus-visible,body[data-quiz-player] :focus-visible{outline-color:var(--qs-accent)!important}
 
-/* Surfaces */
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) .panel{border-color:var(--qs-line);box-shadow:var(--qs-shadow)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.item,.qzcard,.game-card){background:var(--qs-surface)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) :is(.item,.qzcard,.game-card):hover{border-color:var(--qs-line-strong)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) .empty{border-color:var(--qs-line-strong)}
-body[data-studio="quiz"][data-dashboard-view]:not([data-dashboard-view="workspace"]) .modalbox{box-shadow:0 24px 64px rgb(15 23 42 / .16)}
-body[data-studio="quiz"] dialog::backdrop{background:rgb(15 23 42 / .4);backdrop-filter:blur(3px)}
-body[data-studio="quiz"] .pinCoordinates input{border-color:var(--qs-line-strong);background:#fff;color:var(--qs-text)}
+/* Buttons. Layout has zero specificity, so components with their own display (tiles, list rows)
+   keep it; every other label is centred on both axes without line-height tricks. */
+:where(body[data-studio="quiz"],body[data-quiz-player]) :where(button,.btn){
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center;
+}
+body[data-studio="quiz"][data-dashboard-view] :is(button,.btn){
+  border:1px solid var(--qs-line);border-radius:var(--qs-radius);background:var(--qs-surface);color:var(--qs-text-soft);
+  font-weight:600;box-shadow:var(--qs-shadow-xs);
+  transition:background-color var(--qs-ease),border-color var(--qs-ease),color var(--qs-ease),box-shadow var(--qs-ease);
+}
+body[data-studio="quiz"][data-dashboard-view] :is(button,.btn):hover:not(:disabled){
+  background:#f5f7ff;border-color:var(--qs-tint-line);color:var(--qs-accent-hover);box-shadow:var(--qs-shadow-xs);filter:none;transform:none;
+}
+body[data-studio="quiz"][data-dashboard-view] :is(button,.btn):active:not(:disabled){background:var(--qs-tint)}
+body[data-studio="quiz"][data-dashboard-view] :is(button,.btn):disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
 
-/* Live answers and connection notices use the semantic colors. */
+/* Primary: the one main action of a view. */
+body[data-studio="quiz"][data-dashboard-view] :is(.studio-primary,.btn.primary,.btn.gold,.bluff-primary,.yn-primary,.yn-flow-primary){
+  background:var(--qs-accent);border-color:var(--qs-accent);color:#fff;box-shadow:var(--qs-shadow-accent);
+}
+body[data-studio="quiz"][data-dashboard-view] :is(.studio-primary,.btn.primary,.btn.gold,.bluff-primary,.yn-primary,.yn-flow-primary):hover:not(:disabled){
+  background:var(--qs-accent-hover);border-color:var(--qs-accent-hover);color:#fff;box-shadow:var(--qs-shadow-accent);
+}
+/* Danger, light: deleting and locking. */
+body[data-studio="quiz"][data-dashboard-view] :is(button.danger,.btn.danger,.lock-button){
+  background:var(--qs-danger-soft);border-color:var(--qs-danger-line);color:var(--qs-danger);
+}
+body[data-studio="quiz"][data-dashboard-view] :is(button.danger,.btn.danger,.lock-button):hover:not(:disabled){
+  background:var(--qs-danger-hover);border-color:#fda4af;color:var(--qs-danger-ink);
+}
+/* Danger, solid: "Beenden" ends the live game for everyone. */
+body[data-studio="quiz"][data-dashboard-view] :is(button.end-quiz.danger,button.bluff-end,button.yn-lobby-end){
+  background:var(--qs-danger-solid);border-color:var(--qs-danger-solid);color:#fff;box-shadow:0 1px 2px rgb(225 29 72 / .25);
+}
+body[data-studio="quiz"][data-dashboard-view] :is(button.end-quiz.danger,button.bluff-end,button.yn-lobby-end):hover:not(:disabled){
+  background:var(--qs-danger);border-color:var(--qs-danger);color:#fff;
+}
+/* Large start tiles in every lobby. */
+body[data-studio="quiz"][data-dashboard-view] :is(button.bluff-start-card,button.yn-lobby-start,button.lobby-action){
+  border-color:var(--qs-tint-line);border-radius:var(--qs-radius-lg);
+  background:linear-gradient(135deg,var(--qs-surface) 0%,var(--qs-tint) 100%);color:var(--qs-accent-hover);box-shadow:var(--qs-shadow);
+}
+body[data-studio="quiz"][data-dashboard-view] :is(button.bluff-start-card,button.yn-lobby-start,button.lobby-action):hover:not(:disabled){
+  border-color:var(--qs-accent);background:var(--qs-tint);color:var(--qs-accent-hover);
+}
+
+/* Square icon buttons: dialog close buttons share the size of the other icon controls. */
+body[data-studio="quiz"][data-dashboard-view] :is([data-close],.access-close){width:44px;min-width:44px;padding:0;font-size:20px;line-height:1}
+/* Formatting toolbar in the editor: quiet until hovered or active. */
+body[data-studio="quiz"][data-dashboard-view] .rich-toolbar button{border-color:transparent;background:transparent;box-shadow:none;border-radius:var(--qs-radius-sm);color:var(--qs-text-soft)}
+body[data-studio="quiz"][data-dashboard-view] .rich-toolbar button[aria-pressed="true"]{border-color:var(--qs-tint-line);background:var(--qs-tint);color:var(--qs-accent-hover)}
+
+/* Surfaces */
+body[data-studio="quiz"][data-dashboard-view] .panel{
+  border:1px solid var(--qs-line);border-radius:var(--qs-radius-lg);background:var(--qs-surface);box-shadow:var(--qs-shadow);
+}
+body[data-studio="quiz"][data-dashboard-view] .qzcard{background:var(--qs-surface);box-shadow:none;transition:border-color var(--qs-ease),box-shadow var(--qs-ease)}
+body[data-studio="quiz"][data-dashboard-view] .qzcard:hover{border-color:var(--qs-line-strong);box-shadow:var(--qs-shadow-xs)}
+body[data-studio="quiz"][data-dashboard-view] .empty{border-color:var(--qs-line-strong)}
+body[data-studio="quiz"] :is(.bluff-dialog,.quiz-access-dialog,.yn-dialog){
+  border:1px solid var(--qs-line);border-radius:var(--qs-radius-lg);background:var(--qs-surface);color:var(--qs-text);box-shadow:var(--qs-shadow-lg);
+}
+body[data-studio="quiz"] dialog::backdrop{background:rgb(15 23 42 / .4);backdrop-filter:blur(3px)}
+
+/* Live answers and connection notices use the semantic colours. */
 body[data-studio="quiz"][data-dashboard-view="live"] :is(.answer-board.correct,.rank-item.answered,.response-row.correct){background:var(--qs-ok-soft);border-color:var(--qs-ok-line)}
 body[data-studio="quiz"][data-dashboard-view="live"] .response-row.wrong{background:var(--qs-danger-soft);border-color:var(--qs-danger-line)}
 body[data-studio="quiz"] .connection-status{border-color:var(--qs-ok-line);background:var(--qs-ok-soft);color:var(--qs-ok-ink)}

@@ -53,7 +53,7 @@ function load(file){return fs.readFileSync(file,'utf8').replace(/^\\set.*$/mg,''
   await host.waitForFunction(()=>window.__payloads.some(x=>x.name==='rather_host_state'&&x.payload.data?.phase==='vote'&&x.payload.data.players.every(p=>p.voted)));
   for(const p of [host,...players]){assert.equal(await p.getByText(/\d+ von \d+ haben abgestimmt/).count(),0);assert.equal(await p.locator('.rather-choices .bluff-avatar,.rather-choices .bluff-person').count(),0);}
   assert.equal(await host.locator('[data-action="show_bars"]').innerText(),'Auswerten');
-  assert.equal(await host.locator('[data-action="show_bars"]').evaluate(b=>getComputedStyle(b).backgroundColor),'rgb(255, 255, 255)');await shot(players[0],'vote-mobile');await shot(host,'vote-desktop');
+  assert.equal(await host.locator('[data-action="show_bars"]').evaluate(b=>getComputedStyle(b).backgroundColor),'rgb(79, 70, 229)','The flow action uses the shared primary button');await shot(players[0],'vote-mobile');await shot(host,'vote-desktop');
   await host.locator('[data-action="show_bars"]').click();await host.locator('.rather-result').first().waitFor();assert.equal(await host.locator('.rather-count,.rather-voters').count(),0);
   assert.equal(await host.locator('.rather-results').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),1);await shot(host,'results-hidden-desktop');
   await players[2].locator('.rather-result').first().waitFor();assert.equal(await players[2].locator('[data-action="reveal-result"]').count(),0);
