@@ -26,6 +26,10 @@ Die Übersicht zeigt fünf Kacheln in dieser Reihenfolge: Quiz, Manipulation, We
 
 Manipulation hieß zuvor Bluff-Quiz, Dieselbe Antwort hieß Das gleiche Antworten und Ja oder Nein hieß Ja/Nein-Schätzspiel. Bestehende Links, Spielkennungen und gespeicherte Inhalte bleiben kompatibel. Für diese Layoutänderung ist kein SQL-Update nötig.
 
+## Quiz Studio: Farbschema
+
+Alle Quiz-Studio-Seiten (Bibliothek, Editor, Live-Ansichten und Teilnehmerseiten aller fünf Spiele) verwenden ein gemeinsames, ruhiges Farbschema: kühle Grautöne für Flächen und Linien, Indigo (`#4f46e5`) als einzige Akzentfarbe. Grün und Rot zeigen ausschließlich richtig/falsch, Verbindungsstatus und Beenden an. `apps/quiz-studio/theme.css` wird auf jeder Quiz-Studio-Seite zuletzt geladen. Es definiert die Farbwerte und überschreibt die warmen Standardfarben der gemeinsamen Studio-Stile nur für Quiz Studio; Umfragen und Jeopardy bleiben unverändert. Layout, Abläufe und gespeicherte Inhalte ändern sich nicht, ein SQL-Update ist nicht nötig.
+
 ## Live-Spielweisen im Quiz Studio
 
 Die Spielweise wird pro Frage im Editor gewählt: Klassisch, Buzzer oder Schnellantwort. Fehlende oder frühere „Standard übernehmen“-Einstellungen werden als klassisch behandelt. Beim Klick auf „Live mit Schülern“ wird direkt eine Wartelobby angelegt. Erst „Quiz starten“ zeigt die erste Frage und öffnet gleichzeitig die Antworten. „Weiter“ zeigt und öffnet jeweils die nächste Frage. Beim Zurückgehen bleiben bereits erfolgte Bewertungen und Zeitstempel erhalten.

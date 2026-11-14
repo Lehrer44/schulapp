@@ -54,7 +54,7 @@ server.on('request',async(req,res)=>{
  assert.equal(await host.locator('.ranking-panel .bluff-empty').innerText(),'noch keine Teilnehmer');
  await host.evaluate(()=>window.__failSync=true);
  await host.waitForFunction(()=>document.querySelector('#bluffConnectionStatus').dataset.state==='error');
- assert.equal(await host.locator('#bluffConnectionStatus').evaluate(el=>getComputedStyle(el).color),'rgb(162, 54, 40)');
+ assert.equal(await host.locator('#bluffConnectionStatus').evaluate(el=>getComputedStyle(el).color),'rgb(190, 18, 60)');
  await host.evaluate(()=>window.__failSync=false);
  await host.waitForFunction(()=>document.querySelector('#bluffConnectionStatus').dataset.state==='ready');
  const randomSid=new URL(host.url()).searchParams.get('session');assert.equal(sql('select count(distinct question) from private.bluff_rounds where session_id='+sqlLiteral(randomSid)),'3');
@@ -122,7 +122,7 @@ server.on('request',async(req,res)=>{
   }
   if(phase==='ended'){
    assert(await first.getByRole('heading',{name:'Platzierung',exact:true}).isVisible());
-   assert.equal(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(217, 239, 223)');
+   assert.equal(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(209, 250, 229)');
   }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Player page fits the phone');
  }
