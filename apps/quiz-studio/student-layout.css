@@ -1,9 +1,8 @@
-/* Keep the active question first and let mobile standings use normal page scrolling. */
+/* Player page: keep the active question first; mobile standings use normal page scrolling. */
 #playerSyncStatus[data-state="error"]{color:#be123c;font-weight:700}
 .final-result{text-align:center}
 .final-result h1{font-size:clamp(22px,4vw,30px)}
-.final-score{display:flex;align-items:center;justify-content:center;gap:14px 28px;flex-wrap:wrap;color:var(--dark);font-size:clamp(22px,5vw,34px);font-weight:850;font-variant-numeric:tabular-nums}
-.final-score{column-gap:clamp(12px,2vw,22px)}
+.final-score{display:flex;align-items:center;justify-content:center;gap:14px clamp(12px,2vw,22px);flex-wrap:wrap;color:var(--dark);font-size:clamp(22px,5vw,34px);font-weight:850;font-variant-numeric:tabular-nums}
 .final-points{border-left:2px solid currentColor;padding-left:clamp(12px,2vw,22px)}
 @media(max-width:740px){
  body[data-quiz-player] .layout>.main{order:0}
