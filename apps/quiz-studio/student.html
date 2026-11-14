@@ -9,13 +9,16 @@
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;font:16px/1.45 Inter,"Avenir Next",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 button,input{font:inherit}
-button{border:1px solid transparent;border-radius:10px;padding:11px 14px;background:var(--dark);color:#ffffff;font-weight:800;cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}
-.secondary{background:var(--surface);color:var(--text);border-color:var(--line)}
+/* Same button language as the teacher views: one filled primary, quiet secondary buttons. */
+button{border:1px solid var(--qs-accent);border-radius:var(--qs-radius);padding:10px 16px;background:var(--qs-accent);color:#fff;font-weight:600;box-shadow:var(--qs-shadow-accent);cursor:pointer;transition:background-color var(--qs-ease),border-color var(--qs-ease),color var(--qs-ease),filter var(--qs-ease)}
+button:hover:not(:disabled){filter:brightness(.94)}
+button:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.secondary{background:var(--qs-surface);color:var(--qs-text-soft);border-color:var(--qs-line);box-shadow:var(--qs-shadow-xs)}
+.secondary:hover:not(:disabled){filter:none;background:#f5f7ff;border-color:var(--qs-tint-line);color:var(--qs-accent-hover)}
 .wrap{width:min(100%,1000px);margin:0 auto;padding:var(--space-2) var(--page-gutter)}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:15px;align-items:start}
 .main,.side{display:flex;flex-direction:column;gap:var(--section-gap);min-width:0}
-.panel{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:18px;padding:var(--panel-padding);box-shadow:var(--shadow);min-width:0}
+.panel{background:var(--qs-surface);border:1px solid var(--line);border-radius:var(--qs-radius-lg);padding:var(--panel-padding);box-shadow:var(--shadow);min-width:0}
 .eyebrow{font-size:.72rem;letter-spacing:.13em;text-transform:uppercase;font-weight:900;color:var(--accent);margin-bottom:5px}
 h1{font-size:clamp(1.4rem,3vw,2rem);line-height:1.2;margin:2px 0 12px;letter-spacing:-.03em}
 h2{font-size:1.05rem;margin:0 0 12px}
@@ -26,56 +29,56 @@ h2{font-size:1.05rem;margin:0 0 12px}
 .field input:focus{outline:3px solid #a5b4fc;outline-offset:1px}
 .code-input{text-transform:uppercase;letter-spacing:.2em;font-size:1.4rem;font-weight:900;text-align:center}
 .full{width:100%;margin-top:8px}
-.notice{padding:12px 14px;border-radius:12px;background:var(--danger-soft);color:#9f1239;border:1px solid #fecdd3;margin-top:12px}
-.waiting{padding:var(--card-padding);text-align:center;background:var(--soft);border:1px dashed var(--line-strong);border-radius:14px;color:var(--muted)}
+.notice{padding:12px 14px;border-radius:var(--qs-radius);background:var(--danger-soft);color:#9f1239;border:1px solid #fecdd3;margin-top:12px}
+.waiting{padding:var(--card-padding);text-align:center;background:var(--soft);border:1px dashed var(--line-strong);border-radius:var(--qs-radius);color:var(--muted)}
 .waiting-icon{font-size:2rem;margin-bottom:8px}
 .answers{display:flex;flex-direction:column;gap:9px}
-.answer{display:flex;align-items:flex-start;gap:11px;padding:var(--card-padding);border:1.5px solid var(--line);border-radius:12px;background:white;cursor:pointer;font-weight:650;overflow-wrap:anywhere;min-height:var(--control-size)}
+.answer{display:flex;align-items:flex-start;gap:11px;padding:var(--card-padding);border:1.5px solid var(--line);border-radius:var(--qs-radius);background:white;cursor:pointer;font-weight:650;overflow-wrap:anywhere;min-height:var(--control-size)}
 .answer:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
 .answer input{width:19px;height:19px;flex:none;accent-color:var(--accent);margin:2px 0 0}
 .answer.correct{border-color:var(--ok);background:var(--ok-soft)}
-.text-answer{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:14px;background:white;color:var(--text);font:inherit;min-height:52px}
+.text-answer{width:100%;border:1.5px solid var(--line);border-radius:var(--qs-radius);padding:14px;background:white;color:var(--text);font:inherit;min-height:52px}
 .text-answer:focus{outline:3px solid #a5b4fc;outline-offset:1px}
 .rank-choices{display:flex;flex-direction:column;gap:8px}
-.rank-choice{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px;align-items:center;padding:9px 10px;background:white;border:1px solid var(--line);border-radius:11px}
-.rank-choice button{padding:6px 10px;background:var(--surface);color:var(--text);border-color:var(--line);min-height:var(--control-size);min-width:var(--control-size)}
-.rank-num{display:inline-grid;place-items:center;width:26px;height:26px;background:var(--accent-soft);border-radius:8px;margin-right:7px;font-weight:900;font-size:.8rem}
+.rank-choice{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px;align-items:center;padding:9px 10px;background:white;border:1px solid var(--line);border-radius:var(--qs-radius)}
+.rank-choice button{padding:6px 10px;background:var(--qs-surface);color:var(--qs-text-soft);border-color:var(--qs-line);box-shadow:var(--qs-shadow-xs);min-height:var(--control-size);min-width:var(--control-size)}
+.rank-num{display:inline-grid;place-items:center;width:26px;height:26px;background:var(--accent-soft);border-radius:var(--qs-radius-sm);margin-right:7px;font-weight:900;font-size:.8rem}
 .rank-name{overflow-wrap:anywhere}
 .status{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:var(--accent-soft);color:var(--dark);font-size:.8rem;font-weight:850}
 .status.green{background:var(--ok-soft);color:#065f46}
 .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .question-bar{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.86rem;font-weight:800;color:var(--muted);margin-bottom:13px}
 .rank-list{display:flex;flex-direction:column;gap:7px}
-.rank-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;background:var(--soft)}
+.rank-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:var(--qs-radius);background:var(--soft)}
 .rank-item.me{border-color:var(--ok);background:var(--ok-soft)}
 .rank-item.answered{border-color:#a7f3d0}
-.rank-no{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:#f1f5f9;font-size:.8rem;font-weight:900}
+.rank-no{display:grid;place-items:center;width:26px;height:26px;border-radius:var(--qs-radius-sm);background:#f1f5f9;font-size:.8rem;font-weight:900}
 .rank-person{font-weight:750;overflow-wrap:anywhere}
 .score{white-space:nowrap;font-weight:900;color:var(--dark)}
 .timer{font-weight:900;font-variant-numeric:tabular-nums;color:var(--dark)}
 .timer.expired{color:var(--danger)}
-.result{padding:13px;background:var(--ok-soft);border:1px solid #a7f3d0;border-radius:12px;color:#065f46;font-weight:750;margin-top:14px}
+.result{padding:13px;background:var(--ok-soft);border:1px solid #a7f3d0;border-radius:var(--qs-radius);color:#065f46;font-weight:750;margin-top:14px}
 .result.wrong{background:var(--danger-soft);border-color:#fecdd3;color:#9f1239}
 .foot{text-align:center;color:var(--muted);font-size:.8rem;padding:var(--space-3) 0}
 .hidden{display:none!important}
 @media(max-width:740px){
  .wrap{padding:var(--space-2) var(--page-gutter)}
  .layout{grid-template-columns:minmax(0,1fr)}
- .panel{border-radius:15px;padding:var(--panel-padding)}
+ .panel{border-radius:var(--qs-radius);padding:var(--panel-padding)}
  .question-bar{font-size:.82rem}
 }
 </style>
 <link rel="stylesheet" href="../../shared/accessibility.css">
 <script src="../../shared/accessibility.js"></script>
-<link rel="stylesheet" href="rich-text.css">
-<script src="rich-text.js"></script>
+<link rel="stylesheet" href="rich-text.css?v=design-1">
+<script src="rich-text.js?v=design-1"></script>
 <script src="play-modes.js"></script>
-<script src="pin.js"></script>
-<link rel="stylesheet" href="pin.css">
-<link rel="stylesheet" href="play-modes.css">
+<script src="pin.js?v=design-1"></script>
+<link rel="stylesheet" href="pin.css?v=design-1">
+<link rel="stylesheet" href="play-modes.css?v=design-1">
 <link rel="stylesheet" href="../../shared/live-sidebar.css">
-<link rel="stylesheet" href="student-layout.css?v=2">
-<link rel="stylesheet" href="theme.css?v=1">
+<link rel="stylesheet" href="student-layout.css?v=design-1">
+<link rel="stylesheet" href="theme.css?v=design-1">
 </head>
 <body data-quiz-player>
 <div class="wrap">

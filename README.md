@@ -26,9 +26,22 @@ Die Übersicht zeigt fünf Kacheln in dieser Reihenfolge: Quiz, Manipulation, We
 
 Manipulation hieß zuvor Bluff-Quiz, Dieselbe Antwort hieß Das gleiche Antworten und Ja oder Nein hieß Ja/Nein-Schätzspiel. Bestehende Links, Spielkennungen und gespeicherte Inhalte bleiben kompatibel. Für diese Layoutänderung ist kein SQL-Update nötig.
 
-## Quiz Studio: Farbschema
+## Quiz Studio: Design-System
 
-Alle Quiz-Studio-Seiten (Bibliothek, Editor, Live-Ansichten und Teilnehmerseiten aller fünf Spiele) verwenden ein gemeinsames, ruhiges Farbschema: kühle Grautöne für Flächen und Linien, Indigo (`#4f46e5`) als einzige Akzentfarbe. Grün und Rot zeigen ausschließlich richtig/falsch, Verbindungsstatus und Beenden an. `apps/quiz-studio/theme.css` wird auf jeder Quiz-Studio-Seite zuletzt geladen. Es definiert die Farbwerte und überschreibt die warmen Standardfarben der gemeinsamen Studio-Stile nur für Quiz Studio; Umfragen und Jeopardy bleiben unverändert. Layout, Abläufe und gespeicherte Inhalte ändern sich nicht, ein SQL-Update ist nicht nötig.
+Alle Quiz-Studio-Seiten verwenden ein gemeinsames Design-System. Dazu gehören Bibliothek, Editor, Live-Ansichten und die Teilnehmerseiten aller fünf Spiele. `apps/quiz-studio/theme.css` wird auf jeder dieser Seiten zuletzt geladen und definiert die Tokens (`--qs-*`) sowie das Aussehen der Bausteine. Umfragen und Jeopardy bleiben unverändert, weil jede Regel auf Quiz-Studio-Seiten begrenzt ist.
+
+- **Farben:** kühle Grautöne für Flächen und Linien, Indigo (`#4f46e5`) als einzige Akzentfarbe. Grün und Rot stehen ausschließlich für richtig/falsch, Verbindungsstatus und destruktive Aktionen.
+- **Formen:** Eckenradien 6, 8, 12 und 20 px (`--qs-radius-xs`, `-sm`, `--qs-radius`, `-lg`). Eingabefelder haben 10 px, Buttons und Karten 12 px, Panels und Dialoge 20 px.
+- **Schatten:** drei Stufen (`--qs-shadow-xs`, `--qs-shadow`, `--qs-shadow-lg`) und ein Akzentschatten für Primärbuttons.
+- **Buttons:** Beschriftungen sind per Flexbox auf beiden Achsen zentriert (`display:inline-flex; align-items:center; justify-content:center`), ohne Zeilenhöhen-Tricks. Die Regel hat keine Spezifität, damit Kacheln und Listenzeilen ihr eigenes Layout behalten. Es gibt vier Varianten:
+  - Standard: weiß mit Linie, Indigo-Tönung beim Überfahren.
+  - Primär (`.studio-primary`, `.bluff-primary`, `.yn-primary`, `.yn-flow-primary`): Indigo, die Hauptaktion einer Ansicht.
+  - Gefahr hell (`.danger`, Sperren): Löschen und Sperren.
+  - Gefahr voll (`.end-quiz`, `.bluff-end`, `.yn-lobby-end`): „Beenden“ für alle Spiele.
+
+  Dazu kommen die großen Startkacheln der Lobbys und quadratische Icon-Buttons (44 px), auch für Schließen-Buttons in Dialogen.
+
+Neue Quiz-Studio-Komponenten verwenden die Tokens statt fester Farbwerte und definieren keine eigenen Button-Farben. Layout, Abläufe und gespeicherte Inhalte ändern sich nicht, ein SQL-Update ist nicht nötig.
 
 ## Live-Spielweisen im Quiz Studio
 

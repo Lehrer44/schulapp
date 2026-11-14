@@ -25,21 +25,20 @@ button,input,select,textarea{font:inherit;color:inherit}
 
  /* ---------- Quiz cards ---------- */
 .qzcard .quiz-info{grid-column:1;min-width:0}
-.question-media-editor{margin:10px 0 2px;padding:12px;background:var(--surface-soft);border:1px solid var(--line);border-radius:12px}
+.question-media-editor{margin:10px 0 2px;padding:12px;background:var(--surface-soft);border:1px solid var(--line);border-radius:var(--qs-radius)}
 .media-upload-label{position:relative;overflow:hidden}
 .media-upload-label input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
 .media-paste-hint{font-size:.82rem;color:var(--muted);line-height:1.5;margin-top:8px}
 .media-preview-editor{display:block;max-width:100%;max-height:220px;margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:#ffffff;object-fit:contain}
 audio.media-preview-editor{width:min(100%,560px);height:42px}
 video.media-preview-editor{width:auto;max-width:100%;max-height:220px}
-.question-media-play{display:block;max-width:100%;max-height:320px;margin:0 auto 18px;border-radius:12px;object-fit:contain}
+.question-media-play{display:block;max-width:100%;max-height:320px;margin:0 auto 18px;border-radius:var(--qs-radius);object-fit:contain}
 audio.question-media-play{width:min(100%,560px);height:42px}
 video.question-media-play{width:auto;max-width:100%;max-height:320px}
 
 .title-input::placeholder{color:var(--muted);font-weight:600}
 .meta{margin-top:12px;font-size:.84rem;color:var(--muted);font-weight:600}
 
-.qcard{margin:0 0 var(--section-gap);padding:var(--panel-padding);}
 .qhead{display:flex;margin-bottom:12px}
 .badge{padding:5px 11px;white-space:nowrap;letter-spacing:.02em}
 .qnum{font-size:.82rem;color:var(--muted);font-weight:700}
@@ -62,7 +61,7 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 .tf{display:flex;gap:10px}
 .tf label{
   flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;
-  border:1.5px solid var(--line);border-radius:12px;cursor:pointer;font-weight:700;font-size:.94rem;
+  border:1.5px solid var(--line);border-radius:var(--qs-radius);cursor:pointer;font-weight:700;font-size:.94rem;
   background:#ffffff;transition:.15s;
 }
 .tf label:hover{border-color:var(--line-strong);background:var(--surface-soft)}
@@ -76,7 +75,7 @@ video.question-media-play{width:auto;max-width:100%;max-height:320px}
 .play-meta{font-size:.78rem;color:var(--muted);font-weight:800;margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase}
 .play-options{display:flex;flex-direction:column;gap:10px}
 .play-opt{display:flex;align-items:center;gap:12px;padding:var(--card-padding);border:1.5px solid var(--line);
-  border-radius:13px;cursor:pointer;background:#ffffff;transition:.15s;font-size:.98rem;font-weight:600;
+  border-radius:var(--qs-radius);cursor:pointer;background:#ffffff;transition:.15s;font-size:.98rem;font-weight:600;
 min-height:var(--control-size);}
 .play-opt:hover{border-color:var(--line-strong);background:var(--surface-soft)}
 .play-opt input{width:18px;height:18px;accent-color:var(--accent);flex:none;cursor:pointer}
@@ -86,7 +85,7 @@ min-height:var(--control-size);}
 .rank-play{display:flex;flex-direction:column;gap:8px}
 .rank-play-row{
   display:flex;align-items:center;gap:10px;padding:12px 15px;border:1.5px solid var(--line);
-  border-radius:12px;background:#ffffff;transition:.15s;
+  border-radius:var(--qs-radius);background:#ffffff;transition:.15s;
 }
 .rank-play-row.is-correct{border-color:var(--ok);background:var(--ok-soft)}
 .rank-play-row.is-wrong{border-color:var(--danger);background:var(--danger-soft)}
@@ -94,7 +93,7 @@ min-height:var(--control-size);}
 .short-input{width:100%;font-size:1rem}
 .short-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.14)}
 .play-actions{margin-top:22px}
-.feedback{margin-top:20px;padding:16px 18px;border-radius:13px;font-size:.94rem;border:1.5px solid;line-height:1.5}
+.feedback{margin-top:20px;padding:16px 18px;border-radius:var(--qs-radius);font-size:.94rem;border:1.5px solid;line-height:1.5}
 .feedback.ok{background:var(--ok-soft);border-color:var(--ok);color:#065f46}
 .feedback.partial{background:#fffbeb;border-color:#fcd34d;color:#92400e}
 .feedback.bad{background:var(--danger-soft);border-color:var(--danger);color:#9f1239}
@@ -107,7 +106,7 @@ min-height:var(--control-size);}
 .result-pct{font-size:clamp(3rem,8vw,4.2rem);font-weight:900;letter-spacing:-.045em;line-height:1;color:var(--accent-dark)}
 .result-msg{font-size:1.25rem;font-weight:800;margin-top:12px;letter-spacing:-.02em}
 .result-sub{color:var(--muted);margin-top:8px;font-size:.94rem}
-.review{margin-bottom:12px;padding:16px 18px;border-left:4px solid var(--line);border-radius:13px}
+.review{margin-bottom:12px;padding:16px 18px;border-left:4px solid var(--line);border-radius:var(--qs-radius)}
 .review.ok{border-left-color:var(--ok)}
 .review.partial{border-left-color:#fcd34d}
 .review.bad{border-left-color:var(--danger)}
@@ -124,7 +123,7 @@ min-height:var(--control-size);}
 /* ---------- Toast ---------- */
 #toast{
   position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);
-  background:#1e293b;color:#ffffff;padding:13px 20px;border-radius:13px;
+  background:#1e293b;color:#ffffff;padding:13px 20px;border-radius:var(--qs-radius);
   font-size:.92rem;font-weight:700;opacity:0;pointer-events:none;
   transition:.25s;z-index:999;max-width:min(420px,calc(100vw - 32px));
   box-shadow:0 12px 32px rgba(0,0,0,.18);
@@ -145,21 +144,21 @@ min-height:var(--control-size);}
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css?v=compact-2">
 <link rel="stylesheet" href="../../shared/workspace.css?v=compact-2">
-<link rel="stylesheet" href="rich-text.css">
-<script src="rich-text.js"></script>
+<link rel="stylesheet" href="rich-text.css?v=design-1">
+<script src="rich-text.js?v=design-1"></script>
 <script src="rich-editor.js" defer></script>
 <script src="play-modes.js"></script>
-<script src="pin.js?v=editor-live-2"></script>
-<link rel="stylesheet" href="bluff/library.css?v=compact-2">
+<script src="pin.js?v=design-1"></script>
+<link rel="stylesheet" href="bluff/library.css?v=design-1">
 <script src="bluff/library.js?v=controls-3"></script>
 <script src="rather/library.js"></script>
 <script src="same/library.js"></script>
-<link rel="stylesheet" href="yesno/yesno.css?v=results-layout-6">
+<link rel="stylesheet" href="yesno/yesno.css?v=design-1">
 <script src="yesno/common.js?v=manual-flow-5"></script>
 <script src="yesno/library.js?v=manual-flow-5"></script>
-<link rel="stylesheet" href="pin.css?v=editor-live-2">
-<link rel="stylesheet" href="editor-compact.css?v=1">
-<link rel="stylesheet" href="play-modes.css">
+<link rel="stylesheet" href="pin.css?v=design-1">
+<link rel="stylesheet" href="editor-compact.css?v=design-1">
+<link rel="stylesheet" href="play-modes.css?v=design-1">
 
 <style>
 body[data-studio="quiz"] .studio-title{font-size:clamp(20px,2.5vw,24px)}
@@ -175,8 +174,6 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-gri
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid>.panel{
   min-width:0;min-height:236px;margin:0;padding:16px;
-  border:1px solid #e2e8f0;border-radius:20px;background:#fff;
-  box-shadow:0 4px 20px #0f172a08,0 1px 3px #263b6305;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
   display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;
@@ -192,22 +189,17 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-actions{
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is(button,.btn){
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   box-sizing:border-box;height:var(--library-control-height);min-height:var(--library-control-height);
-  padding:0 9px;font:500 14px/1.4 Inter,"Avenir Next",system-ui,sans-serif;
-  border:1px solid #e2e8f0;border-radius:11px;background:#fff;color:#475569;
-  box-shadow:none;white-space:nowrap;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(button,.btn):hover:not(:disabled){
-  background:#f1f5ff;border-color:#c7d2fe;color:#4338ca;
+  padding:0 9px;white-space:nowrap;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is(.studio-add,.icon-btn){
   width:var(--library-control-height);min-width:var(--library-control-height);
   flex:0 0 var(--library-control-height);padding:0;order:0;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-add{
-  background:#eef2ff;border-color:#dfe5ff;color:#4f46e5;
+  background:var(--qs-tint);border-color:var(--qs-tint-line);color:var(--qs-accent);box-shadow:var(--qs-shadow-xs);
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-add:hover:not(:disabled){
-  background:#e0e7ff;border-color:#c7d2fe;color:#4338ca;
+  background:var(--qs-tint-hover);border-color:var(--qs-tint-line);color:var(--qs-accent-hover);box-shadow:var(--qs-shadow-xs);
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading svg{
   display:block;width:22px;height:22px;fill:none;stroke:currentColor;
@@ -216,8 +208,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading sv
 body[data-studio="quiz"][data-dashboard-view="library"] #app .grid{gap:12px}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{
   display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
-  padding:8px;margin:0;gap:8px;border:1px solid #e2e8f0;border-radius:12px;
-  background:#fff;box-shadow:none;
+  padding:8px;margin:0;gap:8px;border:1px solid var(--qs-line);border-radius:var(--qs-radius);
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .quiz-info h3{
   margin:0;font-size:14px;font-weight:700;
@@ -227,12 +218,9 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .card-actio
   grid-column:2;grid-row:1;display:flex;justify-content:flex-end;align-items:center;align-self:center;
   gap:8px;margin:0;padding:0;flex-wrap:nowrap;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app .icon-btn.danger{
-  color:#be123c;border-color:#fecdd3;background:#fff1f2;
-}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .empty{
   display:flex;align-items:center;justify-content:center;min-height:128px;
-  margin:0;padding:16px;border:1px dashed #e2e8f0;border-radius:14px;
+  margin:0;padding:16px;border:1px dashed #e2e8f0;border-radius:var(--qs-radius);
   background:#f8fafc;color:var(--studio-muted);font-size:13px;box-shadow:none;text-wrap:balance;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]){
@@ -250,7 +238,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-sta
   }
 }
 </style>
-<link rel="stylesheet" href="theme.css?v=1">
+<link rel="stylesheet" href="theme.css?v=design-1">
 </head>
 <body data-studio="quiz" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -674,7 +662,7 @@ function viewEditor(){
     <div class="add-label">Frage hinzufügen</div>
     <div class="add-buttons">
       ${Object.entries(TYPES).map(([k,v]) =>
-        `<button class="btn small" data-action="add-question" data-type="${k}">${v.icon} ${v.label}</button>`
+        `<button class="btn" data-action="add-question" data-type="${k}">${v.icon} ${v.label}</button>`
       ).join('')}
     </div>
   </div>`;
@@ -696,9 +684,9 @@ function mediaMarkup(media, className){
 }
 function questionMediaTools(q){
  const pin=q.type==='pin',hasMedia=Boolean(q.media?.data);
- return `<label class="btn secondary small media-upload-label">＋ ${pin?'Bild':'Medien'} auswählen
+ return `<label class="btn secondary media-upload-label">＋ ${pin?'Bild':'Medien'} auswählen
    <input type="file" accept="${pin?'image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp':'image/*,audio/*,video/*'}" data-qid="${q.id}" data-media-input aria-label="${pin?'Bild':'Bild-, Audio- oder Videodatei'} auswählen">
-  </label>${hasMedia?`<button class="btn danger small" data-action="remove-question-media" data-qid="${q.id}">Medien entfernen</button>`:''}`;
+  </label>${hasMedia?`<button class="btn danger" data-action="remove-question-media" data-qid="${q.id}">Medien entfernen</button>`:''}`;
 }
 function questionMediaEditor(q){
  const missingMedia=Boolean(q.media?.storedInIndexedDB&&!q.media.data);
@@ -759,7 +747,7 @@ function questionBody(q){
           <input class="opt-text" type="text" value="${esc(o.text)}" placeholder="Antwort ${oi+1}" aria-label="Antwort ${oi+1}" data-qid="${q.id}" data-oid="${o.id}" data-field="option-text">
           <button class="icon-btn danger" data-action="del-option" data-qid="${q.id}" data-oid="${o.id}">✕</button>
         </div>`).join('')}
-      <div><button class="btn secondary small" data-action="add-option" data-qid="${q.id}">＋ Antwort</button></div>`;
+      <div><button class="btn secondary" data-action="add-option" data-qid="${q.id}">＋ Antwort</button></div>`;
   }
 
   if(q.type === 'truefalse'){
@@ -782,7 +770,7 @@ function questionBody(q){
           <button class="icon-btn" data-action="move-item" data-qid="${q.id}" data-iid="${it.id}" data-dir="1">↓</button>
           <button class="icon-btn danger" data-action="del-item" data-qid="${q.id}" data-iid="${it.id}">✕</button>
         </div>`).join('')}
-      <div><button class="btn secondary small" data-action="add-item" data-qid="${q.id}">＋ Element</button></div>`;
+      <div><button class="btn secondary" data-action="add-item" data-qid="${q.id}">＋ Element</button></div>`;
   }
 
   if(q.type === 'shortanswer'){
@@ -793,7 +781,7 @@ function questionBody(q){
                  data-qid="${q.id}" data-aid="${ai}" data-field="answer-text">
           <button class="icon-btn danger" data-action="del-answer" data-qid="${q.id}" data-aid="${ai}">✕</button>
         </div>`).join('')}
-      <div><button class="btn secondary small" data-action="add-answer" data-qid="${q.id}">＋ Alternative</button></div>`;
+      <div><button class="btn secondary" data-action="add-answer" data-qid="${q.id}">＋ Alternative</button></div>`;
   }
 
   return '';
@@ -876,7 +864,7 @@ function viewPlay(){
   </header>
   <div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>
 
-  <div class="panel play-panel">
+  <div class="panel">
     <div class="play-meta">Frage ${s.index+1} von ${total} · ${fmt(q.points)} ${Number(q.points)===1?'Punkt':'Punkte'}</div>
     <h2 class="play-question">${(q.text ? QuizRichText.render(q) : '') || '<em class="muted">Keine Frage formuliert</em>'}</h2>
     ${q.type==='pin'?'':mediaMarkup(q.media,'question-media-play')}

@@ -67,7 +67,7 @@
    '</fieldset><button class="yn-primary yn-submit" type="submit" disabled>Abgeben</button></form>';
  }
  function results(){
-  return '<div class="yn-result-total"><span>Ja:</span><strong class="yn-total">'+state.yes_count+'</strong></div><div class="yn-result-list">'+state.results.map(r=>'<div class="yn-result-row"><strong class="yn-result-name">'+esc(r.name)+'</strong><span class="yn-result-estimate">Tipp <span class="yn-estimate-chip">'+(r.estimate===null?'–':r.estimate)+'</span></span><span class="yn-result-answer">'+(state.reveal_answers&&typeof r.answer==='boolean'?'<span class="yn-revealed-answer '+(r.answer?'is-yes':'is-no')+'">'+(r.answer?'Ja':'Nein')+'</span>':'')+'</span><span class="yn-points">+'+r.points+'P</span></div>').join('')+'</div>';
+  return '<div class="yn-result-total"><span>Ja:</span><strong class="yn-total">'+state.yes_count+'</strong></div><div>'+state.results.map(r=>'<div class="yn-result-row"><strong class="yn-result-name">'+esc(r.name)+'</strong><span class="yn-result-estimate">Tipp <span class="yn-estimate-chip">'+(r.estimate===null?'–':r.estimate)+'</span></span><span class="yn-result-answer">'+(state.reveal_answers&&typeof r.answer==='boolean'?'<span class="yn-revealed-answer '+(r.answer?'is-yes':'is-no')+'">'+(r.answer?'Ja':'Nein')+'</span>':'')+'</span><span class="yn-points">+'+r.points+'P</span></div>').join('')+'</div>';
  }
  function scoreboard(final=false){
   const terminal=['finished','ended'].includes(state.phase);
@@ -95,17 +95,17 @@
   if(state.own_answer){draftAnswer=state.own_answer.answer;draftEstimate=state.own_answer.estimate;}
   const phase=state.phase,terminal=['finished','ended'].includes(phase),actions=!terminal?'<button class="yn-lobby-end" data-action="end">Beenden</button>':'<a class="btn" href="../index.html">Quiz Studio</a>';
   if(terminal){
-   app.innerHTML=gameHeader(actions)+'<section class="panel yn-final-result"><h2 class="yn-final-title">Endplatzierung</h2><div class="yn-final-ranking">'+scoreboard(true)+'</div></section>';
+   app.innerHTML=gameHeader(actions)+'<section class="panel"><h2 class="yn-final-title">Endplatzierung</h2><div class="yn-final-ranking">'+scoreboard(true)+'</div></section>';
    app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));return;
   }
   const question=phase==='question',roundLabel='Runde '+(state.round_index+1)+' von '+state.round_count;
   let content='<div class="yn-round-heading"><span class="yn-round-label">'+roundLabel+'</span>'+(question?'<span class="yn-clock" id="ynCountdown" role="timer" aria-label="Verbleibende Zeit"></span>':'')+'</div>'+((isHost||question)?'<h2 class="yn-question">'+esc(state.question)+'</h2>':'');
   if(question){
-   if(isHost)content+='<div class="yn-actions yn-round-actions"><button class="yn-flow-primary" data-action="evaluate" '+(!state.can_evaluate?'disabled':'')+'>Auswertung</button></div>';
+   if(isHost)content+='<div class="yn-actions"><button class="yn-flow-primary" data-action="evaluate" '+(!state.can_evaluate?'disabled':'')+'>Auswertung</button></div>';
    else content+=answerForm();
   }else{
    content+=results();
-   if(isHost)content+='<div class="yn-actions yn-round-actions"><button class="yn-flow-primary" data-action="next">'+(state.round_index+1>=state.round_count?'Endplatzierung':'Nächste Runde')+'</button><button data-action="reveal_answers" '+(state.reveal_answers?'disabled':'')+'>Antwort anzeigen</button></div>';
+   if(isHost)content+='<div class="yn-actions"><button class="yn-flow-primary" data-action="next">'+(state.round_index+1>=state.round_count?'Endplatzierung':'Nächste Runde')+'</button><button data-action="reveal_answers" '+(state.reveal_answers?'disabled':'')+'>Antwort anzeigen</button></div>';
   }
   app.innerHTML=gameHeader(actions)+'<div class="yn-grid'+(!question?' yn-results-grid':'')+(!isHost?' yn-player-grid':'')+'"><section class="panel yn-game-main'+(!question?' yn-results-main':'')+'">'+content+'</section><aside class="'+(isHost?'live-sidebar':'yn-player-standings')+'" '+(isHost?'tabindex="0" ':'')+'aria-label="Rangliste">'+scoreboard()+'</aside></div>';
   app.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>gameAction(b.dataset.action));bindAnswers();updateClock();

@@ -13,3 +13,5 @@ body[data-dashboard-view="editor"] .qhead{align-items:center;gap:10px}
  .question-settings .media-upload-label{max-width:100%}
  .opt-row>input.opt-text,.rank-row>input.opt-text{flex-basis:140px}
 }
+/* The formatted text field sits flush inside its toolbar frame instead of drawing a second box. */
+body[data-dashboard-view="editor"] .rich-editor .rich-input{border:0;border-radius:0;background:transparent}

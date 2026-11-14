@@ -37,7 +37,7 @@
   const loaded=()=>{if(img.naturalWidth&&img.naturalHeight){aspect=img.naturalWidth/img.naturalHeight;onAspect(aspect);draw();}};
   img.addEventListener('load',loaded,{once:true});if(img.complete)loaded();draw();
  }
- root.QuizPin={image,point,target,valid,correct,color,markup,mount};
+ root.QuizPin={point,valid,correct,color,markup,mount};
  if(typeof module!=='undefined')module.exports=root.QuizPin;
 })(typeof window!=='undefined'?window:globalThis);
 

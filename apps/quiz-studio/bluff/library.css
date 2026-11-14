@@ -1,6 +1,5 @@
 /* Dialogs for saved games and participation; shared by Manipulation, Wer würde eher and Dieselbe Antwort. */
-.bluff-dialog{box-sizing:border-box;width:min(640px,calc(100% - 32px));max-height:calc(100dvh - 40px);overflow:auto;border:1px solid var(--studio-line,#e2e8f0);border-radius:18px;padding:var(--dialog-padding);background:var(--studio-surface,#ffffff);color:var(--studio-text,#1e293b);font:inherit;box-shadow:0 20px 70px #0f172a40}
-.bluff-dialog::backdrop{background:#0f172a70}
+.bluff-dialog{box-sizing:border-box;width:min(640px,calc(100% - 32px));max-height:calc(100dvh - 40px);overflow:auto;padding:var(--dialog-padding);font:inherit}
 .bluff-dialog label:not(.bluff-question-choice){display:block;margin:14px 0 6px;font-size:14px;font-weight:650}
 .bluff-dialog input:not([type=checkbox]){box-sizing:border-box;width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px 12px;background:white;color:inherit;font:inherit}
 .bluff-dialog fieldset{border:0;margin:20px 0 0;padding:0;min-width:0}

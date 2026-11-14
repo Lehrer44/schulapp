@@ -11,12 +11,10 @@ body[data-studio="quiz"][data-dashboard-view="live"] #timerSeconds{width:76px;mi
 body[data-studio="quiz"][data-dashboard-view="live"] .next-question{justify-self:end;white-space:nowrap;font-size:13px}
 .ranking-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:var(--space-3);}
 body[data-studio="quiz"][data-dashboard-view="live"] .ranking-heading h2{margin:0}
-body[data-studio="quiz"][data-dashboard-view="live"] .lock-button{color:var(--danger);border-color:#fecdd3;background:#fff1f2}
 body[data-studio="quiz"][data-dashboard-view="live"] .ranking-panel{margin-bottom:0}
-.quiz-access-dialog{position:relative;box-sizing:border-box;width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid var(--studio-line);border-radius:20px;background:var(--studio-surface);color:var(--studio-text);padding:var(--dialog-padding);box-shadow:0 24px 90px #0f172a40;text-align:center}
-.quiz-access-dialog::backdrop{background:#0f172a66;backdrop-filter:blur(3px)}
+.quiz-access-dialog{position:relative;box-sizing:border-box;width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:var(--dialog-padding);text-align:center}
 .quiz-access-dialog>p.muted{font-size:14px;margin:14px 0 20px}
-.access-qr{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:fit-content;max-width:100%;padding:var(--space-3);margin:0 auto;background:#fff;border-radius:12px}
+.access-qr{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:fit-content;max-width:100%;padding:var(--space-3);margin:0 auto;background:#fff;border-radius:var(--qs-radius)}
 .access-qr :is(canvas,img){max-width:100%;height:auto}
 .access-code-label{font-size:12px;color:var(--studio-muted);margin:12px 44px 4px}
 .access-code{font-size:clamp(28px,7vw,42px);font-weight:800;letter-spacing:.15em;color:var(--studio-accent);font-variant-numeric:tabular-nums;margin:0 0 20px}
@@ -40,14 +38,12 @@ body[data-studio="quiz"][data-dashboard-view="live"] .ranking-panel{margin-botto
 
 
 .lobby-panel{display:grid;place-items:center;min-height:220px}
-body[data-studio="quiz"][data-dashboard-view="live"] button.lobby-action{width:100%;min-height:220px;margin:0;padding:32px;border:1px solid var(--studio-line);border-radius:18px;background:linear-gradient(135deg,var(--studio-surface),var(--studio-soft));color:var(--studio-accent);font-size:clamp(23px,3vw,32px);font-weight:750;letter-spacing:-.025em;text-align:center}
-body[data-studio="quiz"][data-dashboard-view="live"] button.lobby-action:hover:not(:disabled){background:var(--studio-tint);border-color:var(--studio-accent);transform:none;filter:none}
-.lobby-action:focus-visible{outline:3px solid var(--studio-accent);outline-offset:4px}
+body[data-studio="quiz"][data-dashboard-view="live"] button.lobby-action{width:100%;min-height:220px;margin:0;padding:32px;font-size:clamp(23px,3vw,32px);font-weight:750;letter-spacing:-.025em;text-align:center}
 #saveStatus[data-state="error"]{color:#be123c;font-weight:600}
 .quiz-access-dialog .access-close{position:absolute;right:12px;top:12px}
 body[data-studio="quiz"] #joinPageLink{display:inline-flex;align-items:center;justify-content:center;margin-top:18px;background:transparent}
 body[data-studio="quiz"] #joinPageLink:hover{background:transparent}
-body[data-studio="quiz"][data-dashboard-view="live"] .answer-board{display:flex;align-items:center;gap:16px;min-height:58px;padding:16px 18px;border-radius:14px;background:linear-gradient(120deg,#ffffff,#f8fafc);border:1px solid #e2e8f0;box-shadow:0 2px 5px #0f172a08;white-space:normal}
+body[data-studio="quiz"][data-dashboard-view="live"] .answer-board{display:flex;align-items:center;gap:16px;min-height:58px;padding:16px 18px;border-radius:var(--qs-radius);background:linear-gradient(120deg,#ffffff,#f8fafc);border:1px solid #e2e8f0;box-shadow:0 2px 5px #0f172a08;white-space:normal}
 .answer-label{min-width:0;flex:1;white-space:pre-wrap;overflow-wrap:anywhere}
 .answers-board.single-answers{grid-template-columns:minmax(0,1fr)}
 .answer-names{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:6px 12px;max-width:55%;min-width:0;text-align:right}
