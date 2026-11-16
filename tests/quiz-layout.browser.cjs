@@ -101,7 +101,7 @@ function fixture(){
   assert.equal(await page.locator('.studio-header .studio-home').getAttribute('href'),'../../index.html');
   await page.screenshot({path:path.join(out,'studio-grid-'+width+'.png'),fullPage:true});
   const colours=el=>el.evaluate(n=>{const s=getComputedStyle(n);return [s.backgroundColor,s.color];});
-  const row=page.locator('.qzcard').first(),green='rgb(25, 135, 84)',white='rgb(255, 255, 255)';
+  const row=page.locator('.qzcard').first(),green='rgb(50, 154, 119)',white='rgb(255, 255, 255)';
   await page.mouse.move(0,0);await page.waitForTimeout(200);
   assert.deepEqual(await colours(row),[green,white],'Saved games are green with white text');
   await row.locator('h3').hover();await page.waitForTimeout(200);

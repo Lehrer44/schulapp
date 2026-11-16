@@ -45,7 +45,7 @@ Neue Quiz-Studio-Komponenten verwenden die Tokens statt fester Farbwerte und def
 
 ## Quiz Studio: Dashboard im Flat-Design
 
-Das Dashboard des Quiz Studios (`apps/quiz-studio/index.html`, Bibliotheksansicht) verwendet ein flaches Layout in genau zwei Farben: Grün (`#198754`, Kontrast 4,5:1 zu Weiß) und Weiß. Rot erscheint nur bei Fehlermeldungen. Die Regeln liegen in `apps/quiz-studio/library.css`, die nach `theme.css` geladen wird. Sie gelten ausschließlich für die Bibliotheksansicht. Editor, Live-Ansichten und die übrigen Anwendungen bleiben unverändert.
+Das Dashboard des Quiz Studios (`apps/quiz-studio/index.html`, Bibliotheksansicht) verwendet ein flaches Layout in genau zwei Farben: Grün (`#329A77`, Kontrast 3,5:1 zu Weiß) und Weiß. Rot erscheint nur bei Fehlermeldungen. Die Regeln liegen in `apps/quiz-studio/library.css`, die nach `theme.css` geladen wird. Sie gelten ausschließlich für die Bibliotheksansicht. Editor, Live-Ansichten und die übrigen Anwendungen bleiben unverändert.
 
 - **Kopfzeile:** Logo und „Quiz Studio“ links, das Häuschen rechts führt zum Haupt-Dashboard. Darunter liegt eine grüne Linie. Die Brotkrümelnavigation ist in dieser Ansicht ausgeblendet.
 - **Kacheln:** weiße Flächen mit grünem Rahmen, ohne Schatten.
