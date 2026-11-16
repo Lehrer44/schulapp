@@ -212,6 +212,13 @@ function fixture(){
     assert.equal(await page.locator('.response-row').count(),0);
     assert.equal(await page.locator('[data-option-id="a"] .answer-name.correct').innerText(),'Ada');
     assert.equal(await page.locator('[data-option-id="b"] .answer-name.wrong').innerText(),'Ben <img src=x>');
+    // Flat live view: the correct tile is filled green, other tiles are outlined, wrong names stay red.
+    const tile=sel=>page.locator(sel).evaluate(el=>{const s=getComputedStyle(el);return [s.backgroundColor,s.borderTopColor,s.color];});
+    assert.deepEqual(await tile('[data-option-id="a"]'),['rgb(50, 154, 119)','rgb(50, 154, 119)','rgb(255, 255, 255)']);
+    assert.deepEqual(await tile('[data-option-id="b"]'),['rgb(255, 255, 255)','rgb(50, 154, 119)','rgb(50, 154, 119)']);
+    assert.equal(await page.locator('[data-option-id="b"] .answer-name.wrong').evaluate(el=>getComputedStyle(el).color),'rgb(190, 18, 60)');
+    assert(!(await page.locator('.app-nav').isVisible()));assert.equal(await page.locator('.studio-header .studio-home').getAttribute('href'),'../../index.html');
+    assert.match(await page.locator('.question-text').evaluate(el=>getComputedStyle(el).fontFamily),/^"?Comic Neue"?/);
     assert.equal(await page.locator('.answer-names img').count(),0);
     assert.equal(await page.locator('.answer-names').first().evaluate(el=>getComputedStyle(el).justifyContent),'flex-end');
    }else if(index===5){
