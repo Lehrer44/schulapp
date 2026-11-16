@@ -1,13 +1,15 @@
-/* Quiz Studio flat UI in two colours, green and white: dashboard (library view), quiz editor
-   and the live view of a classic quiz (apps/quiz-studio/live.html). Loaded last on both pages.
-   Every rule is scoped to those views, so the preview, player pages, the other games and apps keep
-   their look. Red stays reserved for error messages and, in the live view, wrong answers and an
+/* Quiz Studio flat UI in two colours, green and white: dashboard (library view), quiz editor,
+   the live view of a classic quiz (live.html) and its player page (student.html). Loaded last on each page.
+   Every rule is scoped to those views, so the preview, the other games and apps keep their look.
+   Red stays reserved for error messages and, in live and player views, wrong answers and an
    expired timer.
    Text uses Comic Neue (SIL OFL), served from shared/fonts.
-   Sections: shared base and header, dashboard, editor (partly shared with live), live view. */
+   Sections: shared base and header, dashboard, editor (partly shared with live and player),
+   live view, player page. */
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:400;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-400.woff2") format("woff2")}
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:700;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-700.woff2") format("woff2")}
-body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]){
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),
+body[data-quiz-player]{
   --flat-green:#329a77; /* chosen brand green; 3.5:1 against white */
   --flat-white:#fff;
   --flat-line:2px;
@@ -21,13 +23,14 @@ body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view
   background:var(--flat-white);color:var(--flat-green);font-family:var(--flat-font);
 }
 body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]) :is(#app,#app *,#cloudStatus){font-family:var(--flat-font)}
+body[data-quiz-player] :is(#app,#app *,#playerSyncStatus){font-family:var(--flat-font)}
 body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"])>.app-nav{display:none}
 body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"])>.wrap{padding-top:var(--space-4)}
 body[data-studio="quiz"][data-dashboard-view="library"] #app svg{
   display:block;width:24px;height:24px;fill:none;stroke:currentColor;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
 }
-body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]) #app :is(button,a):focus-visible{
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app :is(button,a):focus-visible{
   outline:3px solid var(--flat-green)!important;outline-offset:2px;
 }
 
@@ -136,9 +139,9 @@ body[data-studio="quiz"][data-dashboard-view="library"] #cloudStatus[data-state=
 }
 
 /* ======================= Quiz editor ======================= */
-/* Editor and live view reuse the old token names; mapping them to the two colours keeps every
+/* Editor, live view and player page reuse the old token names; mapping them to the two colours keeps every
    remaining shared rule (workspace.css, play-modes.css, pin.css, live.css) green and white without shadows. */
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]){
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]){
   --qs-bg:#fff;--qs-surface:#fff;--qs-soft:#fff;--qs-muted-bg:#fff;--qs-tint:#fff;--qs-tint-hover:#fff;
   --qs-line:var(--flat-green);--qs-line-strong:var(--flat-green);--qs-tint-line:var(--flat-green);
   --qs-text:var(--flat-green);--qs-text-soft:var(--flat-green);--qs-muted:var(--flat-green);
@@ -159,8 +162,8 @@ body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view=
 body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .studio-subtitle{color:var(--flat-green);font-size:14px}
 body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .studio-header .studio-actions{flex-wrap:nowrap;gap:var(--space-2)}
 
-/* Panels: editor cards and live panels share the dashboard tile frame. */
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .panel{
+/* Panels: editor cards, live and player panels share the dashboard tile frame. */
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app .panel{
   margin:0 0 var(--space-4);padding:var(--space-4);
   border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);box-shadow:none;
 }
@@ -192,7 +195,7 @@ body[data-studio="quiz"][data-dashboard-view="editor"] #app .icon-btn{
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .icon-btn:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
 
 /* Fields: white with a green line, green text; focus draws the shared green ring. */
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select){
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select){
   box-sizing:border-box;min-height:var(--flat-control);padding:8px 12px;
   border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
   font-size:15px;font-weight:700;box-shadow:none;
@@ -201,12 +204,12 @@ body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view=
   appearance:none;padding-right:36px;cursor:pointer;
   background:var(--flat-white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23329a77' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center/18px;
 }
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app :is(input,select):focus-visible,
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app :is(input,select):focus-visible,
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-editor:focus-within{outline:3px solid var(--flat-green);outline-offset:2px;box-shadow:none}
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app ::placeholder{color:var(--flat-green);opacity:.6;font-weight:400}
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app input[type="radio"],
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app input[type="checkbox"],
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app input[type="range"]{accent-color:var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app ::placeholder{color:var(--flat-green);opacity:.6;font-weight:400}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app input[type="radio"],
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app input[type="checkbox"],
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app input[type="range"]{accent-color:var(--flat-green)}
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .title-input{width:100%;margin:0;font-size:22px;font-weight:700}
 
 /* Question card head: type badge, number, points, play mode, media and the card actions. */
@@ -272,13 +275,13 @@ body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf label:is(:hover,
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf input{width:18px;height:18px}
 
 /* Pin questions: image frame, target and controls in the two colours. */
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .quiz-pin-board{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .quiz-pin-board:focus-visible{outline:3px solid var(--flat-green)}
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .quiz-pin-target{border:3px solid var(--flat-green);background:rgb(50 154 119 / .25)}
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app :is(.quiz-pin-own,.quiz-pin-marker){background:var(--flat-green);border-color:var(--flat-white)}
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .quiz-pin-controls label{font-size:14px;font-weight:700;color:var(--flat-green)}
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .quiz-pin-controls input[type="number"]{width:95px}
-body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .pin-hint{font-size:14px;color:var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app .quiz-pin-board{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app .quiz-pin-board:focus-visible{outline:3px solid var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app .quiz-pin-target{border:3px solid var(--flat-green);background:rgb(50 154 119 / .25)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app :is(.quiz-pin-own,.quiz-pin-marker){background:var(--flat-green);border-color:var(--flat-white)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app .quiz-pin-controls label{font-size:14px;font-weight:700;color:var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app .quiz-pin-controls input[type="number"]{width:95px}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app .pin-hint{font-size:14px;color:var(--flat-green)}
 
 /* Add panel: one row of question types. */
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .add-panel{text-align:center}
@@ -290,7 +293,7 @@ body[data-studio="quiz"][data-dashboard-view="editor"] #cloudStatus[data-state="
 @media(max-width:600px){
   body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .studio-header .studio-actions{width:100%;justify-content:flex-start}
   body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .studio-header .studio-home{margin-left:auto}
-  body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]) #app .panel{padding:var(--space-3)}
+  :is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player]) #app .panel{padding:var(--space-3)}
   /* Badge and number on the left, move and delete on the right, settings in the next row. */
   body[data-studio="quiz"][data-dashboard-view="editor"] #app .qhead{gap:var(--space-1)}
   body[data-studio="quiz"][data-dashboard-view="editor"] #app .badge{padding:5px 9px;font-size:13px}
@@ -385,3 +388,74 @@ body[data-studio="quiz"][data-dashboard-view="live"] #joinDialog :is(.access-cod
 body[data-studio="quiz"][data-dashboard-view="live"] #joinDialog .access-code-label{font-size:14px;font-weight:700}
 body[data-studio="quiz"][data-dashboard-view="live"] #joinDialog .access-code{font-weight:700}
 body[data-studio="quiz"][data-dashboard-view="live"] #joinDialog :is(button,a):focus-visible{outline:3px solid var(--flat-green);outline-offset:2px}
+
+/* ======================= Player page (classic quiz) ======================= */
+/* Students see no header; the same tiles, buttons and fields as the teacher views. */
+body[data-quiz-player]{background:var(--flat-white);color:var(--flat-green)}
+body[data-quiz-player] #app .panel{margin:0}
+body[data-quiz-player] #playerSyncStatus{color:var(--flat-green)}
+body[data-quiz-player] #playerSyncStatus[data-state="error"]{color:#be123c}
+body[data-quiz-player] #app :is(h1,h2,.eyebrow,.muted,.question-bar,.field label,.race-time,.final-score){color:var(--flat-green)}
+body[data-quiz-player] #app :is(h1,h2){font-weight:700;letter-spacing:0}
+body[data-quiz-player] #app :is(.question-bar,.field label){font-size:15px;font-weight:700}
+body[data-quiz-player] #app .text-answer{width:100%;min-height:52px;font-size:17px}
+body[data-quiz-player] #app .code-input{font-size:1.4rem;letter-spacing:.2em;text-align:center}
+
+/* Buttons: the main action is filled, everything else outlined; hover swaps the colours. */
+body[data-quiz-player] #app button:not(.buzzer){
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:var(--flat-control);padding:0 var(--space-4);
+  border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-green);color:var(--flat-white);
+  font-size:16px;font-weight:700;box-shadow:none;filter:none;transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-quiz-player] #app button:not(.buzzer):hover:not(:disabled){background:var(--flat-white);color:var(--flat-green);filter:none}
+body[data-quiz-player] #app button.secondary:not(:hover){background:var(--flat-white);color:var(--flat-green)}
+body[data-quiz-player] #app button.secondary:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+body[data-quiz-player] #app button:disabled{opacity:.5;cursor:not-allowed}
+
+/* Answer choices: outlined tiles; the chosen one is filled. After the reveal the correct answers
+   are filled and a wrong choice is outlined in red. */
+body[data-quiz-player] #app .answer{
+  align-items:center;border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
+  font-size:17px;font-weight:700;transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-quiz-player] #app .answer:hover:not(:has(input:disabled)),body[data-quiz-player] #app .answer:has(input:checked),body[data-quiz-player] #app .answer.correct{background:var(--flat-green);color:var(--flat-white)}
+body[data-quiz-player] #app .answer:is(:hover,:has(input:checked),.correct) input{accent-color:var(--flat-white)}
+body[data-quiz-player] #app .answers:has(.answer.correct) .answer:not(.correct){background:var(--flat-white);color:var(--flat-green)}
+body[data-quiz-player] #app .answers:has(.answer.correct) .answer:not(.correct):has(input:checked){border-color:#be123c;color:#be123c}
+body[data-quiz-player] #app .answers:has(.answer.correct) .answer:not(.correct) input{accent-color:var(--flat-green)}
+body[data-quiz-player] #app .answer input{width:20px;height:20px;margin:0}
+
+/* Ranking items to order: tiles with frameless arrow buttons. */
+body[data-quiz-player] #app .rank-choice{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);font-weight:700}
+body[data-quiz-player] #app .rank-choice button:not(.buzzer){width:var(--flat-control);min-width:var(--flat-control);padding:0;border:0;background:transparent;color:var(--flat-green);font-size:20px}
+body[data-quiz-player] #app .rank-choice button:not(.buzzer):hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+body[data-quiz-player] #app .rank-num{border-radius:50%;background:var(--flat-green);color:var(--flat-white);font-weight:700}
+
+/* Waiting, results and notices */
+body[data-quiz-player] #app .waiting{border:var(--flat-line) dashed var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green)}
+body[data-quiz-player] #app .waiting-icon svg{display:block;width:40px;height:40px;margin:0 auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+body[data-quiz-player] #app .result{border:0;border-radius:var(--flat-radius);background:var(--flat-green);color:var(--flat-white);font-weight:700}
+body[data-quiz-player] #app .result.wrong{border:var(--flat-line) solid #be123c;background:var(--flat-white);color:#be123c}
+body[data-quiz-player] #app .notice{border:var(--flat-line) solid #be123c;border-radius:var(--flat-radius);background:var(--flat-white);color:#be123c}
+body[data-quiz-player] #app .timer{color:var(--flat-green);font-weight:700}
+body[data-quiz-player] #app .timer.expired{color:#be123c}
+body[data-quiz-player] #app .final-score{font-weight:700}
+
+/* Buzzer: one large green button; pressed it sinks slightly instead of casting a shadow. */
+body[data-quiz-player] #app button.buzzer{
+  border:8px solid var(--flat-white);background:var(--flat-green);color:var(--flat-white);
+  box-shadow:0 0 0 var(--flat-frame) var(--flat-green);font-weight:700;transition:transform var(--flat-ease);
+}
+body[data-quiz-player] #app button.buzzer:active:not(:disabled){transform:scale(.97);box-shadow:0 0 0 var(--flat-frame) var(--flat-green)}
+
+/* Ranking: like the live view; your own row has a double frame. */
+body[data-quiz-player] #app .rank-item{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green)}
+body[data-quiz-player] #app .rank-item.answered{background:var(--flat-green);color:var(--flat-white)}
+body[data-quiz-player] #app .rank-item.me{box-shadow:inset 0 0 0 var(--flat-line) var(--flat-green)}
+body[data-quiz-player] #app .rank-item.me.answered{box-shadow:inset 0 0 0 var(--flat-line) var(--flat-white)}
+body[data-quiz-player] #app .rank-no{border-radius:50%;background:var(--flat-green);color:var(--flat-white);font-weight:700}
+body[data-quiz-player] #app .rank-item.answered .rank-no{background:var(--flat-white);color:var(--flat-green)}
+body[data-quiz-player] #app :is(.rank-person,.score){color:inherit;font-weight:700}
+body[data-quiz-player] #app .status{border-radius:999px;background:var(--flat-white);color:var(--flat-green);font-size:13px;font-weight:700}
+body[data-quiz-player] .live-sidebar:focus-visible{outline:3px solid var(--flat-green)}
