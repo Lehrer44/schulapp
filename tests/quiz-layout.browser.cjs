@@ -85,12 +85,23 @@ function fixture(){
    }
   }
   for(const card of await page.locator('.qzcard').all()){
-   assert.equal(await card.locator('.card-actions button').first().innerText(),'Starten');
+   const start=card.locator('.card-actions button').first();
+   assert.equal((await start.innerText()).trim(),'');assert.equal(await start.getAttribute('title'),'Starten');
+   assert.match(await start.getAttribute('aria-label'),/ starten$/);
    const title=await card.locator('h3').boundingBox(),actions=await card.locator('.card-actions').boundingBox();
    assert(title.x+title.width<=actions.x+1,'Title cannot overlap actions');
   }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Grid fits '+width);
+  assert(!(await page.locator('.app-nav').isVisible()),'Library uses the home button instead of the breadcrumb');
+  assert.equal(await page.locator('.studio-header .studio-home').getAttribute('href'),'../../index.html');
   await page.screenshot({path:path.join(out,'studio-grid-'+width+'.png'),fullPage:true});
+  const colours=el=>el.evaluate(n=>{const s=getComputedStyle(n);return [s.backgroundColor,s.color];});
+  const row=page.locator('.qzcard').first(),green='rgb(25, 135, 84)',white='rgb(255, 255, 255)';
+  await page.mouse.move(0,0);await page.waitForTimeout(200);
+  assert.deepEqual(await colours(row),[green,white],'Saved games are green with white text');
+  await row.locator('h3').hover();await page.waitForTimeout(200);
+  assert.deepEqual(await colours(row),[white,green],'Hover swaps green and white');
+  await page.screenshot({path:path.join(out,'studio-grid-hover-'+width+'.png')});await page.mouse.move(0,0);
   await page.locator('.qzcard h3').first().evaluate(el=>el.textContent='EinSehrLangerSpielnameOhneLeerzeichen'.repeat(5));
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Long title fits '+width);
   assert.deepEqual(errors,[]);await ctx.close();

@@ -43,6 +43,15 @@ Alle Quiz-Studio-Seiten verwenden ein gemeinsames Design-System. Dazu gehören B
 
 Neue Quiz-Studio-Komponenten verwenden die Tokens statt fester Farbwerte und definieren keine eigenen Button-Farben. Layout, Abläufe und gespeicherte Inhalte ändern sich nicht, ein SQL-Update ist nicht nötig.
 
+## Quiz Studio: Dashboard im Flat-Design
+
+Das Dashboard des Quiz Studios (`apps/quiz-studio/index.html`, Bibliotheksansicht) verwendet ein flaches Layout in genau zwei Farben: Grün (`#198754`, Kontrast 4,5:1 zu Weiß) und Weiß. Rot erscheint nur bei Fehlermeldungen. Die Regeln liegen in `apps/quiz-studio/library.css`, die nach `theme.css` geladen wird. Sie gelten ausschließlich für die Bibliotheksansicht. Editor, Live-Ansichten und die übrigen Anwendungen bleiben unverändert.
+
+- **Kopfzeile:** Logo und „Quiz Studio“ links, das Häuschen rechts führt zum Haupt-Dashboard. Darunter liegt eine grüne Linie. Die Brotkrümelnavigation ist in dieser Ansicht ausgeblendet.
+- **Kacheln:** weiße Flächen mit grünem Rahmen, ohne Schatten.
+- **Gespeicherte Spiele:** grüne Zeilen mit weißer Schrift und Symbolen für Starten (Gamepad), Bearbeiten und Löschen. Beim Überfahren mit der Maus oder bei Tastaturfokus werden die Farben vertauscht.
+- **Kopfsymbole:** grün auf Weiß; „Neues Spiel“ hat einen grünen Rahmen. Beim Überfahren werden die Farben ebenfalls vertauscht.
+
 ## Live-Spielweisen im Quiz Studio
 
 Die Spielweise wird pro Frage im Editor gewählt: Klassisch, Buzzer oder Schnellantwort. Fehlende oder frühere „Standard übernehmen“-Einstellungen werden als klassisch behandelt. Beim Klick auf „Live mit Schülern“ wird direkt eine Wartelobby angelegt. Erst „Quiz starten“ zeigt die erste Frage und öffnet gleichzeitig die Antworten. „Weiter“ zeigt und öffnet jeweils die nächste Frage. Beim Zurückgehen bleiben bereits erfolgte Bewertungen und Zeitstempel erhalten.
