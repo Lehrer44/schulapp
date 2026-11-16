@@ -23,49 +23,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .eyebrow{font-size:.72rem;letter-spacing:.14em;font-weight:850;color:var(--accent);margin:0 0 7px;text-transform:uppercase}
 
 
- /* ---------- Quiz cards ---------- */
-.question-media-editor{margin:10px 0 2px;padding:12px;background:var(--surface-soft);border:1px solid var(--line);border-radius:var(--qs-radius)}
-.media-upload-label{position:relative;overflow:hidden}
-.media-upload-label input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-.media-paste-hint{font-size:.82rem;color:var(--muted);line-height:1.5;margin-top:8px}
-.media-preview-editor{display:block;max-width:100%;max-height:220px;margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:#ffffff;object-fit:contain}
-audio.media-preview-editor{width:min(100%,560px);height:42px}
-video.media-preview-editor{width:auto;max-width:100%;max-height:220px}
 .question-media-play{display:block;max-width:100%;max-height:320px;margin:0 auto 18px;border-radius:var(--qs-radius);object-fit:contain}
 audio.question-media-play{width:min(100%,560px);height:42px}
 video.question-media-play{width:auto;max-width:100%;max-height:320px}
 
-.title-input::placeholder{color:var(--muted);font-weight:600}
-.meta{margin-top:12px;font-size:.84rem;color:var(--muted);font-weight:600}
 
-.qhead{display:flex;margin-bottom:12px}
-.badge{padding:5px 11px;white-space:nowrap;letter-spacing:.02em}
-.qnum{font-size:.82rem;color:var(--muted);font-weight:700}
-.points input{width:64px;font-size:.84rem;font-weight:700;text-align:center}
-.qtext{color:var(--text);padding:12px 14px;font-size:.98rem;line-height:1.5}
-.qtext:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.14)}
-.qbody{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .hint{font-size:.84rem;color:var(--muted);line-height:1.5}
-.opt-row{display:flex;align-items:center;gap:8px}
-.opt-row input[type=radio],.opt-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex:none}
-.opt-text{font-size:.92rem}
-.rank-row{display:flex;align-items:center;gap:8px}
-.rank-num{
-  width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent-dark);
-  display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:900;flex:none;
-}
-.add-panel{text-align:center}
-.add-label{font-size:.78rem;color:var(--muted);margin-bottom:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
-.add-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.tf{display:flex;gap:10px}
-.tf label{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;
-  border:1.5px solid var(--line);border-radius:var(--qs-radius);cursor:pointer;font-weight:700;font-size:.94rem;
-  background:#ffffff;transition:.15s;
-}
-.tf label:hover{border-color:var(--line-strong);background:var(--surface-soft)}
-.tf label:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--accent-dark)}
-.tf input{accent-color:var(--accent);width:17px;height:17px}
 
 /* ---------- Play ---------- */
 .progress{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin-bottom:20px}
@@ -134,7 +97,6 @@ min-height:var(--control-size);}
 @media(max-width:440px){
   .rev-row{padding-left:0}
   .rev-pts{padding-top:0}
-  .tf{flex-direction:column}
 }
 </style>
 <script src="../../shared/cloud-library.js"></script>
@@ -165,7 +127,7 @@ body[data-studio="quiz"] .icon-btn svg{display:block;width:22px;height:22px;fill
 #cloudStatus[data-state="error"]{color:#be123c;font-weight:600}
 </style>
 <link rel="stylesheet" href="theme.css?v=design-2">
-<link rel="stylesheet" href="library.css?v=flat-3">
+<link rel="stylesheet" href="flat.css?v=editor-1">
 </head>
 <body data-studio="quiz" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -190,12 +152,12 @@ const QUIZ_STORAGE_BUCKET = 'quiz-studio';
 const MAX_CLOUD_FILE_SIZE = 50 * 1024 * 1024;
 const cloudClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const TYPES = {
-  pin:         { label:'Pin', icon:'📍' },
+  pin:         { label:'Pin', icon:'⌖' },
   single:      { label:'Einfachauswahl', icon:'◉' },
-  multiple:    { label:'Mehrfachauswahl', icon:'☑' },
-  truefalse:   { label:'Wahr / Falsch',  icon:'⚖' },
-  ranking:     { label:'Ranking',        icon:'↕' },
-  shortanswer: { label:'Kurzantwort',    icon:'✎' }
+  multiple:    { label:'Mehrfachauswahl', icon:'☑\uFE0E' },
+  truefalse:   { label:'Wahr / Falsch',  icon:'⚖\uFE0E' },
+  ranking:     { label:'Ranking',        icon:'↕\uFE0E' },
+  shortanswer: { label:'Kurzantwort',    icon:'✎\uFE0E' }
 };
 
 /* ---------- State ---------- */
@@ -571,6 +533,7 @@ function viewEditor(){
     <div class="studio-actions">
       <button class="btn secondary" data-action="back-to-list">← Quiz</button>
       <button class="studio-primary" data-action="retry-cloud-save" id="retryCloudSave">Erneut speichern</button>
+      <a class="studio-home" href="../../index.html" title="Zum Hauptdashboard" aria-label="Zum Hauptdashboard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5"/></svg></a>
     </div>
   </header>
 

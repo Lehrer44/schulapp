@@ -104,8 +104,8 @@ function fixture(){
   const row=page.locator('.qzcard').first(),green='rgb(50, 154, 119)',white='rgb(255, 255, 255)';
   await page.mouse.move(0,0);await page.waitForTimeout(200);
   assert.deepEqual(await colours(row),[green,white],'Saved games are green with white text');
-  await row.locator('h3').hover();await page.waitForTimeout(200);
-  assert.deepEqual(await colours(row),[white,green],'Hover swaps green and white');
+  await row.locator('h3').hover();
+  await page.waitForFunction(([el,w,g])=>{const s=getComputedStyle(el);return s.backgroundColor===w&&s.color===g;},[await row.elementHandle(),white,green],{timeout:2000});
   await page.screenshot({path:path.join(out,'studio-grid-hover-'+width+'.png')});await page.mouse.move(0,0);
   await page.locator('.qzcard h3').first().evaluate(el=>el.textContent='EinSehrLangerSpielnameOhneLeerzeichen'.repeat(5));
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Long title fits '+width);
@@ -137,6 +137,25 @@ function fixture(){
   assert.equal(saved.questions[0].options[0].textFormat,undefined);assert.equal(saved.questions[3].items[0].text,'Neuer erster Schritt');assert.equal(saved.questions[3].playMode,'speed');
   assert.equal(saved.description,'Bestehende Beschreibung'); // Removing a control does not erase existing content.
   await page.screenshot({path:path.join(out,'studio-editor-compact-'+width+'.png'),fullPage:true});
+  // Flat editor: same two colours, frame, font and header as the dashboard.
+  assert(!(await page.locator('.app-nav').isVisible()));
+  assert.equal(await page.locator('.studio-header .studio-home').getAttribute('href'),'../../index.html');
+  const flat=await page.evaluate(()=>{
+   const css=sel=>getComputedStyle(document.querySelector(sel));
+   const panel=css('.qcard'),badge=css('.badge'),field=css('[data-field="points"]'),title=css('.title-input');
+   return {background:css('body').backgroundColor,panel:[panel.borderTopWidth,panel.borderTopColor,panel.boxShadow],badge:[badge.backgroundColor,badge.color],field:[field.borderTopColor,field.color],font:title.fontFamily,titleSize:title.fontSize};
+  });
+  const green='rgb(50, 154, 119)',white='rgb(255, 255, 255)';
+  assert.deepEqual(flat,{background:white,panel:['4px',green,'none'],badge:[green,white],field:[green,green],font:flat.font,titleSize:'22px'});
+  assert.match(flat.font,/^"?Comic Neue"?/);
+  for(const card of await page.locator('.qcard').all()){
+   const head=await card.locator('.qhead').evaluate(el=>{const r=[...el.querySelectorAll(':scope>.badge,:scope>.qnum,:scope>.icon-btn')].map(n=>{const b=n.getBoundingClientRect();return b.top+b.height/2;});return Math.max(...r)-Math.min(...r);});
+   assert(head<2,'Badge, number, move and delete share one row at '+width);
+  }
+  const add=page.locator('[data-action="add-option"]').first();
+  await add.hover();
+  await add.evaluate((el,[g,w])=>new Promise((resolve,reject)=>{const end=Date.now()+2000;(function check(){const s=getComputedStyle(el);if(s.backgroundColor===g&&s.color===w)return resolve();if(Date.now()>end)return reject(new Error('Editor buttons swap colours on hover: '+s.backgroundColor+' / '+s.color));requestAnimationFrame(check);})();}),[green,white]);
+  await page.mouse.move(0,0);
   await page.locator('[data-action="add-question"][data-type="pin"]').click();
   assert.equal(await page.getByText('Bitte füge ein Bild für die Pin-Frage ein.',{exact:true}).count(),0);
   await page.goto(base+'/apps/quiz-studio/live.html?session=session');await page.locator('[data-action="start"]').waitFor();

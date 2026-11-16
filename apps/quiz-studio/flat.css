@@ -1,0 +1,299 @@
+/* Quiz Studio flat UI in two colours, green and white: dashboard (library view) and quiz editor.
+   Loaded last on apps/quiz-studio/index.html. Every rule is scoped to those two views, so the
+   preview, live views and the other apps keep their look. Red stays reserved for error messages.
+   Text uses Comic Neue (SIL OFL), served from shared/fonts.
+   Sections: shared base and header, dashboard, editor. */
+@font-face{font-family:"Comic Neue";font-style:normal;font-weight:400;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-400.woff2") format("woff2")}
+@font-face{font-family:"Comic Neue";font-style:normal;font-weight:700;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-700.woff2") format("woff2")}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]){
+  --flat-green:#329a77; /* chosen brand green; 3.5:1 against white */
+  --flat-white:#fff;
+  --flat-line:2px;
+  --flat-frame:4px;
+  --flat-radius-sm:8px;
+  --flat-radius:12px;
+  --flat-radius-lg:20px;
+  --flat-control:44px;
+  --flat-ease:.15s ease;
+  --flat-font:"Comic Neue",sans-serif;
+  background:var(--flat-white);color:var(--flat-green);font-family:var(--flat-font);
+}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) :is(#app,#app *,#cloudStatus){font-family:var(--flat-font)}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"])>.app-nav{display:none}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"])>.wrap{padding-top:var(--space-4)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app svg{
+  display:block;width:24px;height:24px;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
+}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app :is(button,a):focus-visible{
+  outline:3px solid var(--flat-green)!important;outline-offset:2px;
+}
+
+/* Header: logo and title on the left, home button on the right, one green rule below.
+   The editor header adds the quiz name as subtitle and its actions before the home button. */
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app .studio-header{
+  flex-wrap:nowrap;align-items:center;gap:var(--space-4);
+  margin:0 0 var(--space-4);padding:0 0 var(--space-2);border-bottom:var(--flat-frame) solid var(--flat-green);
+}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app .studio-icon{border-radius:var(--flat-radius);background:var(--flat-green);color:var(--flat-white)}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app .studio-icon svg{width:28px;height:28px}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app .studio-title{font-weight:700;letter-spacing:-.01em;color:var(--flat-green)}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app .studio-title span{color:inherit;font-weight:400}
+
+/* Icon controls: home button and dashboard tile actions. Green icon on white; inverted on hover. */
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app .studio-home,
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*{
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex:0 0 var(--flat-control);
+  width:var(--flat-control);min-width:var(--flat-control);height:var(--flat-control);min-height:var(--flat-control);padding:0;
+  border:var(--flat-line) solid transparent;border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
+  box-shadow:none;text-decoration:none;transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app .studio-home svg{display:block;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"]) #app .studio-home:hover{background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
+/* Tile header actions keep a 44px touch target but draw a 28px frame, so the framed add button
+   is as large as the random and catalogue icons next to it. Hover fills the frame. */
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*{position:relative;isolation:isolate;border:0;background:transparent}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*::before{
+  content:"";position:absolute;inset:8px;z-index:-1;border:var(--flat-line) solid transparent;border-radius:var(--flat-radius-sm);
+  background:var(--flat-white);transition:background-color var(--flat-ease),border-color var(--flat-ease);
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-add::before{border-color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*:hover:not(:disabled){background:transparent;color:var(--flat-white);box-shadow:none}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*:hover:not(:disabled)::before{background:var(--flat-green);border-color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions svg{width:22px;height:22px}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-add svg{width:18px;height:18px;stroke-width:2.5}
+
+/* Tiles: 3 columns on large screens, 2 on medium, 1 on narrow ones. */
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-5);align-items:stretch;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid>.panel{
+  min-width:0;min-height:228px;margin:0;padding:var(--space-4);
+  border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);box-shadow:none;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
+  display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--space-2);margin:0 0 var(--space-4);
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{
+  margin:0;min-width:0;font-size:21px;font-weight:700;line-height:1.25;color:var(--flat-green);overflow-wrap:anywhere;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions{flex:none;flex-wrap:nowrap;gap:var(--space-1)}
+
+/* Saved games: green rows with white text; hover or keyboard focus swaps the colours. */
+body[data-studio="quiz"][data-dashboard-view="library"] #app .grid{display:flex;flex-direction:column;gap:var(--space-3)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--space-2);
+  min-height:56px;margin:0;padding:4px 4px 4px var(--space-4);
+  border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-green);color:var(--flat-white);
+  box-shadow:none;transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard:is(:hover,:focus-within){background:var(--flat-white);color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .quiz-info{min-width:0}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .quiz-info h3{margin:0;font-size:16px;font-weight:700;line-height:1.35;color:inherit;overflow-wrap:anywhere}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .card-actions{display:flex;flex-wrap:nowrap;align-items:center;gap:2px}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .card-actions .icon-btn{
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+  width:var(--flat-control);min-width:var(--flat-control);height:var(--flat-control);min-height:var(--flat-control);padding:0;
+  border:0;border-radius:var(--flat-radius-sm);background:transparent;color:inherit;box-shadow:none;
+  transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .card-actions .icon-btn:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+
+/* Open "Ja oder Nein" sessions use the same row look as saved games. */
+body[data-studio="quiz"][data-dashboard-view="library"] #app .yn-resume{display:flex;flex-direction:column;gap:var(--space-2);margin:0 0 var(--space-4)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .yn-resume h3{margin:0;font-size:14px;font-weight:700;color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .yn-resume .btn{
+  justify-content:flex-start;min-height:var(--flat-control);padding:0 var(--space-4);text-align:left;white-space:normal;
+  border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);box-shadow:none;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .yn-resume .btn:hover{background:var(--flat-green);color:var(--flat-white)}
+
+/* Empty libraries and loading errors. */
+body[data-studio="quiz"][data-dashboard-view="library"] #app .empty{
+  display:flex;align-items:center;justify-content:center;min-height:128px;margin:0;padding:var(--space-4);
+  border:var(--flat-line) dashed var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);
+  color:var(--flat-green);font-size:14px;text-align:center;text-wrap:balance;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-list],[data-rather-list],[data-same-list],[data-yn-list])>button{
+  border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);box-shadow:none;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-list],[data-rather-list],[data-same-list],[data-yn-list])>button:hover{background:var(--flat-green);color:var(--flat-white)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]){
+  margin:var(--space-3) 0 0;color:#be123c;font-size:14px;overflow-wrap:anywhere;
+}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]):empty{display:none}
+body[data-studio="quiz"][data-dashboard-view="library"] #cloudStatus{color:var(--flat-green);text-align:center}
+body[data-studio="quiz"][data-dashboard-view="library"] #cloudStatus[data-state="error"]{color:#be123c}
+
+@media(max-width:1199px){
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{grid-template-columns:minmax(0,1fr);gap:var(--space-4)}
+  body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid>.panel{min-height:0;padding:var(--space-3) var(--space-4) var(--space-4)}
+}
+
+/* ======================= Quiz editor ======================= */
+/* The editor reuses the old token names; mapping them to the two colours keeps every remaining
+   shared rule (workspace.css, play-modes.css, pin.css) green and white without shadows. */
+body[data-studio="quiz"][data-dashboard-view="editor"]{
+  --qs-bg:#fff;--qs-surface:#fff;--qs-soft:#fff;--qs-muted-bg:#fff;--qs-tint:#fff;--qs-tint-hover:#fff;
+  --qs-line:var(--flat-green);--qs-line-strong:var(--flat-green);--qs-tint-line:var(--flat-green);
+  --qs-text:var(--flat-green);--qs-text-soft:var(--flat-green);--qs-muted:var(--flat-green);
+  --qs-accent:var(--flat-green);--qs-accent-hover:var(--flat-green);
+  --qs-shadow-xs:none;--qs-shadow:none;--qs-shadow-accent:none;
+  --studio-bg:#fff;--studio-surface:#fff;--studio-soft:#fff;--studio-tint:#fff;
+  --studio-line:var(--flat-green);--studio-text:var(--flat-green);--studio-muted:var(--flat-green);--studio-accent:var(--flat-green);
+  --bg:#fff;--surface:#fff;--soft:#fff;--surface-soft:#fff;--surface-muted:#fff;--muted-bg:#fff;
+  --line:var(--flat-green);--line-soft:var(--flat-green);--line-strong:var(--flat-green);
+  --text:var(--flat-green);--muted:var(--flat-green);
+  --accent:var(--flat-green);--accent-dark:var(--flat-green);--dark:var(--flat-green);--accent-soft:#fff;
+  --primary:var(--flat-green);--primary-600:var(--flat-green);--primary-soft:#fff;
+  --shadow:none;--shadow-soft:none;
+}
+
+/* Header: back to the dashboard, retry saving, home. Wraps below the title on narrow screens. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .studio-header{flex-wrap:wrap}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .studio-subtitle{color:var(--flat-green);font-size:14px}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .studio-header .studio-actions{flex-wrap:nowrap;gap:var(--space-2)}
+
+/* Panels: the quiz title, every question card and the add panel share the dashboard tile frame. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .panel{
+  margin:0 0 var(--space-4);padding:var(--space-4);
+  border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);box-shadow:none;
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .panel.empty{
+  border-style:dashed;border-width:var(--flat-line);text-align:center;color:var(--flat-green);
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .meta{margin-top:var(--space-3);font-size:14px;color:var(--flat-green)}
+
+/* Text buttons: green outline on white; hover swaps the colours. The primary action is filled. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .btn,
+body[data-studio="quiz"][data-dashboard-view="editor"] #app button.studio-primary{
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:var(--flat-control);padding:0 var(--space-4);
+  border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
+  font-size:15px;font-weight:700;line-height:1.2;white-space:nowrap;box-shadow:none;filter:none;
+  transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app button.studio-primary{background:var(--flat-green);color:var(--flat-white)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .btn:hover:not(:disabled){background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app button.studio-primary:hover:not(:disabled){background:var(--flat-white);border-color:var(--flat-green);color:var(--flat-green)}
+
+/* Icon buttons (move, delete): like the dashboard row icons, frameless until hovered. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .icon-btn{
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex:0 0 var(--flat-control);
+  width:var(--flat-control);min-width:var(--flat-control);height:var(--flat-control);min-height:var(--flat-control);padding:0;
+  border:0;border-radius:var(--flat-radius);background:transparent;color:var(--flat-green);
+  font-size:20px;font-weight:700;line-height:1;box-shadow:none;transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .icon-btn:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+
+/* Fields: white with a green line, green text; focus draws the shared green ring. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select){
+  box-sizing:border-box;min-height:var(--flat-control);padding:8px 12px;
+  border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
+  font-size:15px;font-weight:700;box-shadow:none;
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app select{
+  appearance:none;padding-right:36px;cursor:pointer;
+  background:var(--flat-white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23329a77' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center/18px;
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app :is(input,select):focus-visible,
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-editor:focus-within{outline:3px solid var(--flat-green);outline-offset:2px;box-shadow:none}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app ::placeholder{color:var(--flat-green);opacity:.6;font-weight:400}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app input[type="radio"],
+body[data-studio="quiz"][data-dashboard-view="editor"] #app input[type="checkbox"],
+body[data-studio="quiz"][data-dashboard-view="editor"] #app input[type="range"]{accent-color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .title-input{width:100%;margin:0;font-size:22px;font-weight:700}
+
+/* Question card head: type badge, number, points, play mode, media and the card actions. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .qhead{display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-3)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .badge{
+  padding:6px 12px;border:0;border-radius:999px;background:var(--flat-green);color:var(--flat-white);
+  font-size:14px;font-weight:700;white-space:nowrap;
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .qnum{font-size:15px;font-weight:700;color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app :is(.points,.mode-field){font-size:15px;font-weight:700;color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .points input{width:68px;text-align:center}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .media-upload-label{position:relative;overflow:hidden}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .media-upload-label input{position:absolute;inset:0;width:100%;height:100%;min-height:0;padding:0;border:0;opacity:0;cursor:pointer}
+
+/* Formatted question text: one green frame around toolbar and text. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-editor{
+  min-width:0;width:100%;overflow:hidden;border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-toolbar{
+  display:flex;flex-wrap:wrap;gap:var(--space-1);padding:var(--space-1);border-bottom:var(--flat-line) solid var(--flat-green);background:var(--flat-white);
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-toolbar button{
+  display:grid;place-items:center;width:36px;min-width:36px;height:36px;min-height:36px;padding:0;
+  border:0;border-radius:var(--flat-radius-sm);background:transparent;color:var(--flat-green);box-shadow:none;font-size:16px;
+  transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-toolbar button:is(:hover,[aria-pressed="true"]){background:var(--flat-green);color:var(--flat-white)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-toolbar svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-input.qtext{
+  display:block;width:100%;min-height:52px;padding:12px 14px;border:0;border-radius:0;background:transparent;box-shadow:none;outline:0;
+  color:var(--flat-green);font-size:16px;line-height:1.5;white-space:pre-wrap;
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-input:empty::before{content:attr(data-placeholder);color:var(--flat-green);opacity:.6;pointer-events:none}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-input[data-align="center"]{text-align:center}
+
+/* Media attached to a question. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .question-media-editor{
+  margin:var(--space-3) 0 0;padding:var(--space-3);border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .media-preview-editor{display:block;max-width:100%;max-height:220px;margin:0 0 var(--space-2);border-radius:var(--flat-radius-sm);object-fit:contain}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app audio.media-preview-editor{width:min(100%,560px);height:42px}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app video.media-preview-editor{width:auto}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .media-paste-hint{margin-top:var(--space-1);font-size:14px;line-height:1.5;color:var(--flat-green)}
+
+/* Answers: options, ranking items and accepted short answers. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .qbody{display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-3)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app :is(.opt-row,.rank-row){display:flex;flex-wrap:nowrap;align-items:center;gap:var(--space-2)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app :is(.opt-row,.rank-row)>.opt-text{flex:1 1 0;min-width:0;width:auto}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .opt-row :is(input[type="radio"],input[type="checkbox"]){flex:none;width:20px;height:20px;margin:0 4px;cursor:pointer}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .rank-num{
+  display:flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;margin:0 2px;
+  border-radius:50%;background:var(--flat-green);color:var(--flat-white);font-size:14px;font-weight:700;
+}
+/* True/false: two tiles; the chosen one is filled, hover previews it. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf{display:flex;gap:var(--space-3)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf label{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:52px;padding:var(--space-3);
+  border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
+  font-size:16px;font-weight:700;cursor:pointer;transition:background-color var(--flat-ease),color var(--flat-ease);
+}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf label:is(:hover,:has(input:checked)){background:var(--flat-green);color:var(--flat-white)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf label:is(:hover,:has(input:checked)) input{accent-color:var(--flat-white)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf input{width:18px;height:18px}
+
+/* Pin questions: image frame, target and controls in the two colours. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .quiz-pin-board{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .quiz-pin-board:focus-visible{outline:3px solid var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .quiz-pin-target{border:3px solid var(--flat-green);background:rgb(50 154 119 / .25)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app :is(.quiz-pin-own,.quiz-pin-marker){background:var(--flat-green);border-color:var(--flat-white)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .quiz-pin-controls label{font-size:14px;font-weight:700;color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .quiz-pin-controls input[type="number"]{width:95px}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .pin-hint{font-size:14px;color:var(--flat-green)}
+
+/* Add panel: one row of question types. */
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .add-panel{text-align:center}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .add-label{margin-bottom:var(--space-3);font-size:18px;font-weight:700;color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #app .add-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--space-2)}
+body[data-studio="quiz"][data-dashboard-view="editor"] #cloudStatus{color:var(--flat-green);text-align:center}
+body[data-studio="quiz"][data-dashboard-view="editor"] #cloudStatus[data-state="error"]{color:#be123c}
+
+@media(max-width:600px){
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app .studio-header .studio-actions{width:100%;justify-content:flex-start}
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app .studio-header .studio-home{margin-left:auto}
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app .panel{padding:var(--space-3)}
+  /* Badge and number on the left, move and delete on the right, settings in the next row. */
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app .qhead{gap:var(--space-1)}
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app .badge{padding:5px 9px;font-size:13px}
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app .qnum{font-size:14px}
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app .qhead [data-action="move-question"][data-dir="-1"]{margin-left:auto}
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app :is(.opt-row,.rank-row){gap:var(--space-1)}
+  body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf{flex-direction:column}
+}

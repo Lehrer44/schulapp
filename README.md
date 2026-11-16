@@ -43,15 +43,16 @@ Alle Quiz-Studio-Seiten verwenden ein gemeinsames Design-System. Dazu gehören B
 
 Neue Quiz-Studio-Komponenten verwenden die Tokens statt fester Farbwerte und definieren keine eigenen Button-Farben. Layout, Abläufe und gespeicherte Inhalte ändern sich nicht, ein SQL-Update ist nicht nötig.
 
-## Quiz Studio: Dashboard im Flat-Design
+## Quiz Studio: Dashboard und Editor im Flat-Design
 
-Das Dashboard des Quiz Studios (`apps/quiz-studio/index.html`, Bibliotheksansicht) verwendet ein flaches Layout in genau zwei Farben: Grün (`#329A77`, Kontrast 3,5:1 zu Weiß) und Weiß. Rot erscheint nur bei Fehlermeldungen. Die Regeln liegen in `apps/quiz-studio/library.css`, die nach `theme.css` geladen wird. Sie gelten ausschließlich für die Bibliotheksansicht. Editor, Live-Ansichten und die übrigen Anwendungen bleiben unverändert.
+Das Dashboard des Quiz Studios (`apps/quiz-studio/index.html`, Bibliotheksansicht) verwendet ein flaches Layout in genau zwei Farben: Grün (`#329A77`, Kontrast 3,5:1 zu Weiß) und Weiß. Rot erscheint nur bei Fehlermeldungen. Seit dem Quiz-Editor gilt dasselbe Design auch für die Editoransicht. Die Regeln liegen in `apps/quiz-studio/flat.css`, die nach `theme.css` geladen wird. Sie gelten ausschließlich für Dashboard und Quiz-Editor. Vorschau, Live-Ansichten, Teilnehmerseiten, die Editoren der anderen Spiele sowie Umfragen und Jeopardy bleiben unverändert.
 
 - **Kopfzeile:** Logo und „Quiz Studio“ links, das Häuschen rechts führt zum Haupt-Dashboard. Darunter liegt eine grüne Linie. Die Brotkrümelnavigation ist in dieser Ansicht ausgeblendet.
 - **Kacheln:** weiße Flächen mit grünem Rahmen, ohne Schatten.
 - **Gespeicherte Spiele:** grüne Zeilen mit weißer Schrift und Symbolen für Starten (Gamepad), Bearbeiten und Löschen. Beim Überfahren mit der Maus oder bei Tastaturfokus werden die Farben vertauscht.
 - **Kopfsymbole:** grün auf Weiß. Alle Symbole haben eine Tippfläche von 44 px, die sichtbare Fläche ist 28 px groß. „Neues Spiel“ hat einen grünen Rahmen und ist so groß wie „Zufälliges Spiel“ und „Fragenkatalog“. Beim Überfahren füllt sich die sichtbare Fläche grün.
 - **Schrift:** Comic Neue in den Stärken 400 und 700. Die Schrift liegt als WOFF2 in `shared/fonts/comic-neue/` (Lizenz: SIL Open Font License, `OFL.txt`) und wird ohne externe Anbieter geladen. Editor, Live-Ansichten und die übrigen Anwendungen behalten ihre bisherige Schrift.
+- **Quiz-Editor:** dieselbe Kopfzeile wie das Dashboard. Rechts stehen „← Quiz“, „Erneut speichern“ und das Häuschen. Titel, Fragekarten und „Frage hinzufügen“ sind Kacheln mit grünem Rahmen. Buttons sind grün umrandet, nur „Erneut speichern“ ist grün gefüllt. Beim Überfahren werden die Farben vertauscht. Felder haben eine grüne Linie und grüne Schrift. Der Fragetyp steht als grünes Etikett in der Karte, die gewählte Wahr/Falsch-Antwort ist grün gefüllt. Verschieben und Löschen sind Symbole ohne Rahmen wie in der Spielliste. Auf schmalen Bildschirmen bleiben Etikett, Nummer, Verschieben und Löschen in einer Zeile. Das Pin-Symbol des Fragetyps ist jetzt ein Textzeichen (⌖) statt eines farbigen Emojis.
 
 ## Live-Spielweisen im Quiz Studio
 

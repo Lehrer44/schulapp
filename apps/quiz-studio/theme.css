@@ -90,9 +90,6 @@ body[data-studio="quiz"][data-dashboard-view] :is(button.bluff-start-card,button
 
 /* Square icon buttons: dialog close buttons share the size of the other icon controls. */
 body[data-studio="quiz"][data-dashboard-view] :is([data-close],.access-close){width:44px;min-width:44px;padding:0;font-size:20px;line-height:1}
-/* Formatting toolbar in the editor: quiet until hovered or active. */
-body[data-studio="quiz"][data-dashboard-view] .rich-toolbar button{border-color:transparent;background:transparent;box-shadow:none;border-radius:var(--qs-radius-sm);color:var(--qs-text-soft)}
-body[data-studio="quiz"][data-dashboard-view] .rich-toolbar button[aria-pressed="true"]{border-color:var(--qs-tint-line);background:var(--qs-tint);color:var(--qs-accent-hover)}
 
 /* Surfaces */
 body[data-studio="quiz"][data-dashboard-view] .panel{
