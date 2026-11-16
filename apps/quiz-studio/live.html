@@ -25,27 +25,24 @@ h2{font-size:1.15rem;margin:0 0 12px;letter-spacing:-.02em}
 .media-audio{width:min(100%,560px);height:44px}
 .answers-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .answer-board{font-size:1rem;overflow-wrap:anywhere}
-.answer-board.correct{font-weight:800}
-.correct-note{padding:12px 14px;margin:14px 0 0;background:var(--ok-soft);border:1px solid #a7f3d0;border-radius:var(--qs-radius);color:#065f46}
+.correct-note{padding:12px 14px;margin:14px 0 0}
 .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--line)}
-.timer{font-variant-numeric:tabular-nums;font-size:1.1rem;font-weight:900;color:var(--dark)}
-.timer.expired{color:var(--danger)}
-.board-status{padding:13px 15px;background:var(--soft);border:1px dashed var(--line-strong);border-radius:var(--qs-radius);color:var(--muted)}
+.timer{font-variant-numeric:tabular-nums;font-size:1.1rem}
+.board-status{padding:13px 15px}
 .ranking-list{display:flex;flex-direction:column;gap:7px}
 .rank-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 11px}
-.rank-num{display:grid;place-items:center;width:26px;height:26px;border-radius:var(--qs-radius-sm);background:var(--muted-bg);font-size:.8rem;font-weight:900}
-.rank-name{font-weight:750;overflow-wrap:anywhere}
-.rank-score{font-weight:900;color:var(--dark);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rank-num{display:grid;place-items:center;width:26px;height:26px;font-size:.8rem}
+.rank-name{overflow-wrap:anywhere}
+.rank-score{font-variant-numeric:tabular-nums;white-space:nowrap}
 .answer-count{font-size:.86rem;color:var(--muted);margin-top:10px}
 .responses{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .response-row{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(0,2fr) auto;gap:10px;align-items:start;padding:11px 12px}
 .response-name{font-weight:800;overflow-wrap:anywhere}
 .response-answer{white-space:pre-wrap;overflow-wrap:anywhere}
 .response-points{font-weight:900;white-space:nowrap}
-.status-pill{display:inline-flex;padding:4px 9px;border-radius:999px;background:var(--muted-bg);font-weight:800;font-size:.78rem}
-.status-pill.green{background:var(--ok-soft);color:#065f46}
+.status-pill{display:inline-flex;padding:4px 9px}
 .foot{color:var(--muted);text-align:center;padding:var(--space-3) 0 var(--space-2);font-size:.82rem}
-.notice{padding:12px 14px;border-radius:var(--qs-radius);background:#fffbeb;color:#92400e;border:1px solid #fcd34d}
+.notice{padding:12px 14px}
 .hidden{display:none!important}
 @media(max-width:900px){
  .layout{grid-template-columns:minmax(0,1fr)}
@@ -64,7 +61,7 @@ h2{font-size:1.15rem;margin:0 0 12px;letter-spacing:-.02em}
 <link rel="stylesheet" href="../../shared/shell.css">
 <link rel="stylesheet" href="../../shared/dashboard.css?v=compact-2">
 <link rel="stylesheet" href="../../shared/workspace.css?v=compact-2">
-<link rel="stylesheet" href="live.css?v=design-1">
+<link rel="stylesheet" href="live.css?v=flat-1">
 <link rel="stylesheet" href="rich-text.css?v=design-1">
 <script src="rich-text.js?v=design-1"></script>
 <script src="play-modes.js"></script>
@@ -73,6 +70,7 @@ h2{font-size:1.15rem;margin:0 0 12px;letter-spacing:-.02em}
 <link rel="stylesheet" href="play-modes.css?v=design-1">
 <link rel="stylesheet" href="../../shared/live-sidebar.css">
 <link rel="stylesheet" href="theme.css?v=design-1">
+<link rel="stylesheet" href="flat.css?v=live-1">
 </head>
 <body data-studio="quiz" data-dashboard-view="live">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -126,7 +124,7 @@ function openJoin(){
  joinDialog.showModal();
  try{
   if(typeof window.QRCode!=='function')throw new Error('QR_UNAVAILABLE');
-  new QRCode(holder,{text:joinUrl(),width:280,height:280,colorDark:'#1e293b',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+  new QRCode(holder,{text:joinUrl(),width:280,height:280,colorDark:'#329a77',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
   // qrcodejs adds a tooltip containing its payload; the dialog shows only the QR and code.
   holder.removeAttribute('title');
  }catch(e){error.classList.remove('hidden');}
@@ -193,7 +191,7 @@ function render(){
  if(!session){app.innerHTML='<div class="panel">Live-Quiz wird geladen …</div>';return;}
  const st=qstate();const q=activeQuestion();
  const phase=session.status==='ended'?'Beendet':'Live';
- app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1>'+(session.status==='lobby'?'':'<div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div>')+'</div></div><div class="studio-actions"><button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col live-sidebar" tabindex="0" aria-label="Punktestand und Spielstatus">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div></div></aside></div>';
+ app.innerHTML='<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1>'+(session.status==='lobby'?'':'<div class="studio-subtitle">Live-Quiz · '+esc(phase)+'</div>')+'</div></div><div class="studio-actions"><button class="secondary" data-action="access" aria-haspopup="dialog">Teilnahme</button><button class="danger end-quiz" data-action="end-quiz">Beenden</button><a class="studio-home" href="../../index.html" title="Zum Hauptdashboard" aria-label="Zum Hauptdashboard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5"/></svg></a></div></header>'+(actionError?'<p class="notice" role="alert">'+esc(actionError)+'</p>':'')+'<div class="layout"><div class="main-col">'+renderQuestion()+'</div><aside class="side-col live-sidebar" tabindex="0" aria-label="Punktestand und Spielstatus">'+(st.mode&&st.mode!=='classic'?raceQueue(st):'')+'<div class="panel ranking-panel"><div class="ranking-heading"><div><h2>Rangliste</h2></div>'+lockButton()+'</div><div id="leaderboard">'+leaderboardMarkup()+'</div></div></aside></div>';
  if(q?.type==='pin')QuizPin.mount(app.querySelector('[data-quiz-pin]'),q,{showTarget:!!st.revealed});
  updateTimer();
 }
