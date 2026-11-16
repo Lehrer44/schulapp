@@ -5,7 +5,7 @@
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:400;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-400.woff2") format("woff2")}
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:700;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-700.woff2") format("woff2")}
 body[data-studio="quiz"][data-dashboard-view="library"]{
-  --flat-green:#198754; /* 4.5:1 against white, so white text on green stays readable */
+  --flat-green:#329a77; /* chosen brand green; 3.5:1 against white */
   --flat-white:#fff;
   --flat-line:2px;
   --flat-frame:4px;
