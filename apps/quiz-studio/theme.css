@@ -98,9 +98,6 @@ body[data-studio="quiz"][data-dashboard-view] .rich-toolbar button[aria-pressed=
 body[data-studio="quiz"][data-dashboard-view] .panel{
   border:1px solid var(--qs-line);border-radius:var(--qs-radius-lg);background:var(--qs-surface);box-shadow:var(--qs-shadow);
 }
-body[data-studio="quiz"][data-dashboard-view] .qzcard{background:var(--qs-surface);box-shadow:none;transition:border-color var(--qs-ease),box-shadow var(--qs-ease)}
-body[data-studio="quiz"][data-dashboard-view] .qzcard:hover{border-color:var(--qs-line-strong);box-shadow:var(--qs-shadow-xs)}
-body[data-studio="quiz"][data-dashboard-view] .empty{border-color:var(--qs-line-strong)}
 body[data-studio="quiz"] :is(.bluff-dialog,.quiz-access-dialog,.yn-dialog){
   border:1px solid var(--qs-line);border-radius:var(--qs-radius-lg);background:var(--qs-surface);color:var(--qs-text);box-shadow:var(--qs-shadow-lg);
 }

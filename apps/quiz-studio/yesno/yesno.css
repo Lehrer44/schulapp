@@ -23,8 +23,6 @@
 .yn-picker small{display:block;color:#64748b;font-weight:400}
 .yn-packs{display:flex;gap:18px;flex-wrap:wrap}
 .yn-packs label{display:flex;align-items:center;margin:4px 0}
-.yn-resume{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:var(--space-3)}
-.yn-resume h3{width:100%;margin:0}
 .yn-question-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;padding:var(--space-3) 0;border-bottom:1px solid #f1f5f9}
 .yn-question-row h3{margin:0 0 6px;font-size:17px;overflow-wrap:anywhere}
 .yn-tag{display:inline-block;border-radius:999px;background:#eef2ff;color:#4f46e5;padding:5px 10px;font-size:13px;font-weight:650}

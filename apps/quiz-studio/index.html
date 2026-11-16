@@ -24,7 +24,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 
  /* ---------- Quiz cards ---------- */
-.qzcard .quiz-info{grid-column:1;min-width:0}
 .question-media-editor{margin:10px 0 2px;padding:12px;background:var(--surface-soft);border:1px solid var(--line);border-radius:var(--qs-radius)}
 .media-upload-label{position:relative;overflow:hidden}
 .media-upload-label input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
@@ -150,12 +149,12 @@ min-height:var(--control-size);}
 <script src="play-modes.js"></script>
 <script src="pin.js?v=design-1"></script>
 <link rel="stylesheet" href="bluff/library.css?v=design-1">
-<script src="bluff/library.js?v=controls-3"></script>
-<script src="rather/library.js"></script>
-<script src="same/library.js"></script>
-<link rel="stylesheet" href="yesno/yesno.css?v=design-1">
+<script src="bluff/library.js?v=flat-1"></script>
+<script src="rather/library.js?v=flat-1"></script>
+<script src="same/library.js?v=flat-1"></script>
+<link rel="stylesheet" href="yesno/yesno.css?v=flat-1">
 <script src="yesno/common.js?v=manual-flow-5"></script>
-<script src="yesno/library.js?v=manual-flow-5"></script>
+<script src="yesno/library.js?v=flat-1"></script>
 <link rel="stylesheet" href="pin.css?v=design-1">
 <link rel="stylesheet" href="editor-compact.css?v=design-1">
 <link rel="stylesheet" href="play-modes.css?v=design-1">
@@ -164,81 +163,9 @@ min-height:var(--control-size);}
 body[data-studio="quiz"] .studio-title{font-size:clamp(20px,2.5vw,24px)}
 body[data-studio="quiz"] .icon-btn svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #cloudStatus[data-state="error"]{color:#be123c;font-weight:600}
-/* Library tiles; colors come from theme.css. */
-body[data-studio="quiz"][data-dashboard-view="library"] #app{
-  --library-control-height:44px;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:24px;align-items:stretch;margin-top:24px;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid>.panel{
-  min-width:0;min-height:236px;margin:0;padding:16px;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
-  display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;
-  gap:8px;margin:4px 2px 18px;min-height:44px;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{
-  margin:0;min-width:0;font-size:20px;font-weight:700;line-height:1.25;
-  color:var(--studio-text);overflow-wrap:anywhere;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-actions{
-  display:flex;flex-wrap:nowrap;align-items:center;gap:6px;width:auto;flex:none;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(button,.btn){
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  box-sizing:border-box;height:var(--library-control-height);min-height:var(--library-control-height);
-  padding:0 9px;white-space:nowrap;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(.studio-add,.icon-btn){
-  width:var(--library-control-height);min-width:var(--library-control-height);
-  flex:0 0 var(--library-control-height);padding:0;order:0;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-add{
-  background:var(--qs-tint);border-color:var(--qs-tint-line);color:var(--qs-accent);box-shadow:var(--qs-shadow-xs);
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-add:hover:not(:disabled){
-  background:var(--qs-tint-hover);border-color:var(--qs-tint-line);color:var(--qs-accent-hover);box-shadow:var(--qs-shadow-xs);
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading svg{
-  display:block;width:22px;height:22px;fill:none;stroke:currentColor;
-  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .grid{gap:12px}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
-  padding:8px;margin:0;gap:8px;border:1px solid var(--qs-line);border-radius:var(--qs-radius);
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .quiz-info h3{
-  margin:0;font-size:14px;font-weight:700;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .quiz-info .muted{display:none}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .qzcard .card-actions{
-  grid-column:2;grid-row:1;display:flex;justify-content:flex-end;align-items:center;align-self:center;
-  gap:8px;margin:0;padding:0;flex-wrap:nowrap;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .empty{
-  display:flex;align-items:center;justify-content:center;min-height:128px;
-  margin:0;padding:16px;border:1px dashed #e2e8f0;border-radius:var(--qs-radius);
-  background:#f8fafc;color:var(--studio-muted);font-size:13px;box-shadow:none;text-wrap:balance;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]){
-  margin:12px 0 0;color:#be123c;font-size:14px;overflow-wrap:anywhere;
-}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]):empty{display:none}
-@media(max-width:1199px){
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-}
-@media(max-width:700px){
-  body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{
-    grid-template-columns:minmax(0,1fr);
-  }
-}
 </style>
-<link rel="stylesheet" href="theme.css?v=design-1">
+<link rel="stylesheet" href="theme.css?v=design-2">
+<link rel="stylesheet" href="library.css?v=flat-1">
 </head>
 <body data-studio="quiz" data-dashboard-view="library">
 <nav class="app-nav" aria-label="Bereichsnavigation"><a href="../../index.html">← SchulApp</a><span aria-hidden="true">/</span><a href="index.html">Quiz Studio</a></nav>
@@ -558,6 +485,7 @@ function viewList(){
   return `
   <header class="studio-header">
     <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><h1 class="studio-title">Quiz <span>Studio</span></h1></div>
+    <a class="studio-home" href="../../index.html" title="Zum Hauptdashboard" aria-label="Zum Hauptdashboard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5"/></svg></a>
   </header>
   <div class="studio-library-grid">
   <section class="panel" id="classicLibrary">
@@ -620,17 +548,14 @@ function viewList(){
 }
 
 function quizCard(q){
-  const pts = q.questions.reduce((s,x)=>s + (Number(x.points)||0), 0);
+  const name = esc(q.title) || 'Ohne Titel';
   return `
-  <div class="panel qzcard" data-quiz-id="${q.id}">
-    <div class="quiz-info">
-      <h3>${esc(q.title) || 'Ohne Titel'}</h3>
-      <div class="muted">${q.questions.length} ${q.questions.length === 1 ? 'Frage' : 'Fragen'} · ${fmt(pts)} Punkte</div>
-    </div>
+  <div class="qzcard" data-quiz-id="${q.id}">
+    <div class="quiz-info"><h3>${name}</h3></div>
     <div class="card-actions">
-      <button data-action="live-quiz" data-id="${q.id}">Starten</button>
-      <button class="icon-btn" data-action="open-quiz" data-id="${q.id}" title="Bearbeiten" aria-label="Quiz bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2 2 0 0 1 5 5L9 20l-6 1 1-6Z"/></svg></button>
-      <button class="icon-btn danger" data-action="del-quiz" data-id="${q.id}" title="Löschen" aria-label="Quiz löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
+      <button class="icon-btn" data-action="live-quiz" data-id="${q.id}" title="Starten" aria-label="${name} starten"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 6h10a5 5 0 0 1 5 5v4.5a3.5 3.5 0 0 1-6.3 2.1L14.5 16h-5l-1.2 1.6A3.5 3.5 0 0 1 2 15.5V11a5 5 0 0 1 5-5Z"/><path d="M7.5 9.5v4M5.5 11.5h4M15.5 10.5h.01M18 12.5h.01"/></svg></button>
+      <button class="icon-btn" data-action="open-quiz" data-id="${q.id}" title="Bearbeiten" aria-label="${name} bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2 2 0 0 1 5 5L9 20l-6 1 1-6Z"/></svg></button>
+      <button class="icon-btn" data-action="del-quiz" data-id="${q.id}" title="Löschen" aria-label="${name} löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
     </div>
   </div>`;
 }
