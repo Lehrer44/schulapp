@@ -170,9 +170,9 @@ async function fixtures(){
  async function captureEditor(name){
   await page.locator('body[data-dashboard-view="editor"]').waitFor();
   assert.equal(await page.locator('.studio-title').innerText(),name+' Studio');
-  assert(await page.locator('.app-nav').isVisible());
+  assert.equal(await page.locator('.app-nav').isVisible(),name!=='Quiz','Only the flat Quiz editor replaces the breadcrumb with the home button');
   const panel=await page.locator('.panel').first().evaluate(el=>{const s=getComputedStyle(el);return {radius:s.borderRadius,border:s.borderTopWidth}});
-  assert.deepEqual(panel,{radius:name==='Quiz'?'20px':'18px',border:'1px'});
+  assert.deepEqual(panel,name==='Quiz'?{radius:'20px',border:'4px'}:{radius:'18px',border:'1px'});
   await page.screenshot({path:path.join(outputRoot,'editor-'+name.toLowerCase()+'-desktop.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),name+' editor mobile overflow');
