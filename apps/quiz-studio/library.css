@@ -1,7 +1,9 @@
 /* Quiz Studio dashboard: flat UI in two colours, green and white.
    Loaded last on apps/quiz-studio/index.html and scoped to the library view, so the editor,
    live views and the other apps keep their look. Hovering a saved game swaps the two colours.
-   Red stays reserved for error messages. */
+   Red stays reserved for error messages. Text uses Comic Neue (SIL OFL), served from shared/fonts. */
+@font-face{font-family:"Comic Neue";font-style:normal;font-weight:400;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-400.woff2") format("woff2")}
+@font-face{font-family:"Comic Neue";font-style:normal;font-weight:700;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-700.woff2") format("woff2")}
 body[data-studio="quiz"][data-dashboard-view="library"]{
   --flat-green:#198754; /* 4.5:1 against white, so white text on green stays readable */
   --flat-white:#fff;
@@ -12,8 +14,10 @@ body[data-studio="quiz"][data-dashboard-view="library"]{
   --flat-radius-lg:20px;
   --flat-control:44px;
   --flat-ease:.15s ease;
-  background:var(--flat-white);color:var(--flat-green);
+  --flat-font:"Comic Neue",sans-serif;
+  background:var(--flat-white);color:var(--flat-green);font-family:var(--flat-font);
 }
+body[data-studio="quiz"][data-dashboard-view="library"] :is(#app,#app *,#cloudStatus){font-family:var(--flat-font)}
 body[data-studio="quiz"][data-dashboard-view="library"]>.app-nav{display:none}
 body[data-studio="quiz"][data-dashboard-view="library"]>.wrap{padding-top:var(--space-4)}
 body[data-studio="quiz"][data-dashboard-view="library"] #app svg{
@@ -31,8 +35,8 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-header{
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-icon{border-radius:var(--flat-radius);background:var(--flat-green);color:var(--flat-white)}
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-icon svg{width:28px;height:28px}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-title{font-weight:800;letter-spacing:-.03em;color:var(--flat-green)}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-title span{color:inherit;font-weight:500}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-title{font-weight:700;letter-spacing:-.01em;color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-title span{color:inherit;font-weight:400}
 
 /* Icon controls: header actions and the home button. Green icon on white; inverted on hover. */
 body[data-studio="quiz"][data-dashboard-view="library"] #app :is(.studio-home,.library-heading .studio-actions>*){
@@ -42,10 +46,19 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app :is(.studio-home,.l
   box-shadow:none;text-decoration:none;transition:background-color var(--flat-ease),color var(--flat-ease);
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-home svg{width:28px;height:28px}
-body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-add{border-color:var(--flat-green)}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is(.studio-home,.library-heading .studio-actions>*):hover:not(:disabled){
-  background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white);box-shadow:none;
+body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-home:hover{background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
+/* Tile header actions keep a 44px touch target but draw a 28px frame, so the framed add button
+   is as large as the random and catalogue icons next to it. Hover fills the frame. */
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*{position:relative;isolation:isolate;border:0;background:transparent}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*::before{
+  content:"";position:absolute;inset:8px;z-index:-1;border:var(--flat-line) solid transparent;border-radius:var(--flat-radius-sm);
+  background:var(--flat-white);transition:background-color var(--flat-ease),border-color var(--flat-ease);
 }
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-add::before{border-color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*:hover:not(:disabled){background:transparent;color:var(--flat-white);box-shadow:none}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*:hover:not(:disabled)::before{background:var(--flat-green);border-color:var(--flat-green)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions svg{width:22px;height:22px}
+body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-add svg{width:18px;height:18px;stroke-width:2.5}
 
 /* Tiles: 3 columns on large screens, 2 on medium, 1 on narrow ones. */
 body[data-studio="quiz"][data-dashboard-view="library"] #app .studio-library-grid{
@@ -59,7 +72,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading{
   display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--space-2);margin:0 0 var(--space-4);
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading h2{
-  margin:0;min-width:0;font-size:20px;font-weight:750;line-height:1.25;color:var(--flat-green);overflow-wrap:anywhere;
+  margin:0;min-width:0;font-size:21px;font-weight:700;line-height:1.25;color:var(--flat-green);overflow-wrap:anywhere;
 }
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions{flex:none;flex-wrap:nowrap;gap:var(--space-1)}
 
