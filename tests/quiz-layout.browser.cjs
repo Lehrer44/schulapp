@@ -93,6 +93,11 @@ function fixture(){
   }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Grid fits '+width);
   assert(!(await page.locator('.app-nav').isVisible()),'Library uses the home button instead of the breadcrumb');
+  assert(await page.evaluate(async()=>{await document.fonts.ready;return ['400','700'].every(w=>document.fonts.check(w+' 16px "Comic Neue"'))&&[...document.fonts].some(f=>f.family.replace(/"/g,'')==='Comic Neue'&&f.status==='loaded');}),'Comic Neue is served from the repository');
+  assert.match(await page.locator('#classicLibrary h2').evaluate(el=>getComputedStyle(el).fontFamily),/^"?Comic Neue"?/);
+  assert.match(await page.locator('.qzcard h3').first().evaluate(el=>getComputedStyle(el).fontFamily),/^"?Comic Neue"?/);
+  for(const action of await page.locator('.library-heading .studio-actions>*').all())
+   assert.equal(await action.evaluate(el=>{const b=getComputedStyle(el,'::before');return parseFloat(b.width)+parseFloat(b.borderLeftWidth)+parseFloat(b.borderRightWidth);}),28,'Add, random and catalogue buttons share one visible size');
   assert.equal(await page.locator('.studio-header .studio-home').getAttribute('href'),'../../index.html');
   await page.screenshot({path:path.join(out,'studio-grid-'+width+'.png'),fullPage:true});
   const colours=el=>el.evaluate(n=>{const s=getComputedStyle(n);return [s.backgroundColor,s.color];});

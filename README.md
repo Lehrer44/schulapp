@@ -50,7 +50,8 @@ Das Dashboard des Quiz Studios (`apps/quiz-studio/index.html`, Bibliotheksansich
 - **Kopfzeile:** Logo und „Quiz Studio“ links, das Häuschen rechts führt zum Haupt-Dashboard. Darunter liegt eine grüne Linie. Die Brotkrümelnavigation ist in dieser Ansicht ausgeblendet.
 - **Kacheln:** weiße Flächen mit grünem Rahmen, ohne Schatten.
 - **Gespeicherte Spiele:** grüne Zeilen mit weißer Schrift und Symbolen für Starten (Gamepad), Bearbeiten und Löschen. Beim Überfahren mit der Maus oder bei Tastaturfokus werden die Farben vertauscht.
-- **Kopfsymbole:** grün auf Weiß; „Neues Spiel“ hat einen grünen Rahmen. Beim Überfahren werden die Farben ebenfalls vertauscht.
+- **Kopfsymbole:** grün auf Weiß. Alle Symbole haben eine Tippfläche von 44 px, die sichtbare Fläche ist 28 px groß. „Neues Spiel“ hat einen grünen Rahmen und ist so groß wie „Zufälliges Spiel“ und „Fragenkatalog“. Beim Überfahren füllt sich die sichtbare Fläche grün.
+- **Schrift:** Comic Neue in den Stärken 400 und 700. Die Schrift liegt als WOFF2 in `shared/fonts/comic-neue/` (Lizenz: SIL Open Font License, `OFL.txt`) und wird ohne externe Anbieter geladen. Editor, Live-Ansichten und die übrigen Anwendungen behalten ihre bisherige Schrift.
 
 ## Live-Spielweisen im Quiz Studio
 
