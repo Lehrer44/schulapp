@@ -239,6 +239,11 @@ function fixture(){
   await player.goto(base+'/apps/quiz-studio/student.html?code=ABCDE');
   await player.locator('#studentName').fill('Ada');await player.locator('#joinForm button').click();
   await player.locator('#shortAnswer').waitFor();
+  // Flat player page: same tile frame, filled main action, green field and Comic Neue as the teacher views.
+  const playerFlat=await player.evaluate(async()=>{await document.fonts.ready;const css=sel=>getComputedStyle(document.querySelector(sel));const panel=css('.panel'),button=css('#submitAnswer'),field=css('#shortAnswer');
+   return {body:css('body').backgroundColor,panel:[panel.borderTopWidth,panel.borderTopColor,panel.boxShadow],button:[button.backgroundColor,button.color],field:field.borderTopColor,font:css('h1').fontFamily};});
+  assert.deepEqual({...playerFlat,font:undefined},{body:'rgb(255, 255, 255)',panel:['4px','rgb(50, 154, 119)','none'],button:['rgb(50, 154, 119)','rgb(255, 255, 255)'],field:'rgb(50, 154, 119)',font:undefined});
+  assert.match(playerFlat.font,/^"?Comic Neue"?/);
   assert.equal(await player.locator('header.top,.logo,#headerStatus,#connectionStatus').count(),0);
   assert.equal(await player.getByText('Dein Status',{exact:true}).count(),0);
   assert.equal(await player.getByText('Live-Ranking',{exact:true}).count(),0);
