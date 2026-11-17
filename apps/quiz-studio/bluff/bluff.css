@@ -1,42 +1,37 @@
 #app{min-width:0}
 .bluff-grid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:var(--space-4);align-items:start}
 .bluff-grid>*,.collection-row>*{min-width:0}
-.bluff-message{max-width:1224px;width:calc(100% - 40px);margin:0 auto 15px;color:#9f1239;font-size:14px}
+.bluff-message{max-width:1224px;width:calc(100% - 40px);margin:0 auto 15px;font-size:14px}
 .bluff-message:empty{display:none}
-.bluff-subtitle{margin:var(--space-1) 0 0;color:#64748b;font-size:14px}
-.bluff-label{display:block;font-size:13px;font-weight:700;color:#64748b;margin:14px 0 6px}
-.bluff-input,.bluff-textarea,.bluff-select{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px 12px;background:#fff;color:#1e293b;font:inherit;box-sizing:border-box}
+.bluff-subtitle{margin:var(--space-1) 0 0;font-size:14px}
+.bluff-label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}
+.bluff-input,.bluff-textarea,.bluff-select{width:100%;padding:11px 12px;font:inherit;box-sizing:border-box}
 .bluff-textarea{min-height:86px;resize:vertical}
 .bluff-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .bluff-stack{display:grid;gap:10px}
 .bluff-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .bluff-between{justify-content:space-between}
 .bluff-question{overflow-wrap:anywhere}
-.bluff-code{font-size:clamp(28px,5vw,44px);font-weight:800;letter-spacing:.17em;color:#4f46e5}
-.bluff-help{color:#64748b;font-size:13px;line-height:1.6}
-.bluff-help a{color:#4338ca}
+.bluff-code{font-size:clamp(28px,5vw,44px);letter-spacing:.17em}
+.bluff-help{font-size:13px;line-height:1.6}
 .bluff-score{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:var(--space-2) var(--space-3);border:1px solid var(--qs-line);border-radius:var(--qs-radius);background:var(--qs-soft);margin-top:8px;overflow-wrap:anywhere}
-.bluff-score.me{border-color:#c7d2fe;background:#eef2ff}
 .bluff-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:var(--space-3)}
 .bluff-options{display:grid;gap:var(--space-2);margin:var(--space-3) 0}
-.bluff-option{padding:var(--card-padding);border:1px solid var(--qs-tint-line);border-radius:var(--qs-radius);background:var(--qs-soft);overflow-wrap:anywhere}
+.bluff-option{padding:var(--card-padding);overflow-wrap:anywhere}
 .bluff-option h3{font-size:19px;line-height:1.4}
-.bluff-option.new-reveal{animation:bluff-reveal .45s ease both;background:#eef2ff}
-.bluff-option.truth{border-color:#047857;background:#ecfdf5}
+.bluff-option.new-reveal{animation:bluff-reveal .45s ease both}
 .bluff-option button{width:100%;text-align:left}
 .bluff-voters{font-size:13px}
-.bluff-counter{font-variant-numeric:tabular-nums;font-weight:750;color:#4f46e5}
+.bluff-counter{font-variant-numeric:tabular-nums}
 .bluff-timer{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .bluff-timer select{width:auto}
-.bluff-timer.expired{color:#be123c}
-.collection-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:var(--space-3) 0;border-bottom:1px solid #f1f5f9}
-.collection-row:last-child{border:0}
+.collection-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:var(--space-3) 0}
 .collection-row h3{font-size:16px;margin:0 0 7px;overflow-wrap:anywhere}
 .collection-row p{margin:5px 0;overflow-wrap:anywhere}
-.bluff-status{min-height:20px;font-size:13px;color:#64748b;margin:8px 0}
-.bluff-empty{padding:20px;border:1px dashed var(--qs-line-strong);border-radius:var(--qs-radius);color:var(--qs-muted)}
+.bluff-status{min-height:20px;font-size:13px;margin:8px 0}
+.bluff-empty{padding:20px}
 .bluff-rules{margin:0;padding-left:20px;font-size:14px;line-height:1.9}
-.bluff-save-status{color:#047857;font-size:13px}
+.bluff-save-status{font-size:13px}
 [hidden]{display:none!important}
 @keyframes bluff-reveal{from{opacity:.3;transform:translateY(8px) rotateX(12deg)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){
@@ -49,7 +44,6 @@
  .studio-actions{justify-content:flex-start}
  .bluff-code{font-size:32px}
 }
-.bluff-message.is-success{color:#047857}
 body[data-studio="quiz"][data-dashboard-view="bluff"] .panel .bluff-question{font-size:clamp(23px,3.2vw,38px);line-height:1.25;letter-spacing:-.035em}
 .bluff-grid.bluff-lobby>aside{grid-column:2}
 @media(max-width:850px){
@@ -57,7 +51,7 @@ body[data-studio="quiz"][data-dashboard-view="bluff"] .panel .bluff-question{fon
 }
 .bluff-option.revealed{display:grid;gap:24px;align-items:center}
 .bluff-option-answer{min-width:0}
-.bluff-option .bluff-voters{margin:0;padding-left:20px;border-left:1px solid #c7d2fe;color:#1e293b;min-width:0}
+.bluff-option .bluff-voters{margin:0;padding-left:20px;min-width:0}
 .bluff-voter-list{display:flex;flex-wrap:wrap}
 .bluff-voter{box-sizing:border-box;overflow-wrap:anywhere}
 @media(max-width:520px){
@@ -76,21 +70,19 @@ body[data-bluff-mode="host"] .bluff-timer select{min-height:44px}
 body[data-bluff-mode="host"] #app .bluff-clock-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:0 0 44px;padding:0}
 .bluff-clock-button svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .bluff-score-name{display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere}
-body[data-bluff-mode="host"] .bluff-score:is(.has-answer,.has-vote){background:#ecfdf5;border-color:#6ee7b7}
-.bluff-answer-mark{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#047857;color:#fff;font-size:15px;line-height:1}
+.bluff-answer-mark{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;font-size:15px;line-height:1}
 body[data-bluff-mode="host"] .bluff-host-main .bluff-status{margin:0}
 /* Player cards follow the game flow; standings grow with every participant. */
 body[data-bluff-mode="player"] .bluff-player-grid{grid-template-columns:minmax(0,1fr)}
 body[data-bluff-mode="player"] .bluff-player-standings{position:static;max-height:none;overflow:visible}
 body[data-bluff-mode="player"] .bluff-player-standings>.panel{max-height:none;overflow:visible}
 body[data-bluff-mode="player"] #bluffForm #sendBluff{margin-top:16px}
-.bluff-foot{width:min(1224px,calc(100% - 40px));margin:0 auto 18px;text-align:center;color:#64748b;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
-#bluffConnectionStatus[data-state="error"]{color:#be123c;font-weight:650}
+.bluff-foot{width:min(1224px,calc(100% - 40px));margin:0 auto 18px;text-align:center;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+#bluffConnectionStatus[data-state="error"]{font-weight:650}
 body[data-studio="quiz"][data-dashboard-view="bluff"][data-bluff-mode="host"] button.bluff-start-card{display:grid;place-items:center;width:100%;min-height:220px;margin:0;font-size:clamp(24px,3vw,32px);font-weight:750;letter-spacing:-.025em}
 .bluff-final-result{grid-column:1/-1}
 .bluff-final-ranking{width:min(100%,900px);margin:auto}
-.bluff-final-ranking .bluff-score{padding:15px 18px;background:linear-gradient(120deg,#ffffff,#f8fafc);font-size:18px}
-.bluff-final-ranking .bluff-score>span:first-child{display:grid;place-items:center;min-width:30px;height:34px;border-radius:10px;background:#eef2ff;font-weight:800;color:#4f46e5}
+.bluff-final-ranking .bluff-score{padding:15px 18px;font-size:18px}
 .bluff-authors{display:flex;flex-wrap:wrap;gap:8px;overflow-wrap:anywhere}
 .bluff-person-name{min-width:0;overflow-wrap:anywhere}
 @media(max-width:850px){
@@ -99,15 +91,14 @@ body[data-studio="quiz"][data-dashboard-view="bluff"][data-bluff-mode="host"] bu
 /* Voting uses one horizontal answer row with a native single-choice control. */
 .bluff-option.bluff-voting-option{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:12px}
 .bluff-vote-control{display:grid;place-items:center;width:44px;height:44px;cursor:pointer}
-.bluff-vote-control input{appearance:none;width:26px;height:26px;margin:0;border:2px solid #94a3b8;border-radius:50%;background:#fff;cursor:pointer}
-.bluff-vote-control input:checked{border-color:#047857;background:#047857;box-shadow:inset 0 0 0 5px #fff}
+.bluff-vote-control input{appearance:none;width:26px;height:26px;margin:0;border:2px solid;border-radius:50%;background:#fff;cursor:pointer}
+.bluff-vote-control input:checked{box-shadow:inset 0 0 0 5px #fff}
 .bluff-vote-control:has(input:disabled){cursor:default}
 .bluff-vote-control input:disabled{cursor:default}
 @media(forced-colors:active){
  .bluff-vote-control input{appearance:auto}
  .bluff-vote-control input:checked{background:none;box-shadow:none}
 }
-body[data-bluff-mode="player"] .bluff-final-ranking .bluff-score.me{background:#d1fae5;border-color:#047857;color:#065f46}
 /* Manipulation keeps answer groups centered and the reveal columns quiet. */
 .manipulation-option{box-sizing:border-box;display:grid;align-items:center;min-height:68px}
 .manipulation-option .bluff-option-answer{display:flex;flex-direction:column;justify-content:center;align-self:stretch;gap:6px}
@@ -115,8 +106,8 @@ body[data-bluff-mode="player"] .bluff-final-ranking .bluff-score.me{background:#
 .manipulation-option.revealed{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);min-height:94px}
 .manipulation-option .bluff-authors{align-items:center;font-size:17px;font-weight:650;line-height:1.4}
 /* Whole-pixel line height and optical padding center glyphs even when names wrap. */
-.manipulation-option .bluff-author{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-width:0;min-height:28px;padding:2px 14px 4px;border:1px solid #4338ca;border-radius:999px;background:#4f46e5;color:#fff;font-size:14px;font-weight:500;line-height:20px;box-shadow:0 1px 2px #0f172a14}
+.manipulation-option .bluff-author{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-width:0;min-height:28px;padding:2px 14px 4px;border-radius:999px;font-size:14px;line-height:20px}
 .manipulation-option .bluff-author .bluff-person-name{display:block;line-height:20px}
 .manipulation-option .bluff-voters{display:flex;align-items:center;align-self:stretch}
 .manipulation-option .bluff-voter-list{flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
-.manipulation-option .bluff-voter{display:block;max-width:100%;padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:#475569;font-size:14px;font-weight:400;line-height:1.5}
+.manipulation-option .bluff-voter{display:block;max-width:100%;padding:0;border:0;border-radius:0;background:none;box-shadow:none;font-size:14px;font-weight:400;line-height:1.5}
