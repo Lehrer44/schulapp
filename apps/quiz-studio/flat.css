@@ -5,7 +5,7 @@
    expired timer.
    Text uses Comic Neue (SIL OFL), served from shared/fonts.
    Sections: shared base and header, dashboard, editor (partly shared with live and player),
-   live view, player page, party games (Manipulation, Wer würde eher, Dieselbe Antwort). */
+   live view, player page, party games (Manipulation, Wer würde eher, Dieselbe Antwort, Ja oder Nein). */
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:400;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-400.woff2") format("woff2")}
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:700;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-700.woff2") format("woff2")}
 :is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]),
@@ -460,10 +460,10 @@ body[data-quiz-player] #app :is(.rank-person,.score){color:inherit;font-weight:7
 body[data-quiz-player] #app .status{border-radius:999px;background:var(--flat-white);color:var(--flat-green);font-size:13px;font-weight:700}
 body[data-quiz-player] .live-sidebar:focus-visible{outline:3px solid var(--flat-green)}
 
-/* ============ Party games: Manipulation, Wer würde eher, Dieselbe Antwort ============ */
-/* Catalogue, game host and player page carry data-game ("bluff", "rather", "same"); so do their
-   dialogs on the dashboard. */
-body[data-game] :is(#bluffConnectionStatus,#appMessage,dialog,dialog *),:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open],:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] *{font-family:var(--flat-font)}
+/* ======= Party games: Manipulation, Wer würde eher, Dieselbe Antwort, Ja oder Nein ======= */
+/* Catalogue, game host and player page carry data-game ("bluff", "rather", "same", "yesno"); so do
+   their dialogs on the dashboard. */
+body[data-game] :is(#bluffConnectionStatus,#appMessage,dialog,dialog *),:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open],:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] *{font-family:var(--flat-font)}
 body[data-game]>#app{padding-top:var(--space-4)}
 body[data-game] #bluffConnectionStatus,body[data-game] #appMessage.is-success{color:var(--flat-green)}
 body[data-game] :is(#bluffConnectionStatus[data-state="error"],#appMessage:not(.is-success)){color:#be123c}
@@ -483,9 +483,9 @@ body[data-game] #app button:not(.bluff-start-card):not(.bluff-clock-button),body
   font-size:15px;font-weight:700;line-height:1.2;box-shadow:none;filter:none;text-decoration:none;
   transition:background-color var(--flat-ease),color var(--flat-ease);
 }
-body[data-game] #app button:is(.bluff-primary,.studio-primary):not(.bluff-start-card):not(.bluff-clock-button){background:var(--flat-green);color:var(--flat-white)}
+body[data-game] #app button:is(.bluff-primary,.studio-primary,.yn-primary,.yn-flow-primary):not(.bluff-start-card):not(.bluff-clock-button){background:var(--flat-green);color:var(--flat-white)}
 body[data-game] #app button:not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled),body[data-game] #app a.btn:hover{background:var(--flat-green);color:var(--flat-white)}
-body[data-game] #app button:is(.bluff-primary,.studio-primary):not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled){background:var(--flat-white);color:var(--flat-green)}
+body[data-game] #app button:is(.bluff-primary,.studio-primary,.yn-primary,.yn-flow-primary):not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled){background:var(--flat-white);color:var(--flat-green)}
 body[data-game] #app button:disabled{opacity:.5;cursor:not-allowed}
 body[data-game] #app .bluff-clock-button{border:0;border-radius:var(--flat-radius);background:transparent;color:var(--flat-green);box-shadow:none;transition:background-color var(--flat-ease),color var(--flat-ease)}
 body[data-game] #app .bluff-clock-button:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
@@ -539,38 +539,39 @@ body[data-game] #app .bluff-timer.expired{color:#be123c}
 /* Dialogs: participation on the host page, new/edit/random on the dashboard. */
 /* The dashboard keeps its own tokens; inside the Manipulation dialog they point to the two colours,
    so the older dashboard and workspace rules for fields and buttons render green and white too. */
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open]{
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open]{
+  font-family:var(--flat-font);
   --studio-line:var(--flat-green);--studio-accent:var(--flat-green);--studio-text:var(--flat-green);--studio-muted:var(--flat-green);--studio-surface:#fff;--studio-tint:#fff;
   --qs-accent:var(--flat-green);--qs-accent-hover:var(--flat-green);--qs-line:var(--flat-green);--qs-tint-line:var(--flat-green);--qs-shadow-accent:none;--qs-shadow-xs:none;
 }
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open]{border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);color:var(--flat-green);box-shadow:none}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(h2,label,legend,.muted){color:var(--flat-green)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] h2{font-family:var(--flat-font);font-size:21px;font-weight:700;letter-spacing:0}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(label,legend,p,span){font-family:var(--flat-font)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(label:not(.bluff-question-choice),legend){font-size:15px;font-weight:700}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .library-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]){
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open]{border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);color:var(--flat-green);box-shadow:none}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(h2,label,legend,.muted){color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] h2{font-family:var(--flat-font);font-size:21px;font-weight:700;letter-spacing:0}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(label,legend,p,span){font-family:var(--flat-font)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(label:not(.bluff-question-choice),legend){font-size:15px;font-weight:700}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .library-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]){
   box-sizing:border-box;min-height:var(--flat-control);border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);
   background:var(--flat-white);color:var(--flat-green);font-family:var(--flat-font);font-size:15px;font-weight:700;box-shadow:none;
 }
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] input[type="checkbox"]{accent-color:var(--flat-green)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(input,button,a):focus-visible{outline:3px solid var(--flat-green);outline-offset:2px}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-question-picker{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-question-choice{border-bottom:1px solid var(--flat-green);color:var(--flat-green)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-question-choice:last-child{border-bottom:0}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(button,a.btn){
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] input[type="checkbox"]{accent-color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(input,button,a):focus-visible{outline:3px solid var(--flat-green);outline-offset:2px}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .bluff-question-picker{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .bluff-question-choice{border-bottom:1px solid var(--flat-green);color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .bluff-question-choice:last-child{border-bottom:0}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(button,a.btn){
   box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;
   min-height:var(--flat-control);padding:0 var(--space-4);
   border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
   font-family:var(--flat-font);font-size:15px;font-weight:700;box-shadow:none;filter:none;text-decoration:none;transition:background-color var(--flat-ease),color var(--flat-ease);
 }
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] button.studio-primary{background:var(--flat-green);color:var(--flat-white)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(button,a.btn):hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] button.studio-primary:hover:not(:disabled){background:var(--flat-white);color:var(--flat-green)}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] button:disabled{opacity:.5;cursor:not-allowed}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] button[data-close]{width:var(--flat-control);min-width:var(--flat-control);padding:0;border:0;background:transparent;font-size:30px;line-height:1}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-dialog-status{color:#be123c}
-:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-join-code{color:var(--flat-green);font-weight:700}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] button.studio-primary{background:var(--flat-green);color:var(--flat-white)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(button,a.btn):hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] button.studio-primary:hover:not(:disabled){background:var(--flat-white);color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] button:disabled{opacity:.5;cursor:not-allowed}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] button[data-close]{width:var(--flat-control);min-width:var(--flat-control);padding:0;border:0;background:transparent;font-size:30px;line-height:1}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .bluff-dialog-status{color:#be123c}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .bluff-join-code{color:var(--flat-green);font-weight:700}
 
 /* Wer würde eher: choice tiles fill green once chosen; result bars are a light green band behind
    green text, so names stay readable wherever the bar ends. */
@@ -601,3 +602,54 @@ body[data-game="same"] #app .bluff-final-ranking .same-score{grid-template-colum
 @media(max-width:520px){
   body[data-game="same"] #app .same-person>button.same-name:not(.bluff-start-card):not(.bluff-clock-button){margin:-10px;padding:10px;font-size:18px}
 }
+
+/* Ja oder Nein: same tiles, rows and standings as the other games. Ja/Nein and the estimate are
+   outlined choices that fill green once picked; in the results "Ja" is filled and "Nein" outlined. */
+body[data-game="yesno"] :is(#connectionStatus,#appMessage){font-family:var(--flat-font)}
+body[data-game="yesno"] #connectionStatus{border:0;background:transparent;box-shadow:none;color:var(--flat-green);text-align:center;font-size:13px;font-weight:400}
+body[data-game="yesno"] :is(#connectionStatus[data-state="error"],#appMessage.yn-status){color:#be123c}
+body[data-game="yesno"] #appMessage.yn-success{color:var(--flat-green)}
+body[data-game="yesno"] #app :is(h1,h2,h3,legend,label,small,.yn-rules,.yn-round-label,.yn-error:empty){color:var(--flat-green)}
+body[data-game="yesno"] #app .yn-error{color:#be123c}
+body[data-game="yesno"] #app .panel .yn-question{font-weight:700;letter-spacing:0;color:var(--flat-green)}
+body[data-game="yesno"] #app .yn-tag{border:var(--flat-line) solid var(--flat-green);border-radius:999px;background:var(--flat-white);color:var(--flat-green);font-weight:700}
+body[data-game="yesno"] #app .yn-question-row{border-bottom:var(--flat-line) solid var(--flat-green)}
+body[data-game="yesno"] #app .yn-question-row:last-child{border-bottom:0}
+body[data-game="yesno"] #app :is(.yn-clock,.yn-code,.yn-estimate output){color:var(--flat-green);font-weight:700}
+body[data-game="yesno"] #app .yn-clock.expired{color:#be123c}
+/* Choices */
+body[data-game="yesno"] #app button.yn-answer:not(.bluff-start-card):not(.bluff-clock-button){min-height:64px;font-size:24px;font-weight:700}
+body[data-game="yesno"] #app .yn-numbers button:not(.bluff-start-card):not(.bluff-clock-button){min-width:44px;padding:0}
+body[data-game="yesno"] #app button[aria-pressed="true"]:not(.bluff-start-card):not(.bluff-clock-button){background:var(--flat-green);color:var(--flat-white);opacity:1}
+body[data-game="yesno"] #app button.yn-submit:not(.bluff-start-card):not(.bluff-clock-button){width:100%;font-size:19px}
+body[data-game="yesno"] #app button.yn-lobby-start:not(.bluff-start-card):not(.bluff-clock-button){
+  display:grid;place-items:center;width:100%;min-height:220px;
+  border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);color:var(--flat-green);
+  font-size:clamp(24px,3vw,32px);font-weight:700;letter-spacing:0;
+}
+body[data-game="yesno"] #app button.yn-lobby-start:not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+/* Standings */
+body[data-game="yesno"] #app .yn-lobby-score{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);font-weight:700}
+body[data-game="yesno"] #app .yn-lobby-score.me{box-shadow:inset 0 0 0 var(--flat-line) var(--flat-green)}
+body[data-game="yesno"] #app .yn-lobby-score.has-vote{background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
+body[data-game="yesno"] #app .yn-lobby-score.me.has-vote{box-shadow:inset 0 0 0 var(--flat-line) var(--flat-white)}
+body[data-game="yesno"] #app .yn-vote-mark{background:var(--flat-white);color:var(--flat-green)}
+body[data-game="yesno"] #app .yn-lobby-empty{border:var(--flat-line) dashed var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green)}
+body[data-game="yesno"] #app .yn-final-ranking .yn-lobby-score{background:var(--flat-white);color:var(--flat-green)}
+body[data-game="yesno"] #app .yn-final-ranking .yn-score>span:first-child{display:grid;place-items:center;box-sizing:border-box;width:34px;min-width:34px;height:34px;border-radius:50%;background:var(--flat-green);color:var(--flat-white);font-weight:700}
+body[data-game="yesno"] #app .yn-final-title{color:var(--flat-green);font-weight:700;letter-spacing:0}
+/* Results */
+body[data-game="yesno"] #app .yn-result-total{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);box-shadow:none;font-weight:700}
+body[data-game="yesno"] #app .yn-result-total .yn-total{border:0;border-radius:var(--flat-radius-sm);background:var(--flat-green);color:var(--flat-white);box-shadow:none;font-weight:700}
+body[data-game="yesno"] #app .yn-results-main .yn-result-row{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);box-shadow:none}
+body[data-game="yesno"] #app :is(.yn-estimate-chip,.yn-results-main .yn-revealed-answer){border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius-sm);background:var(--flat-white);color:var(--flat-green);box-shadow:none;font-weight:700}
+body[data-game="yesno"] #app .yn-results-main .yn-revealed-answer.is-yes{background:var(--flat-green);color:var(--flat-white)}
+body[data-game="yesno"] #app .yn-results-main :is(.yn-result-name,.yn-result-row .yn-points){color:var(--flat-green)}
+/* Ja oder Nein dialogs: setup rows and question picker in the two colours. */
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(fieldset,.yn-setup-row){border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);box-shadow:none}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(small,strong,.yn-code){color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .yn-code{font-weight:700}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .yn-picker label{border-bottom:1px solid var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(.yn-picker,.yn-packs) input{accent-color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .yn-error{color:#be123c}
+:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] #ynGameForm input[type="number"]{min-height:0;border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius-sm);color:var(--flat-green);box-shadow:none;font-family:var(--flat-font);font-weight:700}

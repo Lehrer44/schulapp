@@ -7,7 +7,7 @@
  let state=null,room=params.get('session'),credentials=null,channel=null,poll=null,tick=null,refreshBusy=false,refreshAgain=false,actionBusy=false,signature='',serverOffset=0;
  let draftRound=null,draftAnswer=null,draftEstimate=null,questions=[],editing=null;
  function say(text,success=false){notice.textContent=text;notice.classList.toggle('yn-success',success);}
- function header(title,actions=''){return '<header class="yn-heading"><div><span class="yn-tag">JA ODER NEIN</span><h1>'+esc(title)+'</h1></div><div class="yn-actions">'+actions+'</div></header>';}
+ function header(title,actions=''){return '<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><div><h1 class="studio-title">Ja oder <span>Nein</span></h1><p class="studio-subtitle">'+esc(title)+'</p></div></div><div class="studio-actions">'+actions+'<a class="studio-home" href="../../../index.html" title="Zum Hauptdashboard" aria-label="Zum Hauptdashboard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5"/></svg></a></div></header>';}
  function rules(){return '<p class="muted">'+'Antworte mit Ja oder Nein. Schätze die Zahl aller Ja-Stimmen inklusive deiner eigenen.</p><ul class="yn-rules"><li>Genau richtig: '+(state?.exact_points??3)+' Punkte.</li><li>Bis zu '+(state?.tolerance??1)+' Personen daneben: '+(state?.near_points??1)+' Punkte.</li><li>Sonst oder ohne Abgabe: 0 Punkte.</li></ul>';}
  async function requireTeacher(){
   const {data,error:failure}=await client.auth.getUser();
@@ -57,7 +57,7 @@
  }
  function drawQr(qr,url){
   qr.setAttribute('aria-label','QR-Code zum Beitreten');qr.setAttribute('role','img');
-  if(typeof window.QRCode==='function'){new QRCode(qr,{text:url,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});qr.removeAttribute('title');}
+  if(typeof window.QRCode==='function'){new QRCode(qr,{text:url,width:240,height:240,colorDark:'#329a77',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});qr.removeAttribute('title');}
  }
  function answerForm(){
   if(state.own_answer)return '<div class="yn-tag">✓ Deine Antwort wurde gespeichert</div><p>Deine Antwort: <strong>'+ (state.own_answer.answer?'JA':'NEIN')+'</strong> · Schätzung: <strong>'+state.own_answer.estimate+'</strong></p><p class="muted">Warte auf die Auswertung. Die Abgabe ist verbindlich.</p>';
@@ -78,7 +78,7 @@
   }).join('');
   const content=rows?'<div class="yn-lobby-score-list">'+rows+'</div>':'<div class="yn-lobby-empty">noch keine Teilnehmer</div>';return final?content:'<section class="panel yn-lobby-ranking"><h2>Rangliste</h2>'+content+'</section>';
  }
- function gameHeader(actions){return isHost?'<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><h1 class="studio-title">Ja oder <span>Nein</span></h1></div><div class="studio-actions">'+actions+'</div></header>':'';}
+ function gameHeader(actions){return isHost?'<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><h1 class="studio-title">Ja oder <span>Nein</span></h1></div><div class="studio-actions">'+actions+'<a class="studio-home" href="../../../index.html" title="Zum Hauptdashboard" aria-label="Zum Hauptdashboard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5"/></svg></a></div></header>':'';}
  function renderLobby(){
   const allReady=state.players.length>=2&&state.players.every(p=>p.ready);
   const heading=gameHeader('<button data-action="participation">Teilnahme</button><button class="yn-lobby-end" data-action="end">Beenden</button>');
