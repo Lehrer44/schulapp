@@ -10,7 +10,7 @@
   return data;
  }
  function dialog(title,content){
-  const opener=document.activeElement,d=document.createElement('dialog');d.className='yn-dialog';d.setAttribute('aria-label',title);
+  const opener=document.activeElement,d=document.createElement('dialog');d.className='yn-dialog';d.dataset.game='yesno';d.setAttribute('aria-label',title);
   d.innerHTML='<div class="yn-heading"><h2>'+esc(title)+'</h2><button type="button" data-close aria-label="Fenster schließen">×</button></div>'+content;
   document.body.append(d);d.querySelector('[data-close]').onclick=()=>d.close();d.addEventListener('close',()=>{d.remove();if(opener?.isConnected)opener.focus();},{once:true});d.showModal();return d;
  }
