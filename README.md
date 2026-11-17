@@ -45,7 +45,7 @@ Neue Quiz-Studio-Komponenten verwenden die Tokens statt fester Farbwerte und def
 
 ## Quiz Studio: Dashboard, Editor, Live-Ansicht und Teilnehmerseite im Flat-Design
 
-Das Dashboard des Quiz Studios (`apps/quiz-studio/index.html`, Bibliotheksansicht) verwendet ein flaches Layout in genau zwei Farben: Grün (`#329A77`, Kontrast 3,5:1 zu Weiß) und Weiß. Rot erscheint nur bei Fehlermeldungen und in Live-Ansicht und Teilnehmerseite bei falschen Antworten und abgelaufenem Timer. Dasselbe Design gilt für den Quiz-Editor, die Live-Ansicht des klassischen Quiz (`apps/quiz-studio/live.html`) und seine Teilnehmerseite (`apps/quiz-studio/student.html`). Die Regeln liegen in `apps/quiz-studio/flat.css`, die auf jeder dieser Seiten nach `theme.css` geladen wird. Sie gelten ausschließlich für diese vier Ansichten. Vorschau, die anderen Spiele sowie Umfragen und Jeopardy bleiben unverändert.
+Das Dashboard des Quiz Studios (`apps/quiz-studio/index.html`, Bibliotheksansicht) verwendet ein flaches Layout in genau zwei Farben: Grün (`#329A77`, Kontrast 3,5:1 zu Weiß) und Weiß. Rot erscheint nur bei Fehlermeldungen und in Live-Ansicht und Teilnehmerseite bei falschen Antworten und abgelaufenem Timer. Dasselbe Design gilt für den Quiz-Editor, die Live-Ansicht des klassischen Quiz (`apps/quiz-studio/live.html`) und seine Teilnehmerseite (`apps/quiz-studio/student.html`). Die Regeln liegen in `apps/quiz-studio/flat.css`, die auf jeder dieser Seiten nach `theme.css` geladen wird. Sie gelten ausschließlich für diese vier Ansichten. Die anderen Spiele sowie Umfragen und Jeopardy bleiben unverändert. Den früheren Selbsttest-Modus (Quiz allein durchspielen mit Auswertung) gibt es nicht mehr; er war seit Einführung der Live-Sitzungen nicht mehr erreichbar.
 
 - **Kopfzeile:** Logo und „Quiz Studio“ links, das Häuschen rechts führt zum Haupt-Dashboard. Darunter liegt eine grüne Linie. Die Brotkrümelnavigation ist in dieser Ansicht ausgeblendet.
 - **Kacheln:** weiße Flächen mit grünem Rahmen, ohne Schatten.
@@ -76,7 +76,7 @@ Die CI prüft Regeln und parallele Abgaben in einer separaten PostgreSQL-17-Date
 
 Im Editor ein Bild auswählen oder einfügen, den richtigen Ort anklicken und den Radius einstellen. Ein Bildwechsel entfernt den bisherigen Lösungsbereich. Auf Schülergeräten wird der Lösungsbereich erst nach der Auflösung ausgeliefert. Die Lehrkraft sieht bei der Auflösung die farbigen, nummerierten Pins mit Namen. Pins können per Klick, Touch, Pfeiltasten oder Prozentfeldern gesetzt werden.
 
-Die Vorschau hat unabhängig von der Antwortprüfung Zurück/Weiter. Antworten und bereits geprüfte Ergebnisse bleiben beim Wechsel erhalten. „Beenden“ im Live-Quiz beendet die Sitzung serverseitig und kehrt erst nach bestätigtem Erfolg ins Quiz Studio zurück. Nicht aufgelöste Fragen erhalten keine nachträglichen Punkte. Beendete Sitzungen lassen sich nicht wieder öffnen. Der bisherige manuelle Aktualisieren-Button entfällt, da die Ansicht automatisch synchronisiert wird.
+„Beenden“ im Live-Quiz beendet die Sitzung serverseitig und kehrt erst nach bestätigtem Erfolg ins Quiz Studio zurück. Nicht aufgelöste Fragen erhalten keine nachträglichen Punkte. Beendete Sitzungen lassen sich nicht wieder öffnen. Der bisherige manuelle Aktualisieren-Button entfällt, da die Ansicht automatisch synchronisiert wird.
 
 
 ## Bluff-Quiz
