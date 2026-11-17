@@ -5,10 +5,10 @@
    expired timer.
    Text uses Comic Neue (SIL OFL), served from shared/fonts.
    Sections: shared base and header, dashboard, editor (partly shared with live and player),
-   live view, player page, Manipulation. */
+   live view, player page, party games (Manipulation, Wer würde eher). */
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:400;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-400.woff2") format("woff2")}
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:700;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-700.woff2") format("woff2")}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]),
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]),
 body[data-quiz-player]{
   --flat-green:#329a77; /* chosen brand green; 3.5:1 against white */
   --flat-white:#fff;
@@ -22,39 +22,39 @@ body[data-quiz-player]{
   --flat-font:"Comic Neue",sans-serif;
   background:var(--flat-white);color:var(--flat-green);font-family:var(--flat-font);
 }
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) :is(#app,#app *,#cloudStatus){font-family:var(--flat-font)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) :is(#app,#app *,#cloudStatus){font-family:var(--flat-font)}
 body[data-quiz-player] :is(#app,#app *,#playerSyncStatus){font-family:var(--flat-font)}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"])>.app-nav{display:none}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"])>.wrap{padding-top:var(--space-4)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game])>.app-nav{display:none}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game])>.wrap{padding-top:var(--space-4)}
 body[data-studio="quiz"][data-dashboard-view="library"] #app svg{
   display:block;width:24px;height:24px;fill:none;stroke:currentColor;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
 }
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app :is(button,a):focus-visible{
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app :is(button,a):focus-visible{
   outline:3px solid var(--flat-green)!important;outline-offset:2px;
 }
 
 /* Header: logo and title on the left, home button on the right, one green rule below.
    The editor header adds the quiz name as subtitle and its actions before the home button. */
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-header{
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-header{
   flex-wrap:nowrap;align-items:center;gap:var(--space-4);
   margin:0 0 var(--space-4);padding:0 0 var(--space-2);border-bottom:var(--flat-frame) solid var(--flat-green);
 }
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-icon{border-radius:var(--flat-radius);background:var(--flat-green);color:var(--flat-white)}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-icon svg{width:28px;height:28px}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-title{font-weight:700;letter-spacing:-.01em;color:var(--flat-green)}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-title span{color:inherit;font-weight:400}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-icon{border-radius:var(--flat-radius);background:var(--flat-green);color:var(--flat-white)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-icon svg{width:28px;height:28px}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-title{font-weight:700;letter-spacing:-.01em;color:var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-title span{color:inherit;font-weight:400}
 
 /* Icon controls: home button and dashboard tile actions. Green icon on white; inverted on hover. */
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-home,
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-home,
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*{
   box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex:0 0 var(--flat-control);
   width:var(--flat-control);min-width:var(--flat-control);height:var(--flat-control);min-height:var(--flat-control);padding:0;
   border:var(--flat-line) solid transparent;border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
   box-shadow:none;text-decoration:none;transition:background-color var(--flat-ease),color var(--flat-ease);
 }
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-home svg{display:block;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-home:hover{background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-home svg{display:block;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-home:hover{background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
 /* Tile header actions keep a 44px touch target but draw a 28px frame, so the framed add button
    is as large as the random and catalogue icons next to it. Hover fills the frame. */
 body[data-studio="quiz"][data-dashboard-view="library"] #app .library-heading .studio-actions>*{position:relative;isolation:isolate;border:0;background:transparent}
@@ -141,7 +141,7 @@ body[data-studio="quiz"][data-dashboard-view="library"] #cloudStatus[data-state=
 /* ======================= Quiz editor ======================= */
 /* Editor, live view and player page reuse the old token names; mapping them to the two colours keeps every
    remaining shared rule (workspace.css, play-modes.css, pin.css, live.css) green and white without shadows. */
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]){
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]){
   --qs-bg:#fff;--qs-surface:#fff;--qs-soft:#fff;--qs-muted-bg:#fff;--qs-tint:#fff;--qs-tint-hover:#fff;
   --qs-line:var(--flat-green);--qs-line-strong:var(--flat-green);--qs-tint-line:var(--flat-green);
   --qs-text:var(--flat-green);--qs-text-soft:var(--flat-green);--qs-muted:var(--flat-green);
@@ -158,12 +158,12 @@ body[data-studio="quiz"][data-dashboard-view="library"] #cloudStatus[data-state=
 }
 
 /* Header (editor and live): page actions, then home. Wraps below the title on narrow screens. */
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-header{flex-wrap:wrap}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-subtitle{color:var(--flat-green);font-size:14px}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-header .studio-actions{flex-wrap:nowrap;gap:var(--space-2)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-header{flex-wrap:wrap}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-subtitle{color:var(--flat-green);font-size:14px}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-header .studio-actions{flex-wrap:nowrap;gap:var(--space-2)}
 
 /* Panels: editor cards, live and player panels share the dashboard tile frame. */
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app .panel{
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app .panel{
   margin:0 0 var(--space-4);padding:var(--space-4);
   border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);box-shadow:none;
 }
@@ -195,21 +195,21 @@ body[data-studio="quiz"][data-dashboard-view="editor"] #app .icon-btn{
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .icon-btn:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
 
 /* Fields: white with a green line, green text; focus draws the shared green ring. */
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select){
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select){
   box-sizing:border-box;min-height:var(--flat-control);padding:8px 12px;
   border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
   font-size:15px;font-weight:700;box-shadow:none;
 }
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app select{
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app select{
   appearance:none;padding-right:36px;cursor:pointer;
   background:var(--flat-white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23329a77' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center/18px;
 }
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app :is(input,select):focus-visible,
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app :is(input,select):focus-visible,
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .rich-editor:focus-within{outline:3px solid var(--flat-green);outline-offset:2px;box-shadow:none}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app ::placeholder{color:var(--flat-green);opacity:.6;font-weight:400}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app input[type="radio"],
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app input[type="checkbox"],
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app input[type="range"]{accent-color:var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app ::placeholder{color:var(--flat-green);opacity:.6;font-weight:400}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app input[type="radio"],
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app input[type="checkbox"],
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app input[type="range"]{accent-color:var(--flat-green)}
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .title-input{width:100%;margin:0;font-size:22px;font-weight:700}
 
 /* Question card head: type badge, number, points, play mode, media and the card actions. */
@@ -275,13 +275,13 @@ body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf label:is(:hover,
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .tf input{width:18px;height:18px}
 
 /* Pin questions: image frame, target and controls in the two colours. */
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app .quiz-pin-board{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app .quiz-pin-board:focus-visible{outline:3px solid var(--flat-green)}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app .quiz-pin-target{border:3px solid var(--flat-green);background:rgb(50 154 119 / .25)}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app :is(.quiz-pin-own,.quiz-pin-marker){background:var(--flat-green);border-color:var(--flat-white)}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app .quiz-pin-controls label{font-size:14px;font-weight:700;color:var(--flat-green)}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app .quiz-pin-controls input[type="number"]{width:95px}
-:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app .pin-hint{font-size:14px;color:var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app .quiz-pin-board{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app .quiz-pin-board:focus-visible{outline:3px solid var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app .quiz-pin-target{border:3px solid var(--flat-green);background:rgb(50 154 119 / .25)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app :is(.quiz-pin-own,.quiz-pin-marker){background:var(--flat-green);border-color:var(--flat-white)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app .quiz-pin-controls label{font-size:14px;font-weight:700;color:var(--flat-green)}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app .quiz-pin-controls input[type="number"]{width:95px}
+:is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app .pin-hint{font-size:14px;color:var(--flat-green)}
 
 /* Add panel: one row of question types. */
 body[data-studio="quiz"][data-dashboard-view="editor"] #app .add-panel{text-align:center}
@@ -291,9 +291,9 @@ body[data-studio="quiz"][data-dashboard-view="editor"] #cloudStatus{color:var(--
 body[data-studio="quiz"][data-dashboard-view="editor"] #cloudStatus[data-state="error"]{color:#be123c}
 
 @media(max-width:600px){
-  :is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-header .studio-actions{width:100%;justify-content:flex-start}
-  :is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game="bluff"]) #app .studio-header .studio-home{margin-left:auto}
-  :is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game="bluff"]) #app .panel{padding:var(--space-3)}
+  :is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-header .studio-actions{width:100%;justify-content:flex-start}
+  :is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]) #app .studio-header .studio-home{margin-left:auto}
+  :is(body[data-studio="quiz"]:is([data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-quiz-player],body[data-game]) #app .panel{padding:var(--space-3)}
   /* Badge and number on the left, move and delete on the right, settings in the next row. */
   body[data-studio="quiz"][data-dashboard-view="editor"] #app .qhead{gap:var(--space-1)}
   body[data-studio="quiz"][data-dashboard-view="editor"] #app .badge{padding:5px 9px;font-size:13px}
@@ -460,114 +460,127 @@ body[data-quiz-player] #app :is(.rank-person,.score){color:inherit;font-weight:7
 body[data-quiz-player] #app .status{border-radius:999px;background:var(--flat-white);color:var(--flat-green);font-size:13px;font-weight:700}
 body[data-quiz-player] .live-sidebar:focus-visible{outline:3px solid var(--flat-green)}
 
-/* ======================= Manipulation (bluff game) ======================= */
-/* Catalogue, game host and player page carry data-game="bluff"; so do its dialogs on the dashboard.
-   "Wer würde eher" and "Dieselbe Antwort" share bluff.css and bluff.js but not this marker. */
-body[data-game="bluff"] :is(#bluffConnectionStatus,#appMessage,dialog,dialog *),:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open],:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] *{font-family:var(--flat-font)}
-body[data-game="bluff"]>#app{padding-top:var(--space-4)}
-body[data-game="bluff"] #bluffConnectionStatus,body[data-game="bluff"] #appMessage.is-success{color:var(--flat-green)}
-body[data-game="bluff"] :is(#bluffConnectionStatus[data-state="error"],#appMessage:not(.is-success)){color:#be123c}
-body[data-game="bluff"] #app :is(h1,h2,h3,.bluff-subtitle,.bluff-label,.bluff-help,.bluff-help a,.bluff-status,.bluff-rules,.bluff-save-status,.bluff-counter,.muted){color:var(--flat-green)}
-body[data-game="bluff"] #app :is(h2,h3){font-weight:700;letter-spacing:0}
-body[data-game="bluff"] #app .panel h2{font-size:21px}
-body[data-game="bluff"] #app .panel .bluff-question{font-weight:700;letter-spacing:0;color:var(--flat-green)}
-body[data-game="bluff"] #app :is(.bluff-label,.bluff-counter){font-size:15px;font-weight:700}
-body[data-game="bluff"] #app .studio-icon{font-size:22px;line-height:1}
+/* ======================= Party games: Manipulation, Wer würde eher ======================= */
+/* Catalogue, game host and player page carry data-game ("bluff", "rather"); so do their dialogs on
+   the dashboard. "Dieselbe Antwort" shares bluff.css but has no marker yet and keeps its old look. */
+body[data-game] :is(#bluffConnectionStatus,#appMessage,dialog,dialog *),:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open],:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] *{font-family:var(--flat-font)}
+body[data-game]>#app{padding-top:var(--space-4)}
+body[data-game] #bluffConnectionStatus,body[data-game] #appMessage.is-success{color:var(--flat-green)}
+body[data-game] :is(#bluffConnectionStatus[data-state="error"],#appMessage:not(.is-success)){color:#be123c}
+body[data-game] #app :is(h1,h2,h3,.bluff-subtitle,.bluff-label,.bluff-help,.bluff-help a,.bluff-status,.bluff-rules,.bluff-save-status,.bluff-counter,.muted){color:var(--flat-green)}
+body[data-game] #app :is(h2,h3){font-weight:700;letter-spacing:0}
+body[data-game] #app .panel h2{font-size:21px}
+body[data-game] #app .panel .bluff-question{font-weight:700;letter-spacing:0;color:var(--flat-green)}
+body[data-game] #app :is(.bluff-label,.bluff-counter){font-size:15px;font-weight:700}
+body[data-game] #app .studio-icon{font-size:22px;line-height:1}
 
 /* Buttons: one filled main action per view, everything else outlined; hover swaps the colours.
    "Beenden" and "Löschen" stay in the two colours as in the quiz views. */
-body[data-game="bluff"] #app button:not(.bluff-start-card):not(.bluff-clock-button),body[data-game="bluff"] #app a.btn{
+body[data-game] #app button:not(.bluff-start-card):not(.bluff-clock-button),body[data-game] #app a.btn{
   box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;
   min-height:var(--flat-control);padding:0 var(--space-4);
   border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
   font-size:15px;font-weight:700;line-height:1.2;box-shadow:none;filter:none;text-decoration:none;
   transition:background-color var(--flat-ease),color var(--flat-ease);
 }
-body[data-game="bluff"] #app button:is(.bluff-primary,.studio-primary):not(.bluff-start-card):not(.bluff-clock-button){background:var(--flat-green);color:var(--flat-white)}
-body[data-game="bluff"] #app button:not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled),body[data-game="bluff"] #app a.btn:hover{background:var(--flat-green);color:var(--flat-white)}
-body[data-game="bluff"] #app button:is(.bluff-primary,.studio-primary):not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled){background:var(--flat-white);color:var(--flat-green)}
-body[data-game="bluff"] #app button:disabled{opacity:.5;cursor:not-allowed}
-body[data-game="bluff"] #app .bluff-clock-button{border:0;border-radius:var(--flat-radius);background:transparent;color:var(--flat-green);box-shadow:none;transition:background-color var(--flat-ease),color var(--flat-ease)}
-body[data-game="bluff"] #app .bluff-clock-button:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
-body[data-game="bluff"] #app .bluff-clock-button svg{stroke-width:2}
+body[data-game] #app button:is(.bluff-primary,.studio-primary):not(.bluff-start-card):not(.bluff-clock-button){background:var(--flat-green);color:var(--flat-white)}
+body[data-game] #app button:not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled),body[data-game] #app a.btn:hover{background:var(--flat-green);color:var(--flat-white)}
+body[data-game] #app button:is(.bluff-primary,.studio-primary):not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled){background:var(--flat-white);color:var(--flat-green)}
+body[data-game] #app button:disabled{opacity:.5;cursor:not-allowed}
+body[data-game] #app .bluff-clock-button{border:0;border-radius:var(--flat-radius);background:transparent;color:var(--flat-green);box-shadow:none;transition:background-color var(--flat-ease),color var(--flat-ease)}
+body[data-game] #app .bluff-clock-button:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+body[data-game] #app .bluff-clock-button svg{stroke-width:2}
 /* Lobby start tile, as in the quiz live view. */
-body[data-game="bluff"] #app button.bluff-start-card{
+body[data-game] #app button.bluff-start-card{
   border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);color:var(--flat-green);
   font-weight:700;letter-spacing:0;box-shadow:none;transition:background-color var(--flat-ease),color var(--flat-ease);
 }
-body[data-game="bluff"] #app button.bluff-start-card:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+body[data-game] #app button.bluff-start-card:hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
 
 /* Fields: textareas join the shared green field style. */
-body[data-game="bluff"] #app textarea{
+body[data-game] #app textarea{
   box-sizing:border-box;padding:10px 12px;border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);
   background:var(--flat-white);color:var(--flat-green);font-size:15px;font-weight:700;box-shadow:none;
 }
-body[data-game="bluff"] #app textarea:focus-visible{outline:3px solid var(--flat-green);outline-offset:2px}
-body[data-game="bluff"] #app .bluff-code{color:var(--flat-green);font-size:clamp(28px,5vw,44px);font-weight:700}
+body[data-game] #app textarea:focus-visible{outline:3px solid var(--flat-green);outline-offset:2px}
+body[data-game] #app .bluff-code{color:var(--flat-green);font-size:clamp(28px,5vw,44px);font-weight:700}
 
 /* Catalogue: questions as rows with a green separator; the count as an outlined pill. */
-body[data-game="bluff"] #app .library-count{border:var(--flat-line) solid var(--flat-green);border-radius:999px;background:var(--flat-white);color:var(--flat-green);font-weight:700}
-body[data-game="bluff"] #app .collection-row{border-bottom:var(--flat-line) solid var(--flat-green)}
-body[data-game="bluff"] #app .collection-row:last-child{border-bottom:0}
-body[data-game="bluff"] #app .collection-row p{color:var(--flat-green)}
-body[data-game="bluff"] #app .bluff-empty{border:var(--flat-line) dashed var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green)}
+body[data-game] #app .library-count{border:var(--flat-line) solid var(--flat-green);border-radius:999px;background:var(--flat-white);color:var(--flat-green);font-weight:700}
+body[data-game] #app .collection-row{border-bottom:var(--flat-line) solid var(--flat-green)}
+body[data-game] #app .collection-row:last-child{border-bottom:0}
+body[data-game] #app .collection-row p{color:var(--flat-green)}
+body[data-game] #app .bluff-empty{border:var(--flat-line) dashed var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green)}
 
 /* Standings: rows like the quiz ranking; a row fills green once the person has answered or voted,
    your own row has a double frame. */
-body[data-game="bluff"] #app .bluff-score{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);font-weight:700}
-body[data-game="bluff"] #app .bluff-score.me{box-shadow:inset 0 0 0 var(--flat-line) var(--flat-green)}
-body[data-game="bluff"] #app .bluff-score:is(.has-answer,.has-vote){background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
-body[data-game="bluff"] #app .bluff-score.me:is(.has-answer,.has-vote){box-shadow:inset 0 0 0 var(--flat-line) var(--flat-white)}
-body[data-game="bluff"] #app .bluff-answer-mark{background:var(--flat-white);color:var(--flat-green)}
-body[data-game="bluff"] #app .bluff-final-ranking .bluff-score{background:var(--flat-white);color:var(--flat-green)}
-body[data-game="bluff"] #app .bluff-final-ranking .bluff-score>span:first-child{border-radius:50%;background:var(--flat-green);color:var(--flat-white);font-weight:700}
+body[data-game] #app .bluff-score{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);font-weight:700}
+body[data-game] #app .bluff-score.me{box-shadow:inset 0 0 0 var(--flat-line) var(--flat-green)}
+body[data-game] #app .bluff-score:is(.has-answer,.has-vote){background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
+body[data-game] #app .bluff-score.me:is(.has-answer,.has-vote){box-shadow:inset 0 0 0 var(--flat-line) var(--flat-white)}
+body[data-game] #app .bluff-answer-mark{background:var(--flat-white);color:var(--flat-green)}
+body[data-game] #app .bluff-final-ranking .bluff-score{background:var(--flat-white);color:var(--flat-green)}
+body[data-game] #app .bluff-final-ranking .bluff-score>span:first-child{border-radius:50%;background:var(--flat-green);color:var(--flat-white);font-weight:700}
 
 /* Answer tiles: outlined; the true answer fills green on reveal. Authors are green pills,
    voters plain green text behind a green divider. */
-body[data-game="bluff"] #app .bluff-option{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green)}
-body[data-game="bluff"] #app .bluff-option.new-reveal{background:var(--flat-white)}
-body[data-game="bluff"] #app .bluff-option.truth{background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
-body[data-game="bluff"] #app .bluff-option :is(h3,.bluff-voter){color:inherit}
-body[data-game="bluff"] #app .bluff-option h3{font-weight:700}
-body[data-game="bluff"] #app .bluff-option .bluff-voters{border-left:var(--flat-line) solid currentColor;color:inherit}
-body[data-game="bluff"] #app .manipulation-option .bluff-author{border:0;background:var(--flat-green);color:var(--flat-white);box-shadow:none;font-weight:700}
-body[data-game="bluff"] #app .bluff-option.truth .bluff-author{background:var(--flat-white);color:var(--flat-green)}
-body[data-game="bluff"] #app .bluff-vote-control input{border-color:var(--flat-green)}
-body[data-game="bluff"] #app .bluff-vote-control input:checked{border-color:var(--flat-green);background:var(--flat-green)}
-body[data-game="bluff"] #app .bluff-timer.expired{color:#be123c}
+body[data-game] #app .bluff-option{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green)}
+body[data-game] #app .bluff-option.new-reveal{background:var(--flat-white)}
+body[data-game] #app .bluff-option.truth{background:var(--flat-green);border-color:var(--flat-green);color:var(--flat-white)}
+body[data-game] #app .bluff-option :is(h3,.bluff-voter){color:inherit}
+body[data-game] #app .bluff-option h3{font-weight:700}
+body[data-game] #app .bluff-option .bluff-voters{border-left:var(--flat-line) solid currentColor;color:inherit}
+body[data-game] #app .manipulation-option .bluff-author{border:0;background:var(--flat-green);color:var(--flat-white);box-shadow:none;font-weight:700}
+body[data-game] #app .bluff-option.truth .bluff-author{background:var(--flat-white);color:var(--flat-green)}
+body[data-game] #app .bluff-vote-control input{border-color:var(--flat-green)}
+body[data-game] #app .bluff-vote-control input:checked{border-color:var(--flat-green);background:var(--flat-green)}
+body[data-game] #app .bluff-timer.expired{color:#be123c}
 
 /* Dialogs: participation on the host page, new/edit/random on the dashboard. */
 /* The dashboard keeps its own tokens; inside the Manipulation dialog they point to the two colours,
    so the older dashboard and workspace rules for fields and buttons render green and white too. */
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open]{
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open]{
   --studio-line:var(--flat-green);--studio-accent:var(--flat-green);--studio-text:var(--flat-green);--studio-muted:var(--flat-green);--studio-surface:#fff;--studio-tint:#fff;
   --qs-accent:var(--flat-green);--qs-accent-hover:var(--flat-green);--qs-line:var(--flat-green);--qs-tint-line:var(--flat-green);--qs-shadow-accent:none;--qs-shadow-xs:none;
 }
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open]{border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);color:var(--flat-green);box-shadow:none}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] :is(h2,label,legend,.muted){color:var(--flat-green)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] h2{font-family:var(--flat-font);font-size:21px;font-weight:700;letter-spacing:0}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] :is(label,legend,p,span){font-family:var(--flat-font)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] :is(label:not(.bluff-question-choice),legend){font-size:15px;font-weight:700}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] .library-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]){
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open]{border:var(--flat-frame) solid var(--flat-green);border-radius:var(--flat-radius-lg);background:var(--flat-white);color:var(--flat-green);box-shadow:none}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(h2,label,legend,.muted){color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] h2{font-family:var(--flat-font);font-size:21px;font-weight:700;letter-spacing:0}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(label,legend,p,span){font-family:var(--flat-font)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(label:not(.bluff-question-choice),legend){font-size:15px;font-weight:700}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .library-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]){
   box-sizing:border-box;min-height:var(--flat-control);border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);
   background:var(--flat-white);color:var(--flat-green);font-family:var(--flat-font);font-size:15px;font-weight:700;box-shadow:none;
 }
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] input[type="checkbox"]{accent-color:var(--flat-green)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] :is(input,button,a):focus-visible{outline:3px solid var(--flat-green);outline-offset:2px}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] .bluff-question-picker{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] .bluff-question-choice{border-bottom:1px solid var(--flat-green);color:var(--flat-green)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] .bluff-question-choice:last-child{border-bottom:0}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] :is(button,a.btn){
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] input[type="checkbox"]{accent-color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(input,button,a):focus-visible{outline:3px solid var(--flat-green);outline-offset:2px}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-question-picker{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-question-choice{border-bottom:1px solid var(--flat-green);color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-question-choice:last-child{border-bottom:0}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(button,a.btn){
   box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;
   min-height:var(--flat-control);padding:0 var(--space-4);
   border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);
   font-family:var(--flat-font);font-size:15px;font-weight:700;box-shadow:none;filter:none;text-decoration:none;transition:background-color var(--flat-ease),color var(--flat-ease);
 }
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] button.studio-primary{background:var(--flat-green);color:var(--flat-white)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] :is(button,a.btn):hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] button.studio-primary:hover:not(:disabled){background:var(--flat-white);color:var(--flat-green)}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] button:disabled{opacity:.5;cursor:not-allowed}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] button[data-close]{width:var(--flat-control);min-width:var(--flat-control);padding:0;border:0;background:transparent;font-size:30px;line-height:1}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] .bluff-dialog-status{color:#be123c}
-:is(body[data-game="bluff"] dialog,dialog[data-game="bluff"]).bluff-dialog[open] .bluff-join-code{color:var(--flat-green);font-weight:700}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] button.studio-primary{background:var(--flat-green);color:var(--flat-white)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] :is(button,a.btn):hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] button.studio-primary:hover:not(:disabled){background:var(--flat-white);color:var(--flat-green)}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] button:disabled{opacity:.5;cursor:not-allowed}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] button[data-close]{width:var(--flat-control);min-width:var(--flat-control);padding:0;border:0;background:transparent;font-size:30px;line-height:1}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-dialog-status{color:#be123c}
+:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] .bluff-join-code{color:var(--flat-green);font-weight:700}
+
+/* Wer würde eher: choice tiles fill green once chosen; result bars are a light green band behind
+   green text, so names stay readable wherever the bar ends. */
+body[data-game] #app .rather-choice{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green)}
+body[data-game] #app .rather-choices>button:not(.bluff-start-card):not(.bluff-clock-button){justify-content:space-between;min-height:64px;padding:16px 20px;font-size:inherit;white-space:normal}
+body[data-game] #app .rather-choices>button[aria-pressed="true"]:not(.bluff-start-card):not(.bluff-clock-button){background:var(--flat-green);color:var(--flat-white);opacity:1}
+body[data-game] #app .rather-name{font-weight:700}
+body[data-game] #app .rather-result{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white)}
+body[data-game] #app .rather-results .rather-result-row:not(.bluff-start-card):not(.bluff-clock-button){min-height:66px;padding:18px 20px;border:0;border-radius:0;background:transparent;color:var(--flat-green)}
+body[data-game] #app .rather-results .rather-result-row:not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled){background:transparent;color:var(--flat-green)}
+body[data-game] #app .rather-fill{background:rgb(50 154 119 / .22)}
+body[data-game] #app :is(.rather-count,.rather-voters){color:var(--flat-green)}
+body[data-game] #app .rather-count{font-weight:700}

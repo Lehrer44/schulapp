@@ -20,14 +20,14 @@
   catch(e){setConnectionStatus('error','Synchronisation mit Supabase fehlgeschlagen: '+errorText(e));throw e;}
   if(result.data?.ok===false)throw Error(result.data.error||'Aktion fehlgeschlagen');return result.data;
  }
- function header(sub,actions=''){if(mode==='player')return '';return '<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><div><h1 class="studio-title">Wer würde <span>eher</span></h1>'+(sub?'<p class="bluff-subtitle">'+esc(sub)+'</p>':'')+'</div></div><div class="studio-actions">'+actions+'</div></header>';}
+ function header(sub,actions=''){if(mode==='player')return '';return '<header class="studio-header"><div class="studio-identity"><span class="studio-icon" aria-hidden="true">⧉</span><div><h1 class="studio-title">Wer würde <span>eher</span></h1>'+(sub?'<p class="bluff-subtitle">'+esc(sub)+'</p>':'')+'</div></div><div class="studio-actions">'+actions+'<a class="studio-home" href="../../../index.html" title="Zum Hauptdashboard" aria-label="Zum Hauptdashboard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5"/></svg></a></div></header>';}
  function rules(){return '<ol class="bluff-rules"><li>Wähle die Person, auf die die Aussage am ehesten zutrifft – auch dich selbst.</li><li>Für eine Wahl mit den meisten Stimmen erhältst du <b>1 Punkt</b>.</li><li>Bei Gleichstand zählen alle Personen mit den meisten Stimmen.</li><li>Die Spielleitung zeigt zuerst Balken und danach die Namen der Abstimmenden.</li></ol>'; }
  async function requireTeacher(){const {data,error}=await client.auth.getUser();if(error||!data?.user){location.href='../../../login.html?next=apps%2Fquiz-studio%2Frather%2Findex.html';return false;}return true;}
  async function loadLibrary(){const q=await rpc('rather_question_list');questions=q.questions;renderLibrary();setConnectionStatus('ready','Fragensammlung mit Supabase verbunden.');}
  function questionRows(){return questions.map(q=>'<article class="collection-row" data-question-id="'+q.id+'"><div><h3>'+esc(q.question)+'</h3></div><div class="bluff-row"><button data-action="edit-question" data-id="'+q.id+'">Bearbeiten</button><button class="danger" data-action="delete-question" data-id="'+q.id+'">Löschen</button></div></article>').join('');}
  function renderLibrary(){
   app.setAttribute('aria-busy','false');
-  app.innerHTML=header('Fragensammlung','<button class="studio-primary" data-action="new-question">＋ Frage hinzufügen</button>')+
+  app.innerHTML=header('Fragensammlung','<a class="btn" href="../index.html">← Quiz Studio</a><button class="studio-primary" data-action="new-question">＋ Frage hinzufügen</button>')+
   '<section class="panel"><div class="library-heading"><h2>Deine Fragensammlung</h2><span class="library-count">'+questions.length+' Fragen</span></div><section class="bluff-editor" id="questionEditor" hidden><h3 id="editorTitle">Neue Frage</h3><form id="questionForm"><label class="bluff-label" for="questionText">Frage</label><textarea id="questionText" class="bluff-textarea" minlength="5" maxlength="500" required></textarea><div class="bluff-actions"><button class="studio-primary" type="submit">Frage speichern</button><button type="button" data-action="cancel-edit">Abbrechen</button></div><p id="questionSaveState" role="status"></p></form></section><div id="questionRows">'+questionRows()+'</div></section>';
   document.getElementById('questionForm').onsubmit=saveQuestion;
  }
@@ -78,7 +78,7 @@
   const d=document.getElementById('participationDialog'),qr=d.querySelector('.bluff-qr');
   d.querySelector('.bluff-join-code').textContent=state.join_code;qr.replaceChildren();
   const u=new URL('../../../join.html',location.href);u.searchParams.set('code',state.join_code);u.searchParams.set('kind','rather');
-  if(typeof QRCode==='function'){new QRCode(qr,{text:u.href,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});qr.removeAttribute('title');}
+  if(typeof QRCode==='function'){new QRCode(qr,{text:u.href,width:240,height:240,colorDark:'#329a77',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});qr.removeAttribute('title');}
   d.querySelector('[data-join-link]').href=u.href;d.showModal();
   d.querySelector('[data-close]').onclick=()=>{d.close();app.querySelector('[data-action="participation"]')?.focus();};
   d.onclose=()=>app.querySelector('[data-action="participation"]')?.focus();
