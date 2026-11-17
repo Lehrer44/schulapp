@@ -5,7 +5,7 @@
    expired timer.
    Text uses Comic Neue (SIL OFL), served from shared/fonts.
    Sections: shared base and header, dashboard, editor (partly shared with live and player),
-   live view, player page, party games (Manipulation, Wer würde eher). */
+   live view, player page, party games (Manipulation, Wer würde eher, Dieselbe Antwort). */
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:400;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-400.woff2") format("woff2")}
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:700;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-700.woff2") format("woff2")}
 :is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]),
@@ -460,9 +460,9 @@ body[data-quiz-player] #app :is(.rank-person,.score){color:inherit;font-weight:7
 body[data-quiz-player] #app .status{border-radius:999px;background:var(--flat-white);color:var(--flat-green);font-size:13px;font-weight:700}
 body[data-quiz-player] .live-sidebar:focus-visible{outline:3px solid var(--flat-green)}
 
-/* ======================= Party games: Manipulation, Wer würde eher ======================= */
-/* Catalogue, game host and player page carry data-game ("bluff", "rather"); so do their dialogs on
-   the dashboard. "Dieselbe Antwort" shares bluff.css but has no marker yet and keeps its old look. */
+/* ============ Party games: Manipulation, Wer würde eher, Dieselbe Antwort ============ */
+/* Catalogue, game host and player page carry data-game ("bluff", "rather", "same"); so do their
+   dialogs on the dashboard. */
 body[data-game] :is(#bluffConnectionStatus,#appMessage,dialog,dialog *),:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open],:is(body[data-game] dialog,dialog[data-game]).bluff-dialog[open] *{font-family:var(--flat-font)}
 body[data-game]>#app{padding-top:var(--space-4)}
 body[data-game] #bluffConnectionStatus,body[data-game] #appMessage.is-success{color:var(--flat-green)}
@@ -520,7 +520,7 @@ body[data-game] #app .bluff-score:is(.has-answer,.has-vote){background:var(--fla
 body[data-game] #app .bluff-score.me:is(.has-answer,.has-vote){box-shadow:inset 0 0 0 var(--flat-line) var(--flat-white)}
 body[data-game] #app .bluff-answer-mark{background:var(--flat-white);color:var(--flat-green)}
 body[data-game] #app .bluff-final-ranking .bluff-score{background:var(--flat-white);color:var(--flat-green)}
-body[data-game] #app .bluff-final-ranking .bluff-score>span:first-child{border-radius:50%;background:var(--flat-green);color:var(--flat-white);font-weight:700}
+body[data-game] #app .bluff-final-ranking .bluff-score>span:first-child{display:grid;place-items:center;box-sizing:border-box;width:34px;min-width:34px;height:34px;border-radius:50%;background:var(--flat-green);color:var(--flat-white);font-weight:700}
 
 /* Answer tiles: outlined; the true answer fills green on reveal. Authors are green pills,
    voters plain green text behind a green divider. */
@@ -584,3 +584,20 @@ body[data-game] #app .rather-results .rather-result-row:not(.bluff-start-card):n
 body[data-game] #app .rather-fill{background:rgb(50 154 119 / .22)}
 body[data-game] #app :is(.rather-count,.rather-voters){color:var(--flat-green)}
 body[data-game] #app .rather-count{font-weight:700}
+
+/* Dieselbe Antwort: team columns under a green rule; a member tile fills green once that person
+   has answered, revealed answers stay outlined. Teams are told apart by column and heading. */
+body[data-game="same"] #app .same-teams{border-top:var(--flat-line) solid var(--flat-green)}
+body[data-game="same"] #app .same-team-heading h3{font-weight:700}
+body[data-game="same"] #app .same-person{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);box-shadow:none;transition:background-color var(--flat-ease),color var(--flat-ease)}
+body[data-game="same"] #app .same-person.has-answer{background:var(--flat-green);color:var(--flat-white)}
+body[data-game="same"] #app .same-person :is(.same-name,.same-answer,label){color:inherit;font-weight:700}
+body[data-game="same"] #app .same-person>button.same-name:not(.bluff-start-card):not(.bluff-clock-button){display:block;width:100%;margin:-12px;padding:12px;box-sizing:content-box;border:0;border-radius:var(--flat-radius-sm);background:transparent;color:var(--flat-green);font-size:clamp(18px,2.3vw,30px)}
+body[data-game="same"] #app .same-person>button.same-name:not(.bluff-start-card):not(.bluff-clock-button):hover:not(:disabled){background:var(--flat-green);color:var(--flat-white)}
+body[data-game="same"] #app .same-point-actions button:not(.bluff-start-card):not(.bluff-clock-button){min-height:var(--flat-control);padding:0 12px;font-size:17px}
+body[data-game="same"] #app .same-score-team :is(strong,p){color:inherit}
+body[data-game="same"] #app .same-score-team strong{font-weight:700}
+body[data-game="same"] #app .bluff-final-ranking .same-score{grid-template-columns:34px minmax(0,1fr) auto;gap:12px}
+@media(max-width:520px){
+  body[data-game="same"] #app .same-person>button.same-name:not(.bluff-start-card):not(.bluff-clock-button){margin:-10px;padding:10px;font-size:18px}
+}
