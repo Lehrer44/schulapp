@@ -14,7 +14,7 @@
  }
  function openDialog(title,content){
   if(dialog){dialog.close();dialog.remove();}
-  const opener=document.activeElement,d=document.createElement('dialog');dialog=d;d.className='bluff-dialog';d.setAttribute('aria-labelledby','bluffDialogTitle');
+  const opener=document.activeElement,d=document.createElement('dialog');dialog=d;d.className='bluff-dialog';d.dataset.game='bluff';d.setAttribute('aria-labelledby','bluffDialogTitle');
   d.innerHTML='<div class="library-heading"><h2 id="bluffDialogTitle">'+esc(title)+'</h2><button type="button" data-close aria-label="Fenster schließen">×</button></div>'+content;
   document.body.append(d);d.querySelector('[data-close]').onclick=()=>d.close();d.addEventListener('close',()=>{d.remove();if(dialog===d)dialog=null;if(opener?.isConnected)opener.focus();},{once:true});d.showModal();return d;
  }

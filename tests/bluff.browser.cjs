@@ -37,7 +37,7 @@ server.on('request',async(req,res)=>{
  await host.locator('[data-action="new-question"]').click();await host.locator('#questionText').fill('Was ist die echte Browser-Testantwort?');await host.locator('#correctAnswer').fill('Die geheime Wahrheit');await host.locator('#questionForm button[type="submit"]').click();await host.locator('#questionRows').getByText('Was ist die echte Browser-Testantwort?',{exact:true}).waitFor();
  const qid=JSON.parse(sql("select json_agg(id) from private.bluff_questions where owner_id="+sqlLiteral(teacher))).at(-1);
  await host.screenshot({path:path.join(output,'bluff-collection-desktop.png'),fullPage:true});
- await host.locator('.app-nav a[href="../index.html"]').click();await host.waitForURL('**/quiz-studio/index.html');await host.locator('#bluffLibrary .empty').waitFor();
+ await host.locator('.studio-header a.btn[href="../index.html"]').click();await host.waitForURL('**/quiz-studio/index.html');await host.locator('#bluffLibrary .empty').waitFor();
  await host.locator('[data-bluff-action="new"]').click();await host.locator('#bluffQuizName').fill('Kurioses zum Bluffen');
  await host.locator('.bluff-question-choice input[value="'+qid+'"]').check();await host.locator('.bluff-question-choice input[value="2"]').check();await host.locator('#bluffQuizForm [type="submit"]').click();
  await host.locator('[data-bluff-quiz-id] h3').getByText('Kurioses zum Bluffen',{exact:true}).waitFor();
@@ -55,6 +55,10 @@ server.on('request',async(req,res)=>{
  await host.evaluate(()=>window.__failSync=true);
  await host.waitForFunction(()=>document.querySelector('#bluffConnectionStatus').dataset.state==='error');
  assert.equal(await host.locator('#bluffConnectionStatus').evaluate(el=>getComputedStyle(el).color),'rgb(190, 18, 60)');
+ // Flat design: same header, frame, buttons and font as the quiz views; the breadcrumb is replaced by the home button.
+ const flat=await host.evaluate(async()=>{await document.fonts.ready;const css=sel=>getComputedStyle(document.querySelector(sel));const panel=css('#app .panel'),title=css('.studio-title');return {body:css('body').backgroundColor,panel:[panel.borderTopWidth,panel.borderTopColor,panel.boxShadow],title:title.color,font:title.fontFamily,nav:css('.app-nav').display,home:document.querySelector('.studio-home')?.getAttribute('href')};});
+ assert.deepEqual({...flat,font:undefined},{body:'rgb(255, 255, 255)',panel:['4px','rgb(50, 154, 119)','none'],title:'rgb(50, 154, 119)',font:undefined,nav:'none',home:'../../../index.html'});
+ assert.match(flat.font,/^"?Comic Neue"?/);
  await host.evaluate(()=>window.__failSync=false);
  await host.waitForFunction(()=>document.querySelector('#bluffConnectionStatus').dataset.state==='ready');
  const randomSid=new URL(host.url()).searchParams.get('session');assert.equal(sql('select count(distinct question) from private.bluff_rounds where session_id='+sqlLiteral(randomSid)),'3');
@@ -122,7 +126,7 @@ server.on('request',async(req,res)=>{
   }
   if(phase==='ended'){
    assert(await first.getByRole('heading',{name:'Platzierung',exact:true}).isVisible());
-   assert.equal(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(209, 250, 229)');
+   assert.deepEqual(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>{const c=getComputedStyle(el);return [c.backgroundColor,c.boxShadow];}),['rgb(255, 255, 255)','rgb(50, 154, 119) 0px 0px 0px 2px inset'],'Own final row has the double green frame');
   }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Player page fits the phone');
  }

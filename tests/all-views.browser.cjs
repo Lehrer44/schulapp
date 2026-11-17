@@ -115,15 +115,15 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
      if(name==='bluff-host-leaderboard'||name==='bluff-player-leaderboard'){
       const styles=await page.locator('.bluff-author').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return [s.backgroundColor,s.color,s.fontSize,s.padding,s.borderRadius];}));
       assert.equal(styles.length,2);assert.deepEqual(styles[0],styles[1],'Authors use uniform name badges');
-      assert.equal(styles[0][0],'rgb(79, 70, 229)');assert.equal(await page.locator('.manipulation-option .bluff-avatar').count(),0);
+      assert.equal(styles[0][0],'rgb(50, 154, 119)');assert.equal(await page.locator('.manipulation-option .bluff-avatar').count(),0);
       for(const badge of await page.locator('.bluff-author').all()){
        assert(await badge.evaluate(el=>{
         const outer=el.getBoundingClientRect(),text=el.firstElementChild.getBoundingClientRect();
         return outer.height>=28&&text.top>outer.top&&text.bottom<outer.bottom&&Math.abs((text.top+text.bottom-outer.top-outer.bottom)/2)<=1.1&&el.scrollHeight<=el.clientHeight;
-       }),'Short and wrapped names stay centered and unclipped inside their blue fields');
+       }),'Short and wrapped names stay centered and unclipped inside their green fields');
       }
       for(const votes of await page.locator('.manipulation-option .bluff-voters').all()){
-       assert.equal(await votes.evaluate(el=>getComputedStyle(el).borderLeftWidth),'1px','Keep divider even without votes');
+       assert.equal(await votes.evaluate(el=>getComputedStyle(el).borderLeftWidth),'2px','Keep divider even without votes');
       }
       for(const voter of await page.locator('.bluff-voter').all()){
        assert.deepEqual(await voter.evaluate(el=>{const s=getComputedStyle(el);return [s.fontSize,s.fontWeight,s.backgroundColor,s.borderWidth,s.padding];}),['14px','400','rgba(0, 0, 0, 0)','0px','0px'],'Voters are plain names');
@@ -142,7 +142,7 @@ for(const format of ['bluff','yesno'])for(const mode of ['host','player'])for(co
       assert.equal(await choice.isChecked(),true);assert.equal(await choice.isDisabled(),true);
       assert.equal((await own.innerText()).trim(),'LICHT','Own answer stays free of vote comments');
      }
-     if(name==='bluff-player-ended')assert.equal(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(209, 250, 229)');
+     if(name==='bluff-player-ended')assert.deepEqual(await page.locator('.bluff-final-ranking .bluff-score.me').evaluate(el=>{const c=getComputedStyle(el);return [c.backgroundColor,c.boxShadow];}),['rgb(255, 255, 255)','rgb(50, 154, 119) 0px 0px 0px 2px inset']);
      await page.evaluate(()=>document.fonts.ready);
      const overflow=await page.evaluate(()=>({width:document.documentElement.scrollWidth,viewport:innerWidth}));
      assert(overflow.width<=width+1,`${name} at ${width}: page overflow ${overflow.width}`);
