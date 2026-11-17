@@ -35,7 +35,11 @@ function load(file){return fs.readFileSync(file,'utf8').replace(/^\\set.*$/mg,''
   await host.locator('[data-action="edit-question"]').first().click();await host.locator('#questionText').fill('Wer würde eher eine Rakete bauen?');await host.locator('#questionForm [type="submit"]').click();await host.getByText('Wer würde eher eine Rakete bauen?',{exact:true}).waitFor();
   await host.locator('[data-action="new-question"]').click();await host.locator('#questionText').fill('Wer würde eher den Test gewinnen?');await host.locator('#questionForm [type="submit"]').click();await host.getByText('Wer würde eher den Test gewinnen?',{exact:true}).waitFor();
   await shot(host,'catalog-desktop');
-  await host.locator('.app-nav a[href="../index.html"]').click();await host.locator('#ratherLibrary .empty').waitFor();
+  // Flat design: same header, frame and font as the quiz and Manipulation; back via "← Quiz Studio" and the home button.
+  const flat=await host.evaluate(async()=>{await document.fonts.ready;const css=sel=>getComputedStyle(document.querySelector(sel));const panel=css('#app .panel'),title=css('.studio-title');return {body:css('body').backgroundColor,panel:[panel.borderTopWidth,panel.borderTopColor,panel.boxShadow],title:title.color,font:title.fontFamily,nav:css('.app-nav').display,home:document.querySelector('.studio-home')?.getAttribute('href')};});
+  assert.deepEqual({...flat,font:undefined},{body:'rgb(255, 255, 255)',panel:['4px','rgb(50, 154, 119)','none'],title:'rgb(50, 154, 119)',font:undefined,nav:'none',home:'../../../index.html'});
+  assert.match(flat.font,/^"?Comic Neue"?/);
+  await host.locator('.studio-header a.btn[href="../index.html"]').click();await host.locator('#ratherLibrary .empty').waitFor();
   await host.locator('[data-rather-action="new"]').click();await host.locator('#ratherQuizName').fill('Unsere Runde');await host.locator('.bluff-question-choice input').nth(0).check();await host.locator('.bluff-question-choice input').nth(1).check();await host.locator('#ratherQuizForm [type="submit"]').click();await host.getByText('Unsere Runde',{exact:true}).waitFor();
   await host.locator('[data-rather-action="edit"]').click();await host.locator('#ratherQuizName').waitFor();assert.equal(await host.locator('.bluff-question-choice input:checked').count(),2);await host.locator('#ratherQuizName').fill('Klassenrunde');await host.locator('#ratherQuizForm [type="submit"]').click();await host.getByText('Klassenrunde',{exact:true}).waitFor();
   await host.setViewportSize({width:390,height:844});await shot(host,'studio-mobile');
@@ -53,7 +57,7 @@ function load(file){return fs.readFileSync(file,'utf8').replace(/^\\set.*$/mg,''
   await host.waitForFunction(()=>window.__payloads.some(x=>x.name==='rather_host_state'&&x.payload.data?.phase==='vote'&&x.payload.data.players.every(p=>p.voted)));
   for(const p of [host,...players]){assert.equal(await p.getByText(/\d+ von \d+ haben abgestimmt/).count(),0);assert.equal(await p.locator('.rather-choices .bluff-avatar,.rather-choices .bluff-person').count(),0);}
   assert.equal(await host.locator('[data-action="show_bars"]').innerText(),'Auswerten');
-  assert.equal(await host.locator('[data-action="show_bars"]').evaluate(b=>getComputedStyle(b).backgroundColor),'rgb(79, 70, 229)','The flow action uses the shared primary button');await shot(players[0],'vote-mobile');await shot(host,'vote-desktop');
+  assert.equal(await host.locator('[data-action="show_bars"]').evaluate(b=>getComputedStyle(b).backgroundColor),'rgb(50, 154, 119)','The flow action uses the shared primary button');await shot(players[0],'vote-mobile');await shot(host,'vote-desktop');
   await host.locator('[data-action="show_bars"]').click();await host.locator('.rather-result').first().waitFor();assert.equal(await host.locator('.rather-count,.rather-voters').count(),0);
   assert.equal(await host.locator('.rather-results').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),1);await shot(host,'results-hidden-desktop');
   await players[2].locator('.rather-result').first().waitFor();assert.equal(await players[2].locator('[data-action="reveal-result"]').count(),0);
