@@ -2,4 +2,3 @@
 .quiz-rich-center{text-align:center}
 .quiz-rich-line{display:block;min-height:1.35em}
 .quiz-rich strong,.rich-input strong,.rich-input b{font-weight:850}
-.play-opt>.quiz-rich,.play-opt>span:has(.quiz-rich){flex:1}

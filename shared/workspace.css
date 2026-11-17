@@ -37,8 +37,6 @@ body[data-dashboard-view="editor"] .editor-board-wrap{overflow:auto}
 body[data-dashboard-view="live"] :is(.session>.main,.participants){border:1px solid var(--studio-line);border-radius:18px;background:var(--studio-surface);padding:var(--panel-padding);box-shadow:none}
 body[data-dashboard-view="live"] :is(.metric,.answer-board,.rank-item,.response-row){border:1px solid var(--studio-line);border-radius:12px;background:var(--studio-soft)}
 body[data-dashboard-view="live"] :is(.question,.question-text){color:var(--studio-text);font-weight:650;letter-spacing:-.025em}
-body[data-dashboard-view="preview"] .panel .play-question{font-size:clamp(24px,3vw,34px);line-height:1.25;margin-bottom:var(--question-gap);}
-body[data-dashboard-view="preview"] .play-opt{border:1px solid var(--studio-line);border-radius:12px;background:var(--studio-soft)}
 body[data-dashboard-view="live"] :is(.answer-board.correct,.rank-item.answered,.response-row.correct){background:#e5f1e8;border-color:#8fbf9c}
 body[data-dashboard-view="live"] .response-row.wrong{background:#f8e8e5;border-color:#ddb3aa}
 @media(max-width:800px){

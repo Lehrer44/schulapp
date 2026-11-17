@@ -13,74 +13,10 @@ body{min-height:100vh}
 button,input,select,textarea{font:inherit;color:inherit}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.btn.big{width:100%}
 
 .icon-btn{flex:none}
 
 .spacer{flex:1}
-
-/* ---------- Panels ---------- */
-.eyebrow{font-size:.72rem;letter-spacing:.14em;font-weight:850;color:var(--accent);margin:0 0 7px;text-transform:uppercase}
-
-
-.question-media-play{display:block;max-width:100%;max-height:320px;margin:0 auto 18px;border-radius:var(--qs-radius);object-fit:contain}
-audio.question-media-play{width:min(100%,560px);height:42px}
-video.question-media-play{width:auto;max-width:100%;max-height:320px}
-
-
-.hint{font-size:.84rem;color:var(--muted);line-height:1.5}
-
-/* ---------- Play ---------- */
-.progress{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin-bottom:20px}
-.progress-bar{height:100%;background:var(--accent);border-radius:999px;transition:width .3s}
-.play-score{font-size:.94rem;font-weight:800;color:var(--accent-dark);padding:6px 12px;background:var(--accent-soft);border-radius:999px}
-.play-meta{font-size:.78rem;color:var(--muted);font-weight:800;margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase}
-.play-options{display:flex;flex-direction:column;gap:10px}
-.play-opt{display:flex;align-items:center;gap:12px;padding:var(--card-padding);border:1.5px solid var(--line);
-  border-radius:var(--qs-radius);cursor:pointer;background:#ffffff;transition:.15s;font-size:.98rem;font-weight:600;
-min-height:var(--control-size);}
-.play-opt:hover{border-color:var(--line-strong);background:var(--surface-soft)}
-.play-opt input{width:18px;height:18px;accent-color:var(--accent);flex:none;cursor:pointer}
-.play-opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
-.play-opt.is-correct{border-color:var(--ok);background:var(--ok-soft)}
-.play-opt.is-wrong{border-color:var(--danger);background:var(--danger-soft)}
-.rank-play{display:flex;flex-direction:column;gap:8px}
-.rank-play-row{
-  display:flex;align-items:center;gap:10px;padding:12px 15px;border:1.5px solid var(--line);
-  border-radius:var(--qs-radius);background:#ffffff;transition:.15s;
-}
-.rank-play-row.is-correct{border-color:var(--ok);background:var(--ok-soft)}
-.rank-play-row.is-wrong{border-color:var(--danger);background:var(--danger-soft)}
-.rank-text{flex:1;font-size:.98rem;font-weight:600}
-.short-input{width:100%;font-size:1rem}
-.short-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.14)}
-.play-actions{margin-top:22px}
-.feedback{margin-top:20px;padding:16px 18px;border-radius:var(--qs-radius);font-size:.94rem;border:1.5px solid;line-height:1.5}
-.feedback.ok{background:var(--ok-soft);border-color:var(--ok);color:#065f46}
-.feedback.partial{background:#fffbeb;border-color:#fcd34d;color:#92400e}
-.feedback.bad{background:var(--danger-soft);border-color:var(--danger);color:#9f1239}
-.fb-title{font-weight:800}
-.fb-correct{margin-top:8px;color:var(--text);opacity:.92}
-.fb-correct strong{font-weight:800}
-
-/* ---------- Result ---------- */
-.result-hero{text-align:center}
-.result-pct{font-size:clamp(3rem,8vw,4.2rem);font-weight:900;letter-spacing:-.045em;line-height:1;color:var(--accent-dark)}
-.result-msg{font-size:1.25rem;font-weight:800;margin-top:12px;letter-spacing:-.02em}
-.result-sub{color:var(--muted);margin-top:8px;font-size:.94rem}
-.review{margin-bottom:12px;padding:16px 18px;border-left:4px solid var(--line);border-radius:var(--qs-radius)}
-.review.ok{border-left-color:var(--ok)}
-.review.partial{border-left-color:#fcd34d}
-.review.bad{border-left-color:var(--danger)}
-.rev-head{display:flex;gap:12px;align-items:flex-start;font-weight:700;font-size:.98rem}
-.rev-num{
-  width:26px;height:26px;border-radius:50%;background:var(--surface-muted);color:var(--muted);
-  display:flex;align-items:center;justify-content:center;font-size:.78rem;flex:none;margin-top:1px;font-weight:800;
-}
-.rev-q{flex:1;line-height:1.4}
-.rev-pts{font-size:.82rem;color:var(--muted);white-space:nowrap;font-weight:800;padding-top:4px}
-.rev-row{margin-top:8px;font-size:.9rem;padding-left:38px;line-height:1.5}
-.rev-label{color:var(--muted);font-weight:700;margin-right:6px}
 
 /* ---------- Toast ---------- */
 #toast{
@@ -93,11 +29,6 @@ min-height:var(--control-size);}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 .footer-note{text-align:center}
 
-
-@media(max-width:440px){
-  .rev-row{padding-left:0}
-  .rev-pts{padding-top:0}
-}
 </style>
 <script src="../../shared/cloud-library.js"></script>
 <link rel="stylesheet" href="../../shared/accessibility.css">
@@ -162,7 +93,7 @@ const TYPES = {
 
 /* ---------- State ---------- */
 let db = { quizzes: [] };
-let state = { view:'list', draft:null, session:null };
+let state = { view:'list', draft:null };
 let saveTimer = null;
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 let indexedDbPromise = null;
@@ -182,13 +113,6 @@ function uid(){
 }
 function esc(s){
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-function shuffle(a){
-  for(let i=a.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]] = [a[j],a[i]];
-  }
-  return a;
 }
 function fmt(n){
   const x = Number(n) || 0;
@@ -377,10 +301,6 @@ function mountPinQuestions(){
   const q=state.draft.questions.find(q=>q.id===card.dataset.qid);if(q?.type!=='pin')return;
   QuizPin.mount(card.querySelector('[data-quiz-pin]'),q,{editor:true,editable:true,showTarget:true,onChange:value=>{q.pinTarget=value;scheduleSave();},onAspect:value=>{if(q.pinAspect!==value){q.pinAspect=value;scheduleSave();}}});
  });
- if(state.view==='play'){
-  const s=state.session,q=s.questions[s.index];if(q.type!=='pin')return;
-  QuizPin.mount($app.querySelector('[data-quiz-pin]'),q,{answer:s.answers[s.index],showTarget:s.checked,editable:!s.checked,onChange:value=>{s.answers[s.index]=value;updatePrimaryBtn();}});
- }
 }
 
 /* ---------- Quiz / Fragen erzeugen ---------- */
@@ -427,11 +347,9 @@ function render(){
   const editorId = state.view === 'editor' ? state.draft?.id : null;
   const keepPosition = editorId !== null && editorId === renderedEditorId;
   const position = {left:window.scrollX,top:window.scrollY};
-  document.body.dataset.dashboardView=state.view==='list'?'library':state.view==='editor'?'editor':'preview';
+  document.body.dataset.dashboardView=state.view==='list'?'library':'editor';
   if(state.view === 'list')        $app.innerHTML = viewList();
   else if(state.view === 'editor') $app.innerHTML = viewEditor();
-  else if(state.view === 'play')   $app.innerHTML = viewPlay();
-  else if(state.view === 'result') $app.innerHTML = viewResult();
   mountPinQuestions();
   if(state.view==='list') window.BluffLibrary.mount(document.getElementById('bluffLibrary'),cloudClient);
   if(state.view==='list') window.RatherLibrary.mount(document.getElementById('ratherLibrary'),cloudClient);
@@ -675,319 +593,6 @@ function questionBody(q){
   return '';
 }
 
-/* ---------- Spielen ---------- */
-function initAnswer(q){
-  switch(q.type){
-    case 'single':      return null;
-    case 'multiple':    return [];
-    case 'truefalse':   return null;
-    case 'ranking':     return q.items.map(i=>i.id);
-    case 'shortanswer': return '';
-  }
-  return null;
-}
-function isAnswered(q, ans){
-  switch(q.type){
-    case 'single':      return !!ans;
-    case 'multiple':    return Array.isArray(ans) && ans.length > 0;
-    case 'truefalse':   return ans === true || ans === false;
-    case 'ranking':     return true;
-    case 'shortanswer': return String(ans||'').trim().length > 0;
-    case 'pin': return QuizPin.point(ans);
-  }
-  return false;
-}
-
-function startPlay(quizId){
-  const quiz = db.quizzes.find(q=>q.id === quizId);
-  if(!quiz){ toast('Quiz nicht gefunden.'); return; }
-  if(quiz.questions.length === 0){ toast('Dieses Quiz hat noch keine Fragen.'); return; }
-
-  const questions = quiz.questions.map(q=>{
-    const c = deepCopy(q);
-    if((c.type === 'single' || c.type === 'multiple') && quiz.shuffleAnswers) shuffle(c.options);
-    if(c.type === 'ranking'){
-      c.correctOrder = c.items.map(i=>i.id);
-      shuffle(c.items);
-    }
-    return c;
-  });
-  if(quiz.shuffleQuestions) shuffle(questions);
-
-  state.session = {
-    quizId,
-    title: quiz.title,
-    questions,
-    answers: questions.map(q=>initAnswer(q)),
-    results: new Array(questions.length).fill(null),
-    index: 0,
-    checked: false,
-    immediate: quiz.immediateFeedback !== false
-  };
-  state.view = 'play';
-  render();
-}
-
-function viewPlay(){
-  const s = state.session;
-  if(!s) return '';
-  const q = s.questions[s.index];
-  const ans = s.answers[s.index];
-  const res = s.results[s.index];
-  const total = s.questions.length;
-  const pct = Math.round((s.index / total) * 100);
-  const score = s.results.reduce((a,r)=>a + (r ? r.score : 0), 0);
-
-  let btnLabel;
-  if(s.checked) btnLabel = (s.index === total-1) ? 'Ergebnis anzeigen' : 'Weiter →';
-  else btnLabel = s.immediate ? 'Antwort prüfen' : 'Weiter →';
-
-  return `
-  <header class="studio-header">
-    <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Frage ${s.index+1} von ${total}</div></div></div>
-    <div class="studio-actions">
-      <div class="play-score">${fmt(score)} Punkte</div>
-      <button class="btn secondary" data-action="quit-play">✕ Beenden</button>
-    </div>
-  </header>
-  <div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>
-
-  <div class="panel">
-    <div class="play-meta">Frage ${s.index+1} von ${total} · ${fmt(q.points)} ${Number(q.points)===1?'Punkt':'Punkte'}</div>
-    <h2 class="play-question">${(q.text ? QuizRichText.render(q) : '') || '<em class="muted">Keine Frage formuliert</em>'}</h2>
-    ${q.type==='pin'?'':mediaMarkup(q.media,'question-media-play')}
-    ${playBody(q, ans, s.checked)}
-    ${(s.checked && s.immediate) ? feedbackBox(q, res) : ''}
-    <div class="play-actions">
-      <button class="btn secondary" data-action="preview-back" ${s.index===0?'disabled':''}>← Zurück</button>
-      <button class="btn secondary" data-action="preview-next" ${s.index===total-1?'disabled':''}>Weiter →</button>
-      <button id="primaryBtn" class="btn primary big" data-action="primary"
-        ${(!s.checked && !isAnswered(q, ans)) ? 'disabled' : ''}>${btnLabel}</button>
-    </div>
-  </div>`;
-}
-
-function playBody(q, ans, checked){
-  if(q.type==='pin')return QuizPin.markup(q,{answer:ans,showTarget:checked,editable:!checked});
-  const dis = checked ? 'disabled' : '';
-
-  if(q.type === 'single'){
-    return `<div class="play-options">${q.options.map(o=>{
-      const sel = ans === o.id;
-      const cls = checked ? (o.correct ? 'is-correct' : (sel ? 'is-wrong' : '')) : '';
-      return `<label class="play-opt ${cls}">
-        <input type="radio" name="play_${q.id}" value="${o.id}" ${sel?'checked':''} ${dis}
-               data-pfield="single" data-oid="${o.id}">
-        <span>${QuizRichText.render(o)}</span>
-      </label>`;
-    }).join('')}</div>`;
-  }
-
-  if(q.type === 'multiple'){
-    return `<div class="play-options">${q.options.map(o=>{
-      const sel = Array.isArray(ans) && ans.includes(o.id);
-      const cls = checked ? (o.correct ? 'is-correct' : (sel ? 'is-wrong' : '')) : '';
-      return `<label class="play-opt ${cls}">
-        <input type="checkbox" value="${o.id}" ${sel?'checked':''} ${dis}
-               data-pfield="multiple" data-oid="${o.id}">
-        <span>${QuizRichText.render(o)}</span>
-      </label>`;
-    }).join('')}</div>`;
-  }
-
-  if(q.type === 'truefalse'){
-    return `<div class="play-options">
-      ${[true,false].map(v=>{
-        const sel = ans === v;
-        const cls = checked ? (q.correct === v ? 'is-correct' : (sel ? 'is-wrong' : '')) : '';
-        return `<label class="play-opt ${cls}">
-          <input type="radio" name="play_${q.id}" value="${v}" ${sel?'checked':''} ${dis}
-                 data-pfield="tf">
-          <span>${v ? 'Wahr' : 'Falsch'}</span>
-        </label>`;
-      }).join('')}
-    </div>`;
-  }
-
-  if(q.type === 'ranking'){
-    const order = ans || [];
-    const correctOrder = q.correctOrder || q.items.map(i=>i.id);
-    const byId = Object.fromEntries(q.items.map(i=>[i.id, i]));
-    return `<div class="rank-play">
-      ${order.map((id,i)=>{
-        const cls = checked ? (correctOrder[i] === id ? 'is-correct' : 'is-wrong') : '';
-        return `<div class="rank-play-row ${cls}">
-          <span class="rank-num">${i+1}</span>
-          <span class="rank-text">${QuizRichText.render(byId[id] || {text:''})}</span>
-          <button class="icon-btn" data-action="play-rank" data-dir="-1" data-idx="${i}" ${dis}>↑</button>
-          <button class="icon-btn" data-action="play-rank" data-dir="1" data-idx="${i}" ${dis}>↓</button>
-        </div>`;
-      }).join('')}
-    </div>`;
-  }
-
-  if(q.type === 'shortanswer'){
-    return `<input class="short-input" type="text" placeholder="Deine Antwort …" value="${esc(ans)}"
-             ${dis} data-pfield="shortanswer" autocomplete="off">`;
-  }
-
-  return '';
-}
-
-function feedbackBox(q, res){
-  if(!res) return '';
-  const cls = res.ok ? 'ok' : (res.score > 0 ? 'partial' : 'bad');
-  const title = res.ok ? 'Richtig!' : (res.score > 0 ? 'Teilweise richtig' : 'Leider falsch');
-  return `<div class="feedback ${cls}">
-    <div class="fb-title">${title} · ${fmt(res.score)} / ${fmt(res.max)} Punkte</div>
-    ${ !res.ok ? `<div class="fb-correct">Richtige Antwort: <strong>${esc(formatCorrect(q))}</strong></div>` : '' }
-  </div>`;
-}
-
-/* ---------- Auswertung ---------- */
-function evaluate(q, ans){
-  const max = Number(q.points) || 0;
-  if(q.type==='pin'){const ok=QuizPin.correct(q,ans);return {ok,score:ok?max:0,max};}
-
-  if(q.type === 'single'){
-    const correctId = (q.options.find(o=>o.correct) || {}).id ?? null;
-    const ok = correctId !== null && ans === correctId;
-    return { ok, score: ok ? max : 0, max };
-  }
-
-  if(q.type === 'multiple'){
-    const correctIds = q.options.filter(o=>o.correct).map(o=>o.id).sort();
-    const given = [...(ans || [])].sort();
-    const ok = correctIds.length > 0 && correctIds.length === given.length &&
-               correctIds.every((v,i)=>v === given[i]);
-    return { ok, score: ok ? max : 0, max };
-  }
-
-  if(q.type === 'truefalse'){
-    const ok = ans === q.correct;
-    return { ok, score: ok ? max : 0, max };
-  }
-
-  if(q.type === 'ranking'){
-    const correctOrder = q.correctOrder || q.items.map(i=>i.id);
-    const given = ans || [];
-    let hits = 0;
-    correctOrder.forEach((id,i)=>{ if(given[i] === id) hits++; });
-    const ratio = correctOrder.length ? hits / correctOrder.length : 0;
-    const score = Math.round(max * ratio * 100) / 100;
-    return { ok: hits === correctOrder.length && correctOrder.length > 0, score, max };
-  }
-
-  if(q.type === 'shortanswer'){
-    const norm = s => String(s ?? '').trim().toLowerCase().replace(/\s+/g,' ');
-    const ok = (q.answers || []).some(a => norm(a) !== '' && norm(a) === norm(ans));
-    return { ok, score: ok ? max : 0, max };
-  }
-
-  return { ok:false, score:0, max };
-}
-
-function formatCorrect(q){
-  if(q.type==='pin')return 'Grün markierter Bereich auf dem Bild';
-  if(q.type === 'single'){
-    const o = q.options.find(o=>o.correct);
-    return o ? o.text : '—';
-  }
-  if(q.type === 'multiple'){
-    const t = q.options.filter(o=>o.correct).map(o=>o.text).filter(Boolean);
-    return t.length ? t.join(', ') : '—';
-  }
-  if(q.type === 'truefalse') return q.correct ? 'Wahr' : 'Falsch';
-  if(q.type === 'ranking'){
-    const order = q.correctOrder || q.items.map(i=>i.id);
-    const byId = Object.fromEntries(q.items.map(i=>[i.id, i]));
-    return order.map(id=>byId[id]).join(' → ');
-  }
-  if(q.type === 'shortanswer'){
-    const t = (q.answers || []).filter(a=>String(a).trim());
-    return t.length ? t.join(' / ') : '—';
-  }
-  return '—';
-}
-
-function formatGiven(q, ans){
-  if(q.type==='pin')return QuizPin.point(ans)?'Pin bei '+ans.x.toLocaleString('de-DE')+' % / '+ans.y.toLocaleString('de-DE')+' %':'— keine Antwort —';
-  if(q.type === 'single'){
-    const o = q.options.find(o=>o.id === ans);
-    return o && o.text ? o.text : (o ? '(leer)' : '— keine Antwort —');
-  }
-  if(q.type === 'multiple'){
-    const ids = ans || [];
-    const t = q.options.filter(o=>ids.includes(o.id)).map(o=>o.text).filter(Boolean);
-    return t.length ? t.join(', ') : '— keine Antwort —';
-  }
-  if(q.type === 'truefalse'){
-    return ans === true ? 'Wahr' : (ans === false ? 'Falsch' : '— keine Antwort —');
-  }
-  if(q.type === 'ranking'){
-    const byId = Object.fromEntries(q.items.map(i=>[i.id, i]));
-    const t = (ans || []).map(id=>byId[id]).filter(Boolean);
-    return t.length ? t.join(' → ') : '—';
-  }
-  if(q.type === 'shortanswer'){
-    const t = String(ans || '').trim();
-    return t || '— keine Antwort —';
-  }
-  return '—';
-}
-
-/* ---------- Ergebnis ---------- */
-function viewResult(){
-  const s = state.session;
-  if(!s) return '';
-  const score = s.results.reduce((a,r)=>a + (r ? r.score : 0), 0);
-  const max = s.questions.reduce((a,q)=>a + (Number(q.points)||0), 0);
-  const pct = max > 0 ? Math.round((score / max) * 100) : 0;
-  const msg = pct >= 90 ? 'Hervorragend! 🏆'
-            : pct >= 70 ? 'Sehr gut! 🎉'
-            : pct >= 50 ? 'Solide Leistung 👍'
-            : 'Weiter üben 💪';
-
-  return `
-  <header class="studio-header">
-    <div class="studio-identity"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="m11 12 2 2 3-4m3 3h3m-11 8 2 2 3-4m3 3h3"/></svg></span><div><h1 class="studio-title">Quiz <span>Studio</span></h1><div class="studio-subtitle">Ergebnis</div></div></div>
-    <div class="studio-actions">
-      <button class="btn secondary" data-action="back-to-list">← Zur Übersicht</button>
-      <button class="btn gold" data-action="restart-quiz">↻ Nochmal spielen</button>
-    </div>
-  </header>
-
-  <div class="panel result-hero">
-    <div class="result-pct">${pct}%</div>
-    <div class="result-msg">${msg}</div>
-    <div class="result-sub">${fmt(score)} von ${fmt(max)} Punkten · ${s.questions.length} ${s.questions.length===1?'Frage':'Fragen'}</div>
-  </div>
-
-  <div class="panel">
-    <div class="eyebrow">Auswertung</div>
-    <h2>Alle Fragen im Überblick</h2>
-    <div style="margin-top:16px">
-    ${s.questions.map((q,i)=>{
-      const r = s.results[i] || { ok:false, score:0, max:Number(q.points)||0 };
-      const cls = r.ok ? 'ok' : (r.score > 0 ? 'partial' : 'bad');
-      return `<div class="review ${cls}">
-        <div class="rev-head">
-          <span class="rev-num">${i+1}</span>
-          <span class="rev-q">${(q.text ? QuizRichText.render(q) : '') || '<em class="muted">Keine Frage formuliert</em>'}</span>
-          <span class="rev-pts">${fmt(r.score)} / ${fmt(r.max)}</span>
-        </div>
-        <div class="rev-row"><span class="rev-label">Deine Antwort:</span>${esc(formatGiven(q, s.answers[i]))}</div>
-        ${ !r.ok ? `<div class="rev-row"><span class="rev-label">Richtig:</span>${esc(formatCorrect(q))}</div>` : '' }
-      </div>`;
-    }).join('')}
-    </div>
-  </div>`;
-}
-
-/* =========================================================
-   Interaktion
-   ========================================================= */
-
 /* ---------- Klicks ---------- */
 document.addEventListener('click', async (e)=>{
   const el = e.target.closest('[data-action]');
@@ -1053,7 +658,6 @@ document.addEventListener('click', async (e)=>{
       save();
       state.view = 'list';
       state.draft = null;
-      state.session = null;
       render();
       break;
     }
@@ -1134,66 +738,13 @@ document.addEventListener('click', async (e)=>{
       break;
     }
 
-    case 'preview-back':
-    case 'preview-next': {
-      const s=state.session;if(!s)break;
-      s.index=Math.max(0,Math.min(s.questions.length-1,s.index+(action==='preview-back'?-1:1)));
-      s.checked=s.immediate&&s.results[s.index]!==null;
-      render();break;
-    }
-    case 'play-rank': {
-      const s = state.session;
-      if(!s || s.checked) break;
-      const arr = s.answers[s.index];
-      const i = Number(el.dataset.idx);
-      if(moveInArray(arr, i, dir)) render();
-      break;
-    }
-    case 'primary': {
-      const s = state.session;
-      if(!s) break;
-      if(s.checked){
-        advance();
-      } else {
-        s.results[s.index] = evaluate(s.questions[s.index], s.answers[s.index]);
-        if(s.immediate){ s.checked = true; render(); }
-        else { advance(); }
-      }
-      break;
-    }
-    case 'quit-play': {
-      if(confirm('Spiel wirklich beenden? Der Fortschritt geht verloren.')){
-        state.session = null;
-        state.view = 'list';
-        render();
-      }
-      break;
-    }
-    case 'restart-quiz': {
-      const s = state.session;
-      if(s) startPlay(s.quizId);
-      break;
-    }
   }
 });
-
-function advance(){
-  const s = state.session;
-  if(!s) return;
-  if(s.index >= s.questions.length - 1){
-    state.view = 'result';
-  } else {
-    s.index++;
-    s.checked = s.immediate && s.results[s.index] !== null;
-  }
-  render();
-}
 
 /* ---------- Eingaben ---------- */
 document.addEventListener('input', (e)=>{
   const t = e.target.closest('.rich-input') || e.target;
   if(state.view === 'editor') editorInput(t);
-  else if(state.view === 'play') playInput(t);
 });
 
 /* ---------- Medien in Fragen ---------- */
@@ -1356,40 +907,6 @@ function editorInput(t){
   }
 
   scheduleSave();
-}
-
-function playInput(t){
-  const s = state.session;
-  if(!s) return;
-  const q = s.questions[s.index];
-  const field = t.dataset.pfield;
-  if(!field) return;
-
-  if(field === 'single'){
-    s.answers[s.index] = t.value;
-  }
-  else if(field === 'multiple'){
-    const set = new Set(s.answers[s.index] || []);
-    if(t.checked) set.add(t.value); else set.delete(t.value);
-    s.answers[s.index] = [...set];
-  }
-  else if(field === 'tf'){
-    s.answers[s.index] = (t.value === 'true');
-  }
-  else if(field === 'shortanswer'){
-    s.answers[s.index] = t.value;
-  }
-
-  updatePrimaryBtn();
-}
-
-function updatePrimaryBtn(){
-  const s = state.session;
-  if(!s || state.view !== 'play') return;
-  const btn = document.getElementById('primaryBtn');
-  if(!btn) return;
-  const q = s.questions[s.index];
-  btn.disabled = !s.checked && !isAnswered(q, s.answers[s.index]);
 }
 
 /* =========================================================

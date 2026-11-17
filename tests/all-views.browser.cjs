@@ -56,8 +56,6 @@ const views=[
  ['survey-player','apps/umfrage/student.html?code=ABCDE','#joinBtn',async p=>{await p.locator('#name').fill('Alex');await p.locator('#joinBtn').click();await p.locator('#submitBtn').waitFor({state:'visible'});}],
  ['quiz-library','apps/quiz-studio/index.html','#yesnoLibrary'],
  ['quiz-editor','apps/quiz-studio/index.html','#classicLibrary',p=>p.evaluate(()=>{state.draft=deepCopy(db.quizzes[0]);state.view='editor';render();})],
- ['quiz-preview','apps/quiz-studio/index.html','#classicLibrary',p=>p.evaluate(()=>startPlay(db.quizzes[0].id))],
- ['quiz-result','apps/quiz-studio/index.html','#classicLibrary',p=>p.evaluate(()=>{startPlay(db.quizzes[0].id);state.session.results=[{score:5,correct:true}];state.view='result';render();})],
  ['quiz-live','apps/quiz-studio/live.html?session=quiz-session','.question-toolbar'],
  ['quiz-join','apps/quiz-studio/student.html?code=ABCDE','#joinForm'],
  ['quiz-player','apps/quiz-studio/student.html?code=ABCDE','#joinForm',async p=>{await p.locator('#studentName').fill('Alex');await p.locator('#joinForm button').click();await p.locator('#submitAnswer').waitFor();}],
