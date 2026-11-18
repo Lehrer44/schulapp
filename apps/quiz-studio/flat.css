@@ -5,12 +5,15 @@
    expired timer.
    Text uses Comic Neue (SIL OFL), served from shared/fonts.
    Sections: shared base and header, dashboard, editor (partly shared with live and player),
-   live view, player page, party games (Manipulation, Wer würde eher, Dieselbe Antwort, Ja oder Nein). */
+   live view, player page, party games (Manipulation, Wer würde eher, Dieselbe Antwort, Ja oder Nein),
+   rankings in orange. */
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:400;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-400.woff2") format("woff2")}
 @font-face{font-family:"Comic Neue";font-style:normal;font-weight:700;font-display:swap;src:url("../../shared/fonts/comic-neue/comic-neue-700.woff2") format("woff2")}
 :is(body[data-studio="quiz"]:is([data-dashboard-view="library"],[data-dashboard-view="editor"],[data-dashboard-view="live"]),body[data-game]),
 body[data-quiz-player]{
   --flat-green:#329a77; /* chosen brand green; 3.5:1 against white */
+  --flat-own:#329a77; /* brand green kept for your own row inside orange rankings */
+  --flat-rank:#ff6600; /* rankings and final placements; 2.9:1 against white */
   --flat-white:#fff;
   --flat-line:2px;
   --flat-frame:4px;
@@ -653,3 +656,20 @@ body[data-game="yesno"] #app .yn-results-main :is(.yn-result-name,.yn-result-row
 :is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(.yn-picker,.yn-packs) input{accent-color:var(--flat-green)}
 :is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .yn-error{color:#be123c}
 :is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] #ynGameForm input[type="number"]{min-height:0;border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius-sm);color:var(--flat-green);box-shadow:none;font-family:var(--flat-font);font-weight:700}
+
+/* ======================= Rankings and final placements ======================= */
+/* Every ranking and final placement, in the quiz and all party games, is drawn in orange: the green
+   token is swapped for the ranking colour inside these tiles, so frame, heading, rows, rank circles
+   and filled "answered" rows follow automatically. Controls inside keep the green of all buttons,
+   and your own row keeps a green double frame. */
+body[data-studio="quiz"][data-dashboard-view="live"] #app .ranking-panel,
+body[data-studio="quiz"][data-dashboard-view="live"] #app .panel:has(>.ranking-list),
+body[data-quiz-player] #app .side>.panel,
+body[data-quiz-player] #app .final-result,
+body[data-game] #app :is(.ranking-panel,.bluff-final-result,.yn-lobby-ranking,.panel:has(.yn-final-ranking)){--flat-green:var(--flat-rank)}
+body[data-studio="quiz"][data-dashboard-view="live"] #app .ranking-panel :is(button,a.btn),
+body[data-studio="quiz"][data-dashboard-view="live"] #app .panel:has(>.ranking-list) :is(button,a.btn),
+body[data-quiz-player] #app .side>.panel :is(button,a.btn),
+body[data-quiz-player] #app .final-result :is(button,a.btn),
+body[data-game] #app :is(.ranking-panel,.bluff-final-result,.yn-lobby-ranking,.panel:has(.yn-final-ranking)) :is(button,a.btn){--flat-green:var(--flat-own)}
+:is(body[data-quiz-player],body[data-game]) #app :is(.rank-item,.bluff-score,.yn-lobby-score).me:is(.me,.answered,.has-answer,.has-vote){border-color:var(--flat-own);box-shadow:inset 0 0 0 var(--flat-line) var(--flat-own)}

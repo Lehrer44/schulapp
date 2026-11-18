@@ -219,6 +219,8 @@ function fixture(){
     assert.equal(await page.locator('[data-option-id="b"] .answer-name.wrong').evaluate(el=>getComputedStyle(el).color),'rgb(190, 18, 60)');
     assert(!(await page.locator('.app-nav').isVisible()));assert.equal(await page.locator('.studio-header .studio-home').getAttribute('href'),'../../index.html');
     assert.match(await page.locator('.question-text').evaluate(el=>getComputedStyle(el).fontFamily),/^"?Comic Neue"?/);
+    assert.deepEqual(await page.locator('.ranking-panel').evaluate(el=>{const r=el.querySelector('.rank-item');return [getComputedStyle(el).borderTopColor,getComputedStyle(r).borderTopColor,getComputedStyle(el.querySelector('h2')).color];}),['rgb(255, 102, 0)','rgb(255, 102, 0)','rgb(255, 102, 0)'],'Ranking tile is orange');
+    assert.equal(await page.locator('.ranking-panel [data-action="lock"]').evaluate(el=>getComputedStyle(el).color),'rgb(50, 154, 119)','Controls in the ranking stay green');
     assert.equal(await page.locator('.answer-names img').count(),0);
     assert.equal(await page.locator('.answer-names').first().evaluate(el=>getComputedStyle(el).justifyContent),'flex-end');
    }else if(index===5){
@@ -244,6 +246,9 @@ function fixture(){
    return {body:css('body').backgroundColor,panel:[panel.borderTopWidth,panel.borderTopColor,panel.boxShadow],button:[button.backgroundColor,button.color],field:field.borderTopColor,font:css('h1').fontFamily};});
   assert.deepEqual({...playerFlat,font:undefined},{body:'rgb(255, 255, 255)',panel:['4px','rgb(50, 154, 119)','none'],button:['rgb(50, 154, 119)','rgb(255, 255, 255)'],field:'rgb(50, 154, 119)',font:undefined});
   assert.match(playerFlat.font,/^"?Comic Neue"?/);
+  // Rankings are orange; your own row keeps a green double frame.
+  const ranking=await player.evaluate(()=>{const css=sel=>getComputedStyle(document.querySelector(sel));const panel=css('.side>.panel'),me=css('.rank-item.me'),no=css('.rank-item.me .rank-no');return {panel:panel.borderTopColor,me:[me.borderTopColor,me.boxShadow],no:no.backgroundColor};});
+  assert.deepEqual(ranking,{panel:'rgb(255, 102, 0)',me:['rgb(50, 154, 119)','rgb(50, 154, 119) 0px 0px 0px 2px inset'],no:'rgb(255, 102, 0)'});
   assert.equal(await player.locator('header.top,.logo,#headerStatus,#connectionStatus').count(),0);
   assert.equal(await player.getByText('Dein Status',{exact:true}).count(),0);
   assert.equal(await player.getByText('Live-Ranking',{exact:true}).count(),0);
