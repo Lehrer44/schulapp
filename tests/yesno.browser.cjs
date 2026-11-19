@@ -14,7 +14,7 @@ const signatures={yesno_question_list:[],yesno_question_save:['p_id','p_question
 function value(v,key){if(v===null||v===undefined)return 'null';if(Array.isArray(v))return 'array['+v.map(x=>quote(x)).join(',')+']::'+(key==='p_question_ids'?'bigint':'text')+'[]';if(typeof v==='boolean'||typeof v==='number')return String(v);return quote(v);}
 const payloads=[],calls=[];
 async function queryRpc(name,args,host){
- if(['bluff_quiz_list','rather_quiz_list','same_quiz_list'].includes(name))return {ok:true,quizzes:[]};
+ if(['bluff_quiz_list','rather_quiz_list','same_quiz_list','closer_quiz_list'].includes(name))return {ok:true,quizzes:[]};
  if(!signatures[name])throw Error('Unexpected RPC: '+name);
  const query='select public.'+name+'('+signatures[name].map(k=>k+'=>'+value(args[k],k)).join(',')+') as value';
  if(db)return db.transaction(async tx=>{await tx.exec("select set_config('request.jwt.claim.sub',"+quote(host?teacher:'')+",true);set local role "+(host?'authenticated':'anon'));return (await tx.query(query)).rows[0].value;});

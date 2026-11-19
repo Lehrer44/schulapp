@@ -1,0 +1,31 @@
+/* Layout of Näher dran: guess form, number line and result rows; colours come from flat.css. */
+.closer-unit-hint{margin:var(--space-1) 0 var(--space-3);font-size:15px}
+.closer-guess{display:grid;gap:10px;margin:var(--space-3) 0 0}
+.closer-guess .bluff-label{margin:0}
+.closer-guess-row{display:flex;align-items:center;gap:10px;min-width:0}
+.closer-guess-row input{flex:1 1 auto;min-width:0;font-size:24px;text-align:center}
+.closer-unit{flex:none;font-size:20px;max-width:40%;overflow-wrap:anywhere}
+.closer-guess button{justify-self:stretch;font-size:18px}
+.closer-guess .bluff-save-status{margin:0}
+.closer-answer{margin:var(--space-3) 0 0;text-align:center;font-size:20px}
+.closer-answer strong{display:block;font-size:clamp(30px,5vw,46px);line-height:1.2;overflow-wrap:anywhere}
+/* Number line: markers are positioned in percent of the width between the smallest and largest value. */
+.closer-line{position:relative;height:96px;margin:28px 18px 8px}
+.closer-axis{position:absolute;left:0;right:0;top:58px;height:0}
+.closer-dot{position:absolute;top:58px;width:16px;height:16px;box-sizing:border-box;border-radius:50%;transform:translate(-50%,-50%)}
+.closer-target{position:absolute;top:30px;width:6px;height:56px;border-radius:3px;transform:translateX(-50%)}
+.closer-target-label{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:15px}
+.closer-tick{position:absolute;top:74px;font-size:12px;white-space:nowrap}
+.closer-tick-start{left:0;transform:translateX(-25%)}
+.closer-tick-end{right:0;transform:translateX(25%)}
+.closer-results{display:grid;gap:10px;margin:var(--space-3) 0 0}
+.closer-result{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) 56px;gap:12px;align-items:center;min-height:52px;padding:8px 14px;box-sizing:border-box;overflow-wrap:anywhere}
+.closer-result-value,.closer-result-distance{text-align:right}
+.closer-result-points{text-align:right;white-space:nowrap}
+@media(max-width:520px){
+ .closer-line{margin:24px 12px 8px}
+ .closer-result{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}
+ .closer-result-value{text-align:left}
+ .closer-result-distance{grid-column:2;grid-row:1;}
+ .closer-result-points{grid-column:2;grid-row:2}
+}

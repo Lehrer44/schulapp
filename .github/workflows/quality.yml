@@ -55,6 +55,9 @@ jobs:
           PGDATABASE=rather_tests node tests/rather-concurrency.cjs
           createdb same_tests
           PGDATABASE=same_tests psql -v ON_ERROR_STOP=1 -f tests/same-db.sql
+          createdb closer_tests
+          PGDATABASE=closer_tests psql -v ON_ERROR_STOP=1 -f tests/closer-db.sql
+          PGDATABASE=closer_tests node tests/closer-concurrency.cjs
           createdb survey_tests
           PGDATABASE=survey_tests psql -v ON_ERROR_STOP=1 -f tests/survey-session-db.sql
       - name: Testbrowser vorbereiten
@@ -71,6 +74,7 @@ jobs:
           PGDATABASE=yesno_tests node tests/yesno.browser.cjs
           PGDATABASE=rather_tests node tests/rather.browser.cjs
           PGDATABASE=same_tests node tests/same.browser.cjs
+          PGDATABASE=closer_tests node tests/closer.browser.cjs
           node tests/live-sidebar.browser.cjs
           node tests/layout.browser.cjs
           node tests/browser.test.cjs
@@ -85,6 +89,7 @@ jobs:
             test-results/yesno-*.png
             test-results/rather-*.png
             test-results/same-*.png
+            test-results/closer-*.png
             test-results/external-links-*.png
             test-results/bluff-*.png
             test-results/pin-*.png

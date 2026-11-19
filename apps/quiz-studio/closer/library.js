@@ -1,0 +1,56 @@
+/* Saved Näher-dran games use authenticated RPCs; answers never enter participant views before the reveal. */
+(function(){
+ 'use strict';
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const errors={INVALID_NAME:'Bitte gib einen Namen mit höchstens 120 Zeichen ein.',INVALID_SELECTION:'Wähle 1 bis 50 unterschiedliche Fragen aus.',INVALID_ROUND_COUNT:'Wähle zwischen 1 und 50 Runden.',NOT_ENOUGH_QUESTIONS:'Dafür sind nicht genügend unterschiedliche Fragen in deiner Sammlung.',NOT_OWNER:'Dieses Quiz ist nicht mehr verfügbar.',NOT_AUTHENTICATED:'Bitte melde dich erneut an.'};
+ let dialog=null;
+ async function rpc(client,name,args={}){
+  let result;
+  try{result=await client.rpc(name,args);if(result.error)throw Error(result.error.message);}
+  catch(e){window.setQuizSyncStatus?.('closer','error','Spiel „Näher dran“: '+(e.message||'Verbindung fehlgeschlagen.'));throw e;}
+  const {data}=result;
+  if(data?.ok===false){const message=errors[data.error]||data.error;if(data.error==='NOT_AUTHENTICATED')window.setQuizSyncStatus?.('closer','error','Spiel „Näher dran“: '+message);throw Error(message);}
+  window.setQuizSyncStatus?.('closer','ready');return data;
+ }
+ function openDialog(title,content){
+  if(dialog){dialog.close();dialog.remove();}
+  const opener=document.activeElement,d=document.createElement('dialog');dialog=d;d.className='bluff-dialog';d.dataset.game='closer';d.setAttribute('aria-labelledby','closerDialogTitle');
+  d.innerHTML='<div class="library-heading"><h2 id="closerDialogTitle">'+esc(title)+'</h2><button type="button" data-close aria-label="Fenster schließen">×</button></div>'+content;
+  document.body.append(d);d.querySelector('[data-close]').onclick=()=>d.close();d.addEventListener('close',()=>{d.remove();if(dialog===d)dialog=null;if(opener?.isConnected)opener.focus();},{once:true});d.showModal();return d;
+ }
+ async function mount(root,client){
+  if(!root)return;
+  if(dialog){dialog.close();dialog=null;}
+  let quizzes=[],busy=false;
+  const list=root.querySelector('[data-closer-list]'),status=root.querySelector('[data-closer-status]');
+  function report(e){status.textContent=e.message||'Verbindung fehlgeschlagen. Bitte erneut versuchen.';}
+  function draw(){list.innerHTML=quizzes.length?'<div class="grid">'+quizzes.map(q=>'<div class="qzcard" data-closer-quiz-id="'+esc(q.id)+'"><div class="quiz-info"><h3>'+esc(q.name)+'</h3></div><div class="card-actions"><button class="icon-btn" data-closer-action="start" data-id="'+esc(q.id)+'" title="Starten" aria-label="'+esc(q.name)+' starten"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 6h10a5 5 0 0 1 5 5v4.5a3.5 3.5 0 0 1-6.3 2.1L14.5 16h-5l-1.2 1.6A3.5 3.5 0 0 1 2 15.5V11a5 5 0 0 1 5-5Z"/><path d="M7.5 9.5v4M5.5 11.5h4M15.5 10.5h.01M18 12.5h.01"/></svg></button><button class="icon-btn" data-closer-action="edit" data-id="'+esc(q.id)+'" title="Bearbeiten" aria-label="'+esc(q.name)+' bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2 2 0 0 1 5 5L9 20l-6 1 1-6Z"/></svg></button><button class="icon-btn" data-closer-action="delete" data-id="'+esc(q.id)+'" aria-label="'+esc(q.name)+' löschen" title="Löschen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button></div></div>').join('')+'</div>':'<div class="empty">Noch keine Spiele vorhanden.</div>';}
+  async function reload(){
+   window.setQuizSyncStatus?.('closer','waiting','Lade Spiele …');const data=await rpc(client,'closer_quiz_list');if(!root.isConnected)return;quizzes=data?.quizzes||[];draw();}
+  async function start(name,args){const s=await rpc(client,name,args);location.href='closer/live.html?session='+encodeURIComponent(s.session_id);}
+  async function configure(quiz,random=false){
+   const data=await rpc(client,'closer_question_list'),questions=[...(data?.questions||[])];
+   // Saved games keep their question copies even after removal from the bank.
+   for(const q of quiz?.questions||[])if(!questions.some(x=>x.id===q.id))questions.push(q);
+   const selected=new Set((quiz?.questions||[]).map(q=>q.id));
+   const d=openDialog(random?'Zufälliges Spiel':quiz?'Spiel „Näher dran“ bearbeiten':'Neues Spiel „Näher dran“',
+    '<form id="closerQuizForm">'+(random?'<label for="closerRoundCount">Anzahl der Runden</label><input id="closerRoundCount" name="rounds" type="number" min="1" max="50" value="'+Math.min(10,Math.max(1,questions.length))+'" required>':'<label for="closerQuizName">Name</label><input id="closerQuizName" maxlength="120" value="'+esc(quiz?.name||'')+'" required><fieldset><legend>Fragen auswählen</legend><div class="bluff-question-picker">'+questions.map(q=>'<label class="bluff-question-choice"><input type="checkbox" value="'+q.id+'" '+(selected.has(q.id)?'checked':'')+'><span>'+esc(q.question)+'<small> · Lösung: '+esc(Number(q.answer).toLocaleString('de-DE',{maximumFractionDigits:3,useGrouping:Math.abs(Number(q.answer))>=10000})+(q.unit?' '+q.unit:''))+'</small></span></label>').join('')+'</div></fieldset><p class="muted" id="closerSelectionCount"></p>')+'<p class="bluff-dialog-status" role="status"></p><div class="studio-actions"><button type="button" data-cancel>Abbrechen</button><button class="studio-primary" type="submit">'+(random?'Lobby erstellen':quiz?'Speichern':'Quiz erstellen')+'</button></div></form>');
+   const form=d.querySelector('form'),submit=form.querySelector('[type="submit"]'),error=d.querySelector('[role="status"]');let saving=false;
+   d.querySelector('[data-cancel]').onclick=()=>d.close();
+   function count(){d.querySelector('#closerSelectionCount').textContent=selected.size+' Fragen ausgewählt';}
+   if(!random){count();form.onchange=e=>{if(e.target.type==='checkbox'){const id=Number(e.target.value);e.target.checked?selected.add(id):selected.delete(id);count();}};}
+   form.onsubmit=async e=>{e.preventDefault();if(saving)return;error.textContent='';saving=true;submit.disabled=true;try{
+    if(random){await start('closer_create',{p_round_count:Number(d.querySelector('#closerRoundCount').value),p_question_ids:null});}
+    else{if(selected.size<1||selected.size>50)throw Error(errors.INVALID_SELECTION);await rpc(client,'closer_quiz_save',{p_id:quiz?.id||null,p_name:d.querySelector('#closerQuizName').value.trim(),p_question_ids:[...selected]});d.close();await reload();}
+   }catch(err){error.textContent=err.message;}finally{saving=false;submit.disabled=false;}};
+  }
+  root.onclick=async e=>{const b=e.target.closest('[data-closer-action]');if(!b||busy)return;const a=b.dataset.closerAction,q=quizzes.find(q=>q.id===b.dataset.id);busy=true;b.disabled=true;status.textContent='';try{
+   if(a==='new'||a==='edit'||a==='random')await configure(q,a==='random');
+   if(a==='start')await start('closer_quiz_start',{p_id:q.id});
+   if(a==='delete'&&confirm('Spiel „Näher dran“ „'+q.name+'“ löschen?')){await rpc(client,'closer_quiz_delete',{p_id:q.id});await reload();}
+  }catch(err){report(err);}finally{busy=false;b.disabled=false;}};
+  try{await reload();}catch(e){list.innerHTML='<button data-closer-action="retry">Erneut laden</button>';report(e);root.querySelector('[data-closer-action="retry"]').onclick=async()=>{try{status.textContent='';await reload();}catch(err){report(err);}};}
+ }
+ window.CloserLibrary={mount};
+})();
+
