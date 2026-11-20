@@ -53,10 +53,10 @@ function fixture(){
    };render();
   });
   await page.locator('[data-bluff-quiz-id]').waitFor();await page.locator('[data-yn-game-id]').waitFor();
-  assert.deepEqual(await page.locator('.studio-library-grid>.panel h2').allTextContents(),['Quiz','Manipulation','Wer würde eher','Dieselbe Antwort','Ja oder Nein']);
+  assert.deepEqual(await page.locator('.studio-library-grid>.panel h2').allTextContents(),['Quiz','Manipulation','Wer würde eher','Dieselbe Antwort','Ja oder Nein','Näher dran']);
   const boxes=await page.locator('.studio-library-grid>.panel').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};}));
   const columns=width>=1200?3:width>700?2:1;
-  for(let i=0;i<5;i++){
+  for(let i=0;i<6;i++){
    assert(Math.abs(boxes[i].x-boxes[i%columns].x)<1,'Aligned grid columns');
    if(i<columns)assert(Math.abs(boxes[i].y-boxes[0].y)<1,'Aligned first row');
    else assert(boxes[i].y>=boxes[i-columns].y+boxes[i-columns].height,'Ordered subsequent rows');
@@ -66,7 +66,7 @@ function fixture(){
    assert(await action.getAttribute('title'));assert.equal(await action.locator('svg').count(),1);
    assert((await action.boundingBox()).height>=44);
   }
-  for(const [key,folder] of [['bluff','bluff'],['rather','rather'],['same','same'],['yn','yesno']]){
+  for(const [key,folder] of [['bluff','bluff'],['rather','rather'],['same','same'],['yn','yesno'],['closer','closer']]){
    assert.equal(await page.locator(`[data-${key}-action="random"]`).getAttribute('title'),'Zufälliges Spiel');
    assert.equal(await page.locator(`#${key==='yn'?'yesno':key}Library a`).getAttribute('href'),folder+'/index.html');
    for(const action of ['random','new']){
@@ -75,6 +75,8 @@ function fixture(){
     await page.keyboard.press('Escape');await page.locator('dialog[open]').waitFor({state:'detached'});
    }
   }
+  // Closed dialogs are removed on their close event; wait so their headings are not counted below.
+  await page.waitForFunction(()=>!document.querySelector('dialog'));
   for(const heading of await page.locator('.library-heading').all()){
    const title=await heading.locator('h2').boundingBox(),actions=await heading.locator('.studio-actions').boundingBox();
    assert(title.x+title.width<=actions.x+1,'Heading cannot overlap icons');
@@ -111,7 +113,7 @@ function fixture(){
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Long title fits '+width);
   assert.deepEqual(errors,[]);await ctx.close();
  }
- console.log('PASS: five-tile grid, renamed games, icon actions, dialogs, long titles and touch controls at 360/390/768/1024/1199/1200/1280/1440/1920px');
+ console.log('PASS: six-tile grid, renamed games, icon actions, dialogs, long titles and touch controls at 360/390/768/1024/1199/1200/1280/1440/1920px');
  for(const width of [390,1280]){
   const ctx=await browser.newContext({viewport:{width,height:900}});await ctx.addInitScript(fixture);
   await ctx.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:'window.supabase={createClient:()=>window.__client}'}));

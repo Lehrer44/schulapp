@@ -122,14 +122,14 @@ body[data-studio="quiz"][data-dashboard-view="library"] #app .empty{
   border:var(--flat-line) dashed var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);
   color:var(--flat-green);font-size:14px;text-align:center;text-wrap:balance;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-list],[data-rather-list],[data-same-list],[data-yn-list])>button{
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-list],[data-rather-list],[data-same-list],[data-yn-list],[data-closer-list])>button{
   border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);box-shadow:none;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-list],[data-rather-list],[data-same-list],[data-yn-list])>button:hover{background:var(--flat-green);color:var(--flat-white)}
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]){
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-list],[data-rather-list],[data-same-list],[data-yn-list],[data-closer-list])>button:hover{background:var(--flat-green);color:var(--flat-white)}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status],[data-closer-status]){
   margin:var(--space-3) 0 0;color:#be123c;font-size:14px;overflow-wrap:anywhere;
 }
-body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status]):empty{display:none}
+body[data-studio="quiz"][data-dashboard-view="library"] #app :is([data-bluff-status],[data-yn-status],[data-rather-status],[data-same-status],[data-closer-status]):empty{display:none}
 body[data-studio="quiz"][data-dashboard-view="library"] #cloudStatus{color:var(--flat-green);text-align:center}
 body[data-studio="quiz"][data-dashboard-view="library"] #cloudStatus[data-state="error"]{color:#be123c}
 
@@ -463,9 +463,9 @@ body[data-quiz-player] #app :is(.rank-person,.score){color:inherit;font-weight:7
 body[data-quiz-player] #app .status{border-radius:999px;background:var(--flat-white);color:var(--flat-green);font-size:13px;font-weight:700}
 body[data-quiz-player] .live-sidebar:focus-visible{outline:3px solid var(--flat-green)}
 
-/* ======= Party games: Manipulation, Wer würde eher, Dieselbe Antwort, Ja oder Nein ======= */
-/* Catalogue, game host and player page carry data-game ("bluff", "rather", "same", "yesno"); so do
-   their dialogs on the dashboard. */
+/* === Party games: Manipulation, Wer würde eher, Dieselbe Antwort, Ja oder Nein, Näher dran === */
+/* Catalogue, game host and player page carry data-game ("bluff", "rather", "same", "yesno",
+   "closer"); so do their dialogs on the dashboard. */
 body[data-game] :is(#bluffConnectionStatus,#appMessage,dialog,dialog *),:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open],:is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] *{font-family:var(--flat-font)}
 body[data-game]>#app{padding-top:var(--space-4)}
 body[data-game] #bluffConnectionStatus,body[data-game] #appMessage.is-success{color:var(--flat-green)}
@@ -656,6 +656,21 @@ body[data-game="yesno"] #app .yn-results-main :is(.yn-result-name,.yn-result-row
 :is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] :is(.yn-picker,.yn-packs) input{accent-color:var(--flat-green)}
 :is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] .yn-error{color:#be123c}
 :is(body[data-game] dialog,dialog[data-game]):is(.bluff-dialog,.yn-dialog)[open] #ynGameForm input[type="number"]{min-height:0;border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius-sm);color:var(--flat-green);box-shadow:none;font-family:var(--flat-font);font-weight:700}
+
+/* Näher dran: the answer is a green marker on the number line, guesses are outlined dots (your own
+   filled); in the result list the closest guess fills green. */
+body[data-game="closer"] #app :is(.closer-unit-hint,.closer-unit,.closer-answer,.closer-tick,.closer-target-label){color:var(--flat-green)}
+body[data-game="closer"] #app :is(.closer-unit,.closer-answer strong,.closer-target-label){font-weight:700}
+body[data-game="closer"] #app .closer-guess-row input{font-size:24px}
+body[data-game="closer"] #app .closer-axis{border-top:var(--flat-line) solid var(--flat-green)}
+body[data-game="closer"] #app .closer-dot{border:3px solid var(--flat-green);background:var(--flat-white)}
+body[data-game="closer"] #app .closer-dot.is-own{background:var(--flat-green)}
+body[data-game="closer"] #app .closer-target{background:var(--flat-green)}
+body[data-game="closer"] #app .closer-result{border:var(--flat-line) solid var(--flat-green);border-radius:var(--flat-radius);background:var(--flat-white);color:var(--flat-green);font-weight:700}
+body[data-game="closer"] #app .closer-result.is-best{background:var(--flat-green);color:var(--flat-white)}
+body[data-game="closer"] #app .closer-result.me{box-shadow:inset 0 0 0 var(--flat-line) var(--flat-green)}
+body[data-game="closer"] #app .closer-result.me.is-best{box-shadow:inset 0 0 0 var(--flat-line) var(--flat-white)}
+body[data-game="closer"] #app .closer-result-distance{font-weight:400}
 
 /* ======================= Rankings and final placements ======================= */
 /* Every ranking and final placement, in the quiz and all party games, is drawn in orange: the green
